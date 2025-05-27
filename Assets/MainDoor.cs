@@ -38,24 +38,5 @@ public class MainDoor : MonoBehaviour
     public void SetCustomer(Transform newCustomer)
     {
         customer = newCustomer;
-
-    }
-
-    public Animator doorAnimator;
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.CompareTag("Customer"))
-        {
-            doorAnimator.SetTrigger("OpenTrigger");
-        }
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        if (other.CompareTag("Customer"))
-        {
-            doorAnimator.SetTrigger("CloseTrigger");
-        }
     }
 }

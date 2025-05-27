@@ -4,10 +4,13 @@ using UnityEngine.AI;
 
 public class CustomerSpawner : MonoBehaviour
 {
+    public QueueManager queueManager;
+
     public GameObject customerPrefab;
     public Transform spawnPoint;
     public Transform doorPoint;
     public Transform cashRegister;
+    public List<Transform> queuePoints;
     public Transform exitPoint;
     public List<ProductData> availableProducts;
     public MainDoor mainDoor;
@@ -45,6 +48,7 @@ public class CustomerSpawner : MonoBehaviour
             customer.cashRegisterPoint = cashRegister;
             customer.exitPoint = exitPoint;
             customer.mainDoor = mainDoor;
+            customer.queueManager = queueManager;
         }
        
     }

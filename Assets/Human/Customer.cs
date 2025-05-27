@@ -16,6 +16,7 @@ public class Customer : MonoBehaviour
     public List<DesiredProduct> desiredProducts = new List<DesiredProduct>();
     public Transform doorPoint;
     public Transform cashRegisterPoint;
+    public QueueManager queueManager;
     public Transform exitPoint;
     public MainDoor mainDoor;
 
@@ -61,11 +62,17 @@ public class Customer : MonoBehaviour
             {
                 StartCoroutine(TakeProduct());
             }
-            else
+            else if (queueManager.IsCustomerFirst(this))
             {
                 StartCoroutine(PayAndLeave());
+                queueManager.LeaveQueue(this);
+            }
+            else
+            {
+                isProcessing = false;
             }
         }
+
 
         GetComponent<Animator>()?.SetBool("isWalking", agent.velocity.magnitude > 0.1f);
     }
@@ -75,7 +82,7 @@ public class Customer : MonoBehaviour
         if (currentProductIndex >= desiredProducts.Count)
         {
             isShopping = false;
-            agent.SetDestination(cashRegisterPoint.position);
+            queueManager.JoinQueue(this);
         }
         else
         {
@@ -103,6 +110,13 @@ public class Customer : MonoBehaviour
 
         isProcessing = false;
         GoToNextProduct();
+    }
+
+    private bool isInQueue = false;
+    public void SetQueueDestination(Vector3 position)
+    {
+        if (agent.isOnNavMesh)
+            agent.SetDestination(position);
     }
 
     IEnumerator PayAndLeave()
