@@ -40,7 +40,7 @@ public class Customer : MonoBehaviour
         if (agent.isOnNavMesh)
         {
             agent.SetDestination(doorPoint.position);
-            mainDoor?.SetCustomer(transform);
+            mainDoor?.RegisterCustomer(transform);
         }
     }
 
@@ -126,8 +126,8 @@ public class Customer : MonoBehaviour
         if (totalSpent > 0)
             GameManager.Instance.AddMoney(totalSpent);
 
+        mainDoor?.UnregisterCustomer(transform);
         agent.SetDestination(exitPoint.position);
-
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance < 0.5f);
         Destroy(gameObject);
     }

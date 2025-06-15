@@ -4,13 +4,10 @@ using UnityEngine;
 
 public class MainDoor : MonoBehaviour
 {
-    public string openTriggerName = "open";
-    public string closeTriggerName = "close";
     public float activationDistance = 2f;
-
-    private Transform customer;
     private Animator animator;
-    private bool isOpen = false;
+    private List<Transform> nearbyCustomers = new List<Transform>();
+    private bool isPlaying = false;
 
     void Start()
     {
@@ -19,24 +16,36 @@ public class MainDoor : MonoBehaviour
 
     void Update()
     {
-        if (customer == null) return;
+        if (isPlaying) return;
+        nearbyCustomers.RemoveAll(c => c == null);
 
-        float distance = Vector3.Distance(transform.position, customer.position);
-
-        if (!isOpen && distance < activationDistance)
+        foreach (Transform customer in nearbyCustomers)
         {
-            animator.SetTrigger(openTriggerName);
-            isOpen = true;
-        }
-        else if (isOpen && distance > activationDistance + 1f)
-        {
-            animator.SetTrigger(closeTriggerName);
-            isOpen = false;
+            if (Vector3.Distance(transform.position, customer.position) < activationDistance)
+            {
+                animator.Play("OpenAndClose", 0, 0f);
+                isPlaying = true;
+                StartCoroutine(ResetAfterAnimation());
+                break;
+            }
         }
     }
 
-    public void SetCustomer(Transform newCustomer)
+    IEnumerator ResetAfterAnimation()
     {
-        customer = newCustomer;
+        float duration = animator.GetCurrentAnimatorStateInfo(0).length;
+        yield return new WaitForSeconds(duration);
+        isPlaying = false;
+    }
+
+    public void RegisterCustomer(Transform customer)
+    {
+        if (!nearbyCustomers.Contains(customer))
+            nearbyCustomers.Add(customer);
+    }
+
+    public void UnregisterCustomer(Transform customer)
+    {
+        nearbyCustomers.Remove(customer);
     }
 }

@@ -8968,15 +8968,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8435830842227818864, guid: a4c306218e8abd84298f58c6b30437da, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
+      value: 7.156647e-15
       objectReference: {fileID: 0}
     - target: {fileID: -8435830842227818864, guid: a4c306218e8abd84298f58c6b30437da, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 5.3999968
+      value: 95.38096
       objectReference: {fileID: 0}
     - target: {fileID: -8435830842227818864, guid: a4c306218e8abd84298f58c6b30437da, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
+      value: 4.5138365e-16
       objectReference: {fileID: 0}
     - target: {fileID: -7871398624690754174, guid: a4c306218e8abd84298f58c6b30437da, type: 3}
       propertyPath: m_Enabled
@@ -8984,15 +8984,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -2341321688622627795, guid: a4c306218e8abd84298f58c6b30437da, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
+      value: 2.846969e-17
       objectReference: {fileID: 0}
     - target: {fileID: -2341321688622627795, guid: a4c306218e8abd84298f58c6b30437da, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: -5.3999968
+      value: -95.38097
       objectReference: {fileID: 0}
     - target: {fileID: -2341321688622627795, guid: a4c306218e8abd84298f58c6b30437da, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
+      value: 4.5138386e-16
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: a4c306218e8abd84298f58c6b30437da, type: 3}
       propertyPath: m_Name
@@ -9007,10 +9007,13 @@ PrefabInstance:
       addedObject: {fileID: 1280006841}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a4c306218e8abd84298f58c6b30437da, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1280006843}
+      addedObject: {fileID: 1280006848}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a4c306218e8abd84298f58c6b30437da, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1280006845}
+    - targetCorrespondingSourceObject: {fileID: 4607668393258877731, guid: a4c306218e8abd84298f58c6b30437da, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 660459269}
   m_SourcePrefab: {fileID: 100100000, guid: a4c306218e8abd84298f58c6b30437da, type: 3}
 --- !u!1001 &275421090
 PrefabInstance:
@@ -19564,7 +19567,7 @@ MonoBehaviour:
     price: 120
     shelfPosition: {fileID: 306406671}
     quantity: 0
-  mainDoor: {fileID: 1280006843}
+  mainDoor: {fileID: 1280006848}
   spawnInterval: 15
 --- !u!4 &651488878
 Transform:
@@ -20123,6 +20126,32 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d372dbc1acdf2b14fb741024354ef278, type: 3}
+--- !u!1 &660459265 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4607668393258877731, guid: a4c306218e8abd84298f58c6b30437da, type: 3}
+  m_PrefabInstance: {fileID: 270980350}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &660459269
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 660459265}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: b6886dbc3a952b544b52ad1aeecda829, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1001 &662224249
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -27286,7 +27315,7 @@ MonoBehaviour:
     price: 120
     shelfPosition: {fileID: 306406671}
     quantity: 0
-  mainDoor: {fileID: 1280006843}
+  mainDoor: {fileID: 1280006848}
   spawnInterval: 10
 --- !u!4 &888227453 stripped
 Transform:
@@ -40802,21 +40831,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &1280006843
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1280006839}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 91c91044eef27aa4f87a4eb65f65bd71, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  openTriggerName: open
-  closeTriggerName: close
-  activationDistance: 2
 --- !u!65 &1280006845
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -40838,6 +40852,19 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 0.19999999, z: 0.6}
   m_Center: {x: 0.00000011920929, y: 0.099999994, z: 0}
+--- !u!114 &1280006848
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1280006839}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 91c91044eef27aa4f87a4eb65f65bd71, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  activationDistance: 0.5
 --- !u!1001 &1281527733
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -56595,7 +56622,7 @@ MonoBehaviour:
     price: 120
     shelfPosition: {fileID: 306406671}
     quantity: 0
-  mainDoor: {fileID: 1280006843}
+  mainDoor: {fileID: 1280006848}
   spawnInterval: 22
 --- !u!4 &1740203267
 Transform:
@@ -57832,7 +57859,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 1.0.6.1v
+  m_text: 1.0.6.2v
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 0c4d5368b8176c5428bb4aa85cec8996, type: 2}
   m_sharedMaterial: {fileID: 6488789454558138175, guid: 0c4d5368b8176c5428bb4aa85cec8996, type: 2}
@@ -64495,7 +64522,7 @@ MonoBehaviour:
     price: 120
     shelfPosition: {fileID: 306406671}
     quantity: 0
-  mainDoor: {fileID: 1280006843}
+  mainDoor: {fileID: 1280006848}
   spawnInterval: 25
 --- !u!4 &2026957390
 Transform:
