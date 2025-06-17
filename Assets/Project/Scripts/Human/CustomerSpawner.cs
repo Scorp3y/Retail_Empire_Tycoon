@@ -15,11 +15,13 @@ public class CustomerSpawner : MonoBehaviour
     public List<ProductData> availableProducts;
     public MainDoor mainDoor;
 
+
     public float spawnInterval = 10f;
 
     void Start()
     {
         InvokeRepeating(nameof(SpawnCustomer), 2f, spawnInterval);
+
     }
 
     void SpawnCustomer()
@@ -49,6 +51,7 @@ public class CustomerSpawner : MonoBehaviour
             customer.exitPoint = exitPoint;
             customer.mainDoor = mainDoor;
             customer.queueManager = queueManager;
+            customer.spawnPoint = spawnPoint;
         }
        
     }

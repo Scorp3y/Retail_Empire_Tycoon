@@ -19,6 +19,7 @@ public class Customer : MonoBehaviour
     public QueueManager queueManager;
     public Transform exitPoint;
     public MainDoor mainDoor;
+    public Transform spawnPoint;
 
     public float waitTimeAtShelf = 2f;
     public float waitTimeAtCash = 3f;
@@ -127,7 +128,10 @@ public class Customer : MonoBehaviour
             GameManager.Instance.AddMoney(totalSpent);
 
         mainDoor?.UnregisterCustomer(transform);
+
         agent.SetDestination(exitPoint.position);
+        yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance < 0.5f);
+        agent.SetDestination(spawnPoint.position);
         yield return new WaitUntil(() => !agent.pathPending && agent.remainingDistance < 0.5f);
         Destroy(gameObject);
     }

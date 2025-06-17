@@ -111,8 +111,10 @@ MonoBehaviour:
   desiredProducts: []
   doorPoint: {fileID: 0}
   cashRegisterPoint: {fileID: 0}
+  queueManager: {fileID: 0}
   exitPoint: {fileID: 0}
   mainDoor: {fileID: 0}
+  spawnPoint: {fileID: 0}
   waitTimeAtShelf: 2
   waitTimeAtCash: 3
 --- !u!195 &-5318680512767432953
@@ -136,4 +138,4 @@ NavMeshAgent:
   m_Height: 2
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
-  m_ObstacleAvoidanceType: 4
+  m_ObstacleAvoidanceType: 0

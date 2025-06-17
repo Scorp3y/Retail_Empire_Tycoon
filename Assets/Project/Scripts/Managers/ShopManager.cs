@@ -12,6 +12,7 @@ public class ShopManager : MonoBehaviour
     {
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
+
     }
 
     void Start()
@@ -37,6 +38,7 @@ public class ShopManager : MonoBehaviour
             {
                 item.buyButton.onClick.RemoveAllListeners();
                 item.buyButton.onClick.AddListener(() => BuyItem(item));
+
             }
 
         }

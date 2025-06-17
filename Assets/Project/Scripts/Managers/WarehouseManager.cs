@@ -22,15 +22,6 @@ public class WarehouseManager : MonoBehaviour
 
             Product current = product;
 
-            if (product.buy1Button != null)
-                product.buy1Button.onClick.AddListener(() => BuyProduct(current, 1));
-
-            if (product.buy5Button != null)
-                product.buy5Button.onClick.AddListener(() => BuyProduct(current, 5));
-
-            if (product.buy10Button != null)
-                product.buy10Button.onClick.AddListener(() => BuyProduct(current, 10));
-
             if (!shelfBought)
             {
                 if (product.buy1Button != null) product.buy1Button.interactable = false;
@@ -154,7 +145,6 @@ public class WarehouseManager : MonoBehaviour
             }
 
             RefreshProductUI(product);
-
         }
     }
 
