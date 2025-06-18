@@ -22,7 +22,7 @@ public class Customer : MonoBehaviour
     public Transform spawnPoint;
 
     public float waitTimeAtShelf = 2f;
-    public float waitTimeAtCash = 3f;
+    public float waitTimeAtCash = 5f;
 
     private NavMeshAgent agent;
     private int currentProductIndex = -1;
@@ -63,7 +63,7 @@ public class Customer : MonoBehaviour
             {
                 StartCoroutine(TakeProduct());
             }
-            else if (queueManager.IsCustomerFirst(this))
+            else if (queueManager.IsCustomerFirst(this) && isInQueuePosition)
             {
                 StartCoroutine(PayAndLeave());
                 queueManager.LeaveQueue(this);
@@ -74,6 +74,10 @@ public class Customer : MonoBehaviour
             }
         }
 
+        if (!isInQueuePosition && !agent.pathPending && agent.remainingDistance < 0.5f && !isShopping)
+        {
+            isInQueuePosition = true;
+        }
 
         GetComponent<Animator>()?.SetBool("isWalking", agent.velocity.magnitude > 0.1f);
     }
@@ -97,35 +101,49 @@ public class Customer : MonoBehaviour
         yield return new WaitForSeconds(waitTimeAtShelf);
 
         var desired = desiredProducts[currentProductIndex];
+
+        if (desired.productData?.shelfPosition == null)
+        {
+            currentProductIndex++;
+            isProcessing = false;
+            GoToNextProduct();
+            yield break;
+        }
+
         bool success = WarehouseManager.Instance.TryTakeProduct(desired.productData.productName, desired.quantity);
 
         if (success)
         {
             totalSpent += desired.productData.price * desired.quantity;
-            currentProductIndex++;
-        }
-        else
-        {
-            isShopping = false;
         }
 
+        currentProductIndex++;
         isProcessing = false;
         GoToNextProduct();
     }
 
-    private bool isInQueue = false;
+    private bool isInQueuePosition = false;
+
     public void SetQueueDestination(Vector3 position)
     {
         if (agent.isOnNavMesh)
+        {
             agent.SetDestination(position);
+            isInQueuePosition = false; 
+        }
     }
 
     IEnumerator PayAndLeave()
-    {
+    {     
         yield return new WaitForSeconds(waitTimeAtCash);
 
         if (totalSpent > 0)
             GameManager.Instance.AddMoney(totalSpent);
+        else if (queueManager.IsCustomerFirst(this) && agent.remainingDistance < 0.5f)
+        {
+            StartCoroutine(PayAndLeave());
+            queueManager.LeaveQueue(this);
+        }
 
         mainDoor?.UnregisterCustomer(transform);
 

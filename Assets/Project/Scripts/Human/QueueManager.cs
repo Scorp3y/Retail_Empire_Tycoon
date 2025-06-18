@@ -3,8 +3,9 @@ using UnityEngine;
 
 public class QueueManager : MonoBehaviour
 {
-    public List<Transform> queuePoints;  
+    public List<Transform> queuePoints;
     private List<Customer> customersInQueue = new List<Customer>();
+    private Dictionary<Transform, Customer> pointAssignments = new Dictionary<Transform, Customer>();
 
     public void JoinQueue(Customer customer)
     {
@@ -15,15 +16,31 @@ public class QueueManager : MonoBehaviour
     public void LeaveQueue(Customer customer)
     {
         customersInQueue.Remove(customer);
+        foreach (var kvp in pointAssignments)
+        {
+            if (kvp.Value == customer)
+            {
+                pointAssignments[kvp.Key] = null;
+                break;
+            }
+        }
+
         UpdateQueuePositions();
     }
 
     private void UpdateQueuePositions()
     {
+        pointAssignments.Clear();
         for (int i = 0; i < customersInQueue.Count; i++)
         {
+            Customer customer = customersInQueue[i];
+
             if (i < queuePoints.Count)
-                customersInQueue[i].SetQueueDestination(queuePoints[i].position);
+            {
+                Transform point = queuePoints[i];
+                customer.SetQueueDestination(point.position);
+                pointAssignments[point] = customer;
+            }
         }
     }
 

@@ -16,12 +16,13 @@ public class CustomerSpawner : MonoBehaviour
     public MainDoor mainDoor;
 
 
+    [Range(15f, 35f)]
     public float spawnInterval = 10f;
 
     void Start()
     {
-        InvokeRepeating(nameof(SpawnCustomer), 2f, spawnInterval);
-
+        float randomStartDelay = Random.Range(0f, spawnInterval);
+        InvokeRepeating(nameof(SpawnCustomer), randomStartDelay, spawnInterval);
     }
 
     void SpawnCustomer()
