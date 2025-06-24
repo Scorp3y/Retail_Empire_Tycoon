@@ -5,23 +5,20 @@ public class TutorialController : MonoBehaviour
     public GameObject tutorialChoiceUI; 
     public GameObject tutorialUI;
     public TutorialDialogue tutorialDialogue;
+    public GameObject characterRoot;
+
     void Start()
     {
-        if (PlayerPrefs.GetInt("hasCompletedTutorial", 0) == 1)
-        {
-            tutorialChoiceUI.SetActive(false);
-            tutorialUI.SetActive(false);
-        }
-        else
-        {
-            tutorialChoiceUI.SetActive(true);
-        }
+        tutorialChoiceUI.SetActive(PlayerPrefs.GetInt("hasCompletedTutorial", 0) == 0);
+        tutorialUI.SetActive(false);
+        characterRoot.SetActive(false); 
     }
 
     public void OnChooseTutorialYes()
     {
         tutorialChoiceUI.SetActive(false);
         tutorialUI.SetActive(true);
+        characterRoot.SetActive(true);
         tutorialDialogue.StartDialogue(); 
     }
 
@@ -33,6 +30,7 @@ public class TutorialController : MonoBehaviour
 
         tutorialChoiceUI.SetActive(false);
         tutorialUI.SetActive(false);
+        characterRoot.SetActive(false);
     }
 
     [ContextMenu("Сбросить обучение")]
@@ -40,6 +38,6 @@ public class TutorialController : MonoBehaviour
     {
         PlayerPrefs.DeleteKey("hasCompletedTutorial");
         PlayerPrefs.Save();
-        Debug.Log("Обучение сброшено (hasCompletedTutorial удалён).");
+        Debug.Log("Обучение сброшено.");
     }
 }
