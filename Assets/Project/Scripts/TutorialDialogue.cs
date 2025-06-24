@@ -5,13 +5,15 @@ using SpeechBubble;
 
 public class TutorialDialogue : MonoBehaviour
 {
-    [Header("Настройки")]
-    public SpeechBubble_TMP speechBubble;        // Ссылка на компонент SpeechBubble
+    public SpeechBubble_TMP speechBubble;
     [TextArea(2, 5)]
-    public List<string> dialogueLines;           // Реплики для показа
-    public float delayBetweenLines = 5f;         // Интервал между строками (5 сек)
+    public List<string> dialogueLines;
+    public float delayBetweenLines = 5f;
+
+    public GameObject arrowToSettingsButton; 
 
     private int currentLineIndex = 0;
+    private bool isPaused = false;
 
     public void StartDialogue()
     {
@@ -24,6 +26,15 @@ public class TutorialDialogue : MonoBehaviour
         while (currentLineIndex < dialogueLines.Count)
         {
             speechBubble.setDialogueText(dialogueLines[currentLineIndex]);
+
+            if (currentLineIndex == 2)
+            {
+                arrowToSettingsButton.SetActive(true);
+                isPaused = true;
+                Debug.Log("Ожидается нажатие на кнопку Настройки.");
+                yield break; 
+            }
+
             currentLineIndex++;
             yield return new WaitForSeconds(delayBetweenLines);
         }
@@ -31,9 +42,18 @@ public class TutorialDialogue : MonoBehaviour
         OnDialogueFinished();
     }
 
+    public void ContinueDialogueAfterButton()
+    {
+        if (!isPaused) return;
+
+        arrowToSettingsButton.SetActive(false); 
+        isPaused = false;
+        currentLineIndex++;
+        StartCoroutine(PlayDialogue());
+    }
+
     private void OnDialogueFinished()
     {
         Debug.Log("Диалог завершён.");
-        // Можно вызывать следующий этап туториала или скрывать UI
     }
 }
