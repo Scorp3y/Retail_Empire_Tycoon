@@ -3,8 +3,8 @@
 public class TutorialController : MonoBehaviour
 {
     public GameObject tutorialChoiceUI; 
-    public GameObject tutorialUI;      
-
+    public GameObject tutorialUI;
+    public TutorialDialogue tutorialDialogue;
     void Start()
     {
         if (PlayerPrefs.GetInt("hasCompletedTutorial", 0) == 1)
@@ -22,7 +22,9 @@ public class TutorialController : MonoBehaviour
     {
         tutorialChoiceUI.SetActive(false);
         tutorialUI.SetActive(true);
+        tutorialDialogue.StartDialogue(); 
     }
+
 
     public void OnChooseTutorialNo()
     {
