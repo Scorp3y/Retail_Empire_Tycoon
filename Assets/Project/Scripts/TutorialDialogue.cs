@@ -6,7 +6,8 @@ using SpeechBubble;
 public class TutorialDialogue : MonoBehaviour
 {
     public SpeechBubble_TMP speechBubble;
-    public GameObject arrowToSettingsButton, arrowToMoneyPanel, arrowToPauseButton, arrowToStoreButton, arrowToStorePanel, arrowToBuildPanel, arrowToWarehouse;
+    public GameObject arrowToSettingsButton, arrowToMoneyPanel, arrowToPauseButton, arrowToStoreButton, arrowToStorePanel, arrowToBuildPanel,
+        arrowToBuyShelf, arrowToWarehouse, arrowToBuyProduct;
     public GameObject dialogueRoot;
 
     [TextArea(2, 5)]
@@ -48,6 +49,48 @@ public class TutorialDialogue : MonoBehaviour
                 arrowToPauseButton.SetActive(true);
             }
 
+            if (currentLineIndex == 7) 
+            {
+                isPaused = true;
+                StartCoroutine(ShowArrowNextFrame(arrowToWarehouse));
+                yield break;
+            }
+
+            if (currentLineIndex == 8)
+            {
+                isPaused= true;
+                StartCoroutine(ShowArrowNextFrame(arrowToStoreButton));
+                yield break;
+            }
+
+            if (currentLineIndex == 10)
+            {
+                isPaused = true;
+                StartCoroutine(ShowArrowNextFrame(arrowToBuildPanel));
+                yield break;
+            }
+
+            if (currentLineIndex == 11)
+            {
+                isPaused = true;
+                StartCoroutine(ShowArrowNextFrame(arrowToBuyShelf));
+                yield break;
+            }
+
+            if (currentLineIndex == 12)
+            {
+                isPaused = true;
+                StartCoroutine(ShowArrowNextFrame(arrowToStorePanel));
+                yield break;
+            }
+
+            if(currentLineIndex == 13)
+            {
+                isPaused = true;
+                StartCoroutine(ShowArrowNextFrame(arrowToBuyProduct));
+                yield break;
+            }
+
             currentLineIndex++;
             yield return new WaitForSeconds(delayBetweenLines);
         }
@@ -59,7 +102,7 @@ public class TutorialDialogue : MonoBehaviour
     {
         if (!isPaused) return;
 
-        arrowToSettingsButton.SetActive(false);
+        HideAllArrows();
         isPaused = false;
         currentLineIndex++;
 
@@ -69,7 +112,7 @@ public class TutorialDialogue : MonoBehaviour
     public void HideDialogueTemporarily()
     {
         dialogueRoot.SetActive(false);
-        arrowToSettingsButton.SetActive(false);
+        HideAllArrows();
     }
     public void ResumeDialogue()
     {
@@ -91,10 +134,12 @@ public class TutorialDialogue : MonoBehaviour
         arrowToSettingsButton?.SetActive(false);
         arrowToMoneyPanel?.SetActive(false);
         arrowToPauseButton?.SetActive(false);
-        /*arrowToStoreButton?.SetActive(false);
+        arrowToStoreButton?.SetActive(false);
         arrowToStorePanel?.SetActive(false);
         arrowToBuildPanel?.SetActive(false);
-        arrowToWarehouse?.SetActive(false); */
+        arrowToWarehouse?.SetActive(false); 
+        arrowToBuyShelf?.SetActive(false);
+        arrowToBuyProduct?.SetActive(false);
     }
 
     private IEnumerator ShowArrowNextFrame(GameObject arrow)
