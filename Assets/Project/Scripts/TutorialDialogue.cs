@@ -10,6 +10,7 @@ public class TutorialDialogue : MonoBehaviour
         arrowToBuyShelf, arrowToWarehouse, arrowToBuyProduct;
     public GameObject dialogueRoot;
 
+
     [TextArea(2, 5)]
     public List<string> dialogueLines;
     public float delayBetweenLines = 5f;
@@ -30,10 +31,14 @@ public class TutorialDialogue : MonoBehaviour
         {
             HideAllArrows();
 
+
             speechBubble.setDialogueText(dialogueLines[currentLineIndex]);
+
+            if (currentLineIndex == 0) { speechBubble.SetBubbleType(SpeechBubbleType.Note); }
 
             if (currentLineIndex == 3)
             {
+                speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
                 isPaused = true;
                 StartCoroutine(ShowArrowNextFrame(arrowToSettingsButton));
                 yield break;
@@ -41,16 +46,21 @@ public class TutorialDialogue : MonoBehaviour
 
             if (currentLineIndex == 4)
             {
+                speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
                 arrowToMoneyPanel.SetActive(true);
             }
 
+            if (currentLineIndex == 5) {speechBubble.SetBubbleType(SpeechBubbleType.Note);}
+
             if (currentLineIndex == 6)
             {
+                speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
                 arrowToPauseButton.SetActive(true);
             }
 
             if (currentLineIndex == 7) 
             {
+                speechBubble.SetBubbleType(SpeechBubbleType.Stress);
                 isPaused = true;
                 StartCoroutine(ShowArrowNextFrame(arrowToWarehouse));
                 yield break;
@@ -58,13 +68,17 @@ public class TutorialDialogue : MonoBehaviour
 
             if (currentLineIndex == 8)
             {
-                isPaused= true;
+                speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
+                isPaused = true;
                 StartCoroutine(ShowArrowNextFrame(arrowToStoreButton));
                 yield break;
             }
 
+            if (currentLineIndex == 9) { speechBubble.SetBubbleType(SpeechBubbleType.Note); }
+
             if (currentLineIndex == 10)
             {
+                speechBubble.SetBubbleType(SpeechBubbleType.Note);
                 isPaused = true;
                 StartCoroutine(ShowArrowNextFrame(arrowToBuildPanel));
                 yield break;
@@ -72,6 +86,7 @@ public class TutorialDialogue : MonoBehaviour
 
             if (currentLineIndex == 11)
             {
+                speechBubble.SetBubbleType(SpeechBubbleType.Note);
                 isPaused = true;
                 StartCoroutine(ShowArrowNextFrame(arrowToBuyShelf));
                 yield break;
@@ -79,6 +94,7 @@ public class TutorialDialogue : MonoBehaviour
 
             if (currentLineIndex == 12)
             {
+                speechBubble.SetBubbleType(SpeechBubbleType.Note);
                 isPaused = true;
                 StartCoroutine(ShowArrowNextFrame(arrowToStorePanel));
                 yield break;
@@ -86,10 +102,13 @@ public class TutorialDialogue : MonoBehaviour
 
             if(currentLineIndex == 13)
             {
+                speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
                 isPaused = true;
                 StartCoroutine(ShowArrowNextFrame(arrowToBuyProduct));
                 yield break;
             }
+
+            if (currentLineIndex == 14) { speechBubble.SetBubbleType(SpeechBubbleType.Note); }
 
             currentLineIndex++;
             yield return new WaitForSeconds(delayBetweenLines);

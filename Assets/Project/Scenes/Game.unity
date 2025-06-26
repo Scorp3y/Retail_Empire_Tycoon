@@ -4831,6 +4831,7 @@ GameObject:
   - component: {fileID: 165075775}
   - component: {fileID: 165075774}
   - component: {fileID: 165075773}
+  - component: {fileID: 165075776}
   m_Layer: 5
   m_Name: Arrow Build
   m_TagString: Untagged
@@ -4895,6 +4896,21 @@ RectTransform:
   m_AnchoredPosition: {x: -396, y: 268}
   m_SizeDelta: {x: 140.5282, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &165075776
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 165075772}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad3919964295c434a8973451c4cfd6a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveDistance: 20
+  speed: 10
+  moveDirection: {x: 1, y: 1}
 --- !u!4 &165619306 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: c80eb4e4380225b4582d792ea8c38209, type: 3}
@@ -6049,6 +6065,7 @@ GameObject:
   - component: {fileID: 194999860}
   - component: {fileID: 194999859}
   - component: {fileID: 194999858}
+  - component: {fileID: 194999861}
   m_Layer: 5
   m_Name: Arrow Store Panel
   m_TagString: Untagged
@@ -6113,6 +6130,21 @@ RectTransform:
   m_AnchoredPosition: {x: -200, y: 465}
   m_SizeDelta: {x: 140.5282, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &194999861
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 194999857}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad3919964295c434a8973451c4cfd6a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveDistance: 20
+  speed: 10
+  moveDirection: {x: 1, y: 1}
 --- !u!1001 &196207041
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10847,6 +10879,7 @@ GameObject:
   - component: {fileID: 329178607}
   - component: {fileID: 329178606}
   - component: {fileID: 329178605}
+  - component: {fileID: 329178608}
   m_Layer: 5
   m_Name: Arrow Shelf
   m_TagString: Untagged
@@ -10911,6 +10944,21 @@ RectTransform:
   m_AnchoredPosition: {x: -3, y: 86}
   m_SizeDelta: {x: 140.5282, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &329178608
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 329178604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad3919964295c434a8973451c4cfd6a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveDistance: 20
+  speed: 10
+  moveDirection: {x: 1, y: 1}
 --- !u!1001 &330264330
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -19537,6 +19585,7 @@ GameObject:
   - component: {fileID: 629469495}
   - component: {fileID: 629469494}
   - component: {fileID: 629469493}
+  - component: {fileID: 629469496}
   m_Layer: 5
   m_Name: Arrow Store Button
   m_TagString: Untagged
@@ -19601,6 +19650,21 @@ RectTransform:
   m_AnchoredPosition: {x: 546, y: -365}
   m_SizeDelta: {x: 140.5282, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &629469496
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 629469492}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad3919964295c434a8973451c4cfd6a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveDistance: 20
+  speed: 10
+  moveDirection: {x: 1, y: 1}
 --- !u!1 &633676584
 GameObject:
   m_ObjectHideFlags: 0
@@ -24815,6 +24879,7 @@ GameObject:
   - component: {fileID: 798761077}
   - component: {fileID: 798761076}
   - component: {fileID: 798761075}
+  - component: {fileID: 798761078}
   m_Layer: 5
   m_Name: Arrow Warehouse
   m_TagString: Untagged
@@ -24879,6 +24944,21 @@ RectTransform:
   m_AnchoredPosition: {x: 857, y: -267}
   m_SizeDelta: {x: 140.5282, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &798761078
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 798761074}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad3919964295c434a8973451c4cfd6a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveDistance: 20
+  speed: 10
+  moveDirection: {x: 1, y: 1}
 --- !u!4 &799118024 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 705b08cc16e2c0746875273c3b56e0ca, type: 3}
@@ -32420,6 +32500,7 @@ GameObject:
   - component: {fileID: 1030401285}
   - component: {fileID: 1030401287}
   - component: {fileID: 1030401286}
+  - component: {fileID: 1030401288}
   m_Layer: 5
   m_Name: Arrow Money
   m_TagString: Untagged
@@ -32436,10 +32517,10 @@ RectTransform:
   m_GameObject: {fileID: 1030401284}
   m_LocalRotation: {x: 0.0010735759, y: -0.0033391837, z: 0.89773005, w: 0.4405321}
   m_LocalPosition: {x: 0, y: 0, z: 3}
-  m_LocalScale: {x: 0.8304599, y: 0.83045983, z: 0.8304601}
+  m_LocalScale: {x: 0.8304599, y: 0.83045983, z: 0.83046013}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 2131580595}
+  m_Father: {fileID: 564768426}
   m_LocalEulerAnglesHint: {x: 0.398, y: -0.058, z: 127.724}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -32484,6 +32565,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1030401284}
   m_CullTransparentMesh: 1
+--- !u!114 &1030401288
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1030401284}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad3919964295c434a8973451c4cfd6a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveDistance: 20
+  speed: 10
+  moveDirection: {x: 1, y: 1}
 --- !u!4 &1031230708 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: c3b0d2e259817f0418894fd6f2e15ac7, type: 3}
@@ -37342,11 +37438,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 705b08cc16e2c0746875273c3b56e0ca, type: 3}
---- !u!224 &1162218846 stripped
-RectTransform:
-  m_CorrespondingSourceObject: {fileID: 2904948911133918536, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
-  m_PrefabInstance: {fileID: 4193451639271158721}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1163296487
 GameObject:
   m_ObjectHideFlags: 0
@@ -38610,6 +38701,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1206424439}
   - component: {fileID: 1206424441}
+  - component: {fileID: 1206424442}
   - component: {fileID: 1206424440}
   m_Layer: 5
   m_Name: Arrow Setting
@@ -38626,15 +38718,15 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1206424438}
   m_LocalRotation: {x: 0.0031978004, y: -0.0014411088, z: 0.27469674, w: 0.96152455}
-  m_LocalPosition: {x: 0, y: 0, z: 4.9082}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 4.0760674}
+  m_LocalScale: {x: 0.8304607, y: 0.8304607, z: 0.83046085}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1162218846}
+  m_Father: {fileID: 564768426}
   m_LocalEulerAnglesHint: {x: 0.398, y: -0.058, z: 31.888}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -169.20589, y: -120.70441}
+  m_AnchoredPosition: {x: 703.4812, y: 356.7597}
   m_SizeDelta: {x: 140.5282, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1206424440
@@ -38675,6 +38767,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1206424438}
   m_CullTransparentMesh: 1
+--- !u!114 &1206424442
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1206424438}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad3919964295c434a8973451c4cfd6a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveDistance: 20
+  speed: 10
+  moveDirection: {x: 1, y: 1}
 --- !u!1001 &1206872036
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -41179,6 +41286,7 @@ GameObject:
   - component: {fileID: 1267180128}
   - component: {fileID: 1267180127}
   - component: {fileID: 1267180126}
+  - component: {fileID: 1267180129}
   m_Layer: 5
   m_Name: Arrow Product
   m_TagString: Untagged
@@ -41243,6 +41351,21 @@ RectTransform:
   m_AnchoredPosition: {x: 96, y: 255}
   m_SizeDelta: {x: 140.5282, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1267180129
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1267180125}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad3919964295c434a8973451c4cfd6a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveDistance: 20
+  speed: 10
+  moveDirection: {x: 1, y: 1}
 --- !u!4 &1273065519 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: c3b0d2e259817f0418894fd6f2e15ac7, type: 3}
@@ -42288,6 +42411,7 @@ GameObject:
   - component: {fileID: 1297971781}
   - component: {fileID: 1297971780}
   - component: {fileID: 1297971779}
+  - component: {fileID: 1297971782}
   m_Layer: 5
   m_Name: Arrow Pause
   m_TagString: Untagged
@@ -42341,17 +42465,32 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1297971778}
   m_LocalRotation: {x: 0.002999148, y: -0.001818744, z: 0.38941917, w: 0.921054}
-  m_LocalPosition: {x: 0, y: 0, z: 7}
-  m_LocalScale: {x: 1.7681023, y: 1.7681022, z: 1.7681024}
+  m_LocalPosition: {x: 0, y: 0, z: 3.2878299}
+  m_LocalScale: {x: 0.83045995, y: 0.83045995, z: 0.8304601}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1616591498}
+  m_Father: {fileID: 564768426}
   m_LocalEulerAnglesHint: {x: 0.398, y: -0.058, z: 45.837}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -167, y: -202}
+  m_AnchoredPosition: {x: -60.98346, y: 387.12262}
   m_SizeDelta: {x: 140.5282, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1297971782
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1297971778}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad3919964295c434a8973451c4cfd6a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveDistance: 20
+  speed: 10
+  moveDirection: {x: 1, y: 1}
 --- !u!1001 &1300502422
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -53248,8 +53387,7 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.46969, y: 0.46969, z: 0.46969}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1297971781}
+  m_Children: []
   m_Father: {fileID: 949410471}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -59011,7 +59149,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '1.0.7.0.4d
+  m_text: '1.0.7.0.e
 
     Version
 
@@ -69498,11 +69636,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a731207266f360249bc672afeadf8fe3, type: 3}
---- !u!224 &2131580595 stripped
-RectTransform:
-  m_CorrespondingSourceObject: {fileID: 3441151650793218783, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
-  m_PrefabInstance: {fileID: 4193451639271158721}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2132560245
 GameObject:
   m_ObjectHideFlags: 0
@@ -72591,31 +72724,34 @@ PrefabInstance:
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 2320526489426412080, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
       insertIndex: 7
-      addedObject: {fileID: 798761077}
+      addedObject: {fileID: 1297971781}
     - targetCorrespondingSourceObject: {fileID: 2320526489426412080, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
       insertIndex: 8
-      addedObject: {fileID: 629469495}
+      addedObject: {fileID: 1030401285}
     - targetCorrespondingSourceObject: {fileID: 2320526489426412080, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
       insertIndex: 9
-      addedObject: {fileID: 165075775}
+      addedObject: {fileID: 1206424439}
     - targetCorrespondingSourceObject: {fileID: 2320526489426412080, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
       insertIndex: 10
-      addedObject: {fileID: 329178607}
+      addedObject: {fileID: 798761077}
     - targetCorrespondingSourceObject: {fileID: 2320526489426412080, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
       insertIndex: 11
-      addedObject: {fileID: 194999860}
+      addedObject: {fileID: 629469495}
     - targetCorrespondingSourceObject: {fileID: 2320526489426412080, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
       insertIndex: 12
+      addedObject: {fileID: 165075775}
+    - targetCorrespondingSourceObject: {fileID: 2320526489426412080, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
+      insertIndex: 13
+      addedObject: {fileID: 329178607}
+    - targetCorrespondingSourceObject: {fileID: 2320526489426412080, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
+      insertIndex: 14
+      addedObject: {fileID: 194999860}
+    - targetCorrespondingSourceObject: {fileID: 2320526489426412080, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
+      insertIndex: 15
       addedObject: {fileID: 1267180128}
     - targetCorrespondingSourceObject: {fileID: 2320526489426412080, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1793998370}
-    - targetCorrespondingSourceObject: {fileID: 3441151650793218783, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1030401285}
-    - targetCorrespondingSourceObject: {fileID: 2904948911133918536, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1206424439}
     - targetCorrespondingSourceObject: {fileID: 4284367423922644792, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
       insertIndex: 6
       addedObject: {fileID: 192788963}
