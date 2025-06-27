@@ -10,6 +10,11 @@ public class TutorialDialogue : MonoBehaviour
         arrowToBuyShelf, arrowToWarehouse, arrowToBuyProduct;
     public GameObject dialogueRoot;
 
+    public RectTransform bubbleTransform;
+    public Transform characterTransform;
+
+    public List<Vector2> bubblePositions; // Для UI — anchoredPosition
+    public List<Vector3> characterPositions; // Обычные позиции
 
     [TextArea(2, 5)]
     public List<string> dialogueLines;
@@ -34,11 +39,13 @@ public class TutorialDialogue : MonoBehaviour
 
             speechBubble.setDialogueText(dialogueLines[currentLineIndex]);
 
-            if (currentLineIndex == 0) { speechBubble.SetBubbleType(SpeechBubbleType.Note); }
+            if (currentLineIndex == 0) { speechBubble.SetBubbleType(SpeechBubbleType.Note); 
+                bubbleTransform.anchoredPosition = bubblePositions[currentLineIndex]; }
 
             if (currentLineIndex == 3)
             {
                 speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
+                bubbleTransform.anchoredPosition = bubblePositions[currentLineIndex];
                 isPaused = true;
                 StartCoroutine(ShowArrowNextFrame(arrowToSettingsButton));
                 yield break;

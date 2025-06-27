@@ -11,7 +11,7 @@ public class TutorialController : MonoBehaviour
     {
         tutorialChoiceUI.SetActive(PlayerPrefs.GetInt("hasCompletedTutorial", 0) == 0);
         tutorialUI.SetActive(false);
-        characterRoot.SetActive(false); 
+        characterRoot.SetActive(true);
     }
 
     public void OnChooseTutorialYes()
