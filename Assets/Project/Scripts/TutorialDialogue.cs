@@ -11,14 +11,10 @@ public class TutorialDialogue : MonoBehaviour
         arrowToBuyShelf, arrowToWarehouse, arrowToBuyProduct;
     public GameObject dialogueRoot;
 
-    [Header("Transform перемещений")]
+    [Header("Transform moving")]
     public RectTransform bubbleTransform; 
     public Transform characterTransform; 
-
-    [Tooltip("UI позиции (anchoredPosition) для bubble")]
     public List<Vector2> bubblePositions;
-
-    [Tooltip("Мировые позиции персонажа")]
     public List<Vector3> characterPositions;
 
     [TextArea(2, 5)]
