@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using SpeechBubble;
+using DG.Tweening; 
 
 public class TutorialDialogue : MonoBehaviour
 {
@@ -10,15 +11,21 @@ public class TutorialDialogue : MonoBehaviour
         arrowToBuyShelf, arrowToWarehouse, arrowToBuyProduct;
     public GameObject dialogueRoot;
 
-    public RectTransform bubbleTransform;
-    public Transform characterTransform;
+    [Header("Transform перемещений")]
+    public RectTransform bubbleTransform; 
+    public Transform characterTransform; 
 
-    public List<Vector2> bubblePositions; // Для UI — anchoredPosition
-    public List<Vector3> characterPositions; // Обычные позиции
+    [Tooltip("UI позиции (anchoredPosition) для bubble")]
+    public List<Vector2> bubblePositions;
+
+    [Tooltip("Мировые позиции персонажа")]
+    public List<Vector3> characterPositions;
 
     [TextArea(2, 5)]
     public List<string> dialogueLines;
+
     public float delayBetweenLines = 5f;
+    public float moveDuration = 0.5f;
 
     private int currentLineIndex = 0;
     private bool isPaused = false;
@@ -36,16 +43,15 @@ public class TutorialDialogue : MonoBehaviour
         {
             HideAllArrows();
 
+            MoveToCurrentPositions();
 
             speechBubble.setDialogueText(dialogueLines[currentLineIndex]);
 
-            if (currentLineIndex == 0) { speechBubble.SetBubbleType(SpeechBubbleType.Note); 
-                bubbleTransform.anchoredPosition = bubblePositions[currentLineIndex]; }
+            if (currentLineIndex == 0) { speechBubble.SetBubbleType(SpeechBubbleType.Note); }
 
             if (currentLineIndex == 3)
             {
                 speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
-                bubbleTransform.anchoredPosition = bubblePositions[currentLineIndex];
                 isPaused = true;
                 StartCoroutine(ShowArrowNextFrame(arrowToSettingsButton));
                 yield break;
@@ -57,7 +63,7 @@ public class TutorialDialogue : MonoBehaviour
                 arrowToMoneyPanel.SetActive(true);
             }
 
-            if (currentLineIndex == 5) {speechBubble.SetBubbleType(SpeechBubbleType.Note);}
+            if (currentLineIndex == 5) { speechBubble.SetBubbleType(SpeechBubbleType.Note); }
 
             if (currentLineIndex == 6)
             {
@@ -65,7 +71,7 @@ public class TutorialDialogue : MonoBehaviour
                 arrowToPauseButton.SetActive(true);
             }
 
-            if (currentLineIndex == 7) 
+            if (currentLineIndex == 7)
             {
                 speechBubble.SetBubbleType(SpeechBubbleType.Stress);
                 isPaused = true;
@@ -107,7 +113,7 @@ public class TutorialDialogue : MonoBehaviour
                 yield break;
             }
 
-            if(currentLineIndex == 13)
+            if (currentLineIndex == 13)
             {
                 speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
                 isPaused = true;
@@ -124,6 +130,17 @@ public class TutorialDialogue : MonoBehaviour
         OnDialogueFinished();
     }
 
+    private void MoveToCurrentPositions()
+    {
+        // Плавно переместить bubble
+        if (currentLineIndex < bubblePositions.Count)
+            bubbleTransform.DOAnchorPos(bubblePositions[currentLineIndex], moveDuration);
+
+        // Плавно переместить персонажа
+        if (currentLineIndex < characterPositions.Count)
+            characterTransform.DOMove(characterPositions[currentLineIndex], moveDuration);
+    }
+
     public void ContinueDialogueAfterButton()
     {
         if (!isPaused) return;
@@ -135,25 +152,26 @@ public class TutorialDialogue : MonoBehaviour
         dialogueRoot.SetActive(true);
         StartCoroutine(PlayDialogue());
     }
+
     public void HideDialogueTemporarily()
     {
         dialogueRoot.SetActive(false);
         HideAllArrows();
     }
+
     public void ResumeDialogue()
     {
         dialogueRoot.SetActive(true);
 
         if (isPaused)
         {
-            ContinueDialogueAfterButton(); 
+            ContinueDialogueAfterButton();
         }
         else
         {
             StartCoroutine(PlayDialogue());
         }
     }
-
 
     private void HideAllArrows()
     {
@@ -163,7 +181,7 @@ public class TutorialDialogue : MonoBehaviour
         arrowToStoreButton?.SetActive(false);
         arrowToStorePanel?.SetActive(false);
         arrowToBuildPanel?.SetActive(false);
-        arrowToWarehouse?.SetActive(false); 
+        arrowToWarehouse?.SetActive(false);
         arrowToBuyShelf?.SetActive(false);
         arrowToBuyProduct?.SetActive(false);
     }
