@@ -7,6 +7,7 @@ public class TutorialController : MonoBehaviour
     public TutorialDialogue tutorialDialogue;
     public GameObject characterRoot;
     public MonoBehaviour cameraControlScript;
+    public Animator trainerAnimator;
 
     public ButtonFadeIn showToSettings, showToMoney, showToPause, showToWarehouse, showToStore, showToButtonBuild, showToButtonStore;
 
@@ -22,6 +23,7 @@ public class TutorialController : MonoBehaviour
 
     public void OnChooseTutorialYes()
     {
+        trainerAnimator?.SetTrigger("Yes");
         if (cameraControlScript != null)
             cameraControlScript.enabled = false;
 
@@ -33,6 +35,7 @@ public class TutorialController : MonoBehaviour
 
     public void OnChooseTutorialNo()
     {
+        trainerAnimator?.SetTrigger("No");
         PlayerPrefs.SetInt("hasCompletedTutorial", 1);
         PlayerPrefs.Save();
 

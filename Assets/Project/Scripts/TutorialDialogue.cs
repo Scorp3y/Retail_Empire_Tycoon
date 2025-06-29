@@ -15,9 +15,14 @@ public class TutorialDialogue : MonoBehaviour
 
     [Header("Transform moving")]
     public RectTransform bubbleTransform; 
-    public Transform characterTransform; 
     public List<Vector2> bubblePositions;
     public List<Vector3> characterPositions;
+
+    [Header("Character Animation")]
+    public Animator trainerAnimator; 
+    public ParticleSystem disappearParticles; 
+    public GameObject trainerObject; 
+
 
     [TextArea(2, 5)]
     public List<string> dialogueLines;
@@ -37,6 +42,12 @@ public class TutorialDialogue : MonoBehaviour
         StartCoroutine(PlayDialogue());
     }
 
+    private void PlayAnimation(string trigger)
+    {
+        if (trainerAnimator != null)
+            trainerAnimator.SetTrigger(trigger);
+    }
+
     private IEnumerator PlayDialogue()
     {
         while (currentLineIndex < dialogueLines.Count)
@@ -46,10 +57,11 @@ public class TutorialDialogue : MonoBehaviour
 
             speechBubble.setDialogueText(dialogueLines[currentLineIndex]);
 
-            if (currentLineIndex == 0) { speechBubble.SetBubbleType(SpeechBubbleType.Note); }
+            if (currentLineIndex == 0) { speechBubble.SetBubbleType(SpeechBubbleType.Note); PlayAnimation("Idle"); }
 
             if (currentLineIndex == 3)
             {
+                PlayAnimation("Pickup");
                 speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
                 isPaused = true;
                 showToSettings.Show();
@@ -141,9 +153,6 @@ public class TutorialDialogue : MonoBehaviour
     {
         if (currentLineIndex < bubblePositions.Count)
             bubbleTransform.DOAnchorPos(bubblePositions[currentLineIndex], moveDuration);
-
-        if (currentLineIndex < characterPositions.Count)
-            characterTransform.DOMove(characterPositions[currentLineIndex], moveDuration);
     }
 
     public void ContinueDialogueAfterButton()
@@ -202,5 +211,22 @@ public class TutorialDialogue : MonoBehaviour
         Debug.Log("Диалог завершён.");
         if (cameraControlScript != null)
             cameraControlScript.enabled = true;
+
+        StartCoroutine(HandleTrainerDisappearance());
+    }
+
+    private IEnumerator HandleTrainerDisappearance()
+    {
+        PlayAnimation("Death");
+
+        yield return new WaitForSeconds(2f); 
+
+        if (disappearParticles != null)
+            disappearParticles.Play();
+
+        yield return new WaitForSeconds(1f);
+
+        if (trainerObject != null)
+            Destroy(trainerObject);
     }
 }
