@@ -10,6 +10,8 @@ public class TutorialDialogue : MonoBehaviour
     public GameObject arrowToSettingsButton, arrowToMoneyPanel, arrowToPauseButton, arrowToStoreButton, arrowToStorePanel, arrowToBuildPanel,
         arrowToBuyShelf, arrowToWarehouse, arrowToBuyProduct;
     public GameObject dialogueRoot;
+    public ButtonFadeIn showToSettings, showToMoney, showToPause, showToWarehouse, showToStore, showToButtonBuild, showToButtonStore;
+    public MonoBehaviour cameraControlScript;
 
     [Header("Transform moving")]
     public RectTransform bubbleTransform; 
@@ -28,6 +30,8 @@ public class TutorialDialogue : MonoBehaviour
 
     public void StartDialogue()
     {
+        if (cameraControlScript != null)
+            cameraControlScript.enabled = false;
         currentLineIndex = 0;
         dialogueRoot.SetActive(true);
         StartCoroutine(PlayDialogue());
@@ -38,7 +42,6 @@ public class TutorialDialogue : MonoBehaviour
         while (currentLineIndex < dialogueLines.Count)
         {
             HideAllArrows();
-
             MoveToCurrentPositions();
 
             speechBubble.setDialogueText(dialogueLines[currentLineIndex]);
@@ -49,6 +52,7 @@ public class TutorialDialogue : MonoBehaviour
             {
                 speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
                 isPaused = true;
+                showToSettings.Show();
                 StartCoroutine(ShowArrowNextFrame(arrowToSettingsButton));
                 yield break;
             }
@@ -56,6 +60,7 @@ public class TutorialDialogue : MonoBehaviour
             if (currentLineIndex == 4)
             {
                 speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
+                showToMoney.Show();
                 arrowToMoneyPanel.SetActive(true);
             }
 
@@ -64,12 +69,14 @@ public class TutorialDialogue : MonoBehaviour
             if (currentLineIndex == 6)
             {
                 speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
+                showToPause.Show();
                 arrowToPauseButton.SetActive(true);
             }
 
             if (currentLineIndex == 7)
             {
                 speechBubble.SetBubbleType(SpeechBubbleType.Stress);
+                showToWarehouse.Show();
                 isPaused = true;
                 StartCoroutine(ShowArrowNextFrame(arrowToWarehouse));
                 yield break;
@@ -78,16 +85,19 @@ public class TutorialDialogue : MonoBehaviour
             if (currentLineIndex == 8)
             {
                 speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
+                showToStore.Show();
                 isPaused = true;
                 StartCoroutine(ShowArrowNextFrame(arrowToStoreButton));
                 yield break;
             }
 
-            if (currentLineIndex == 9) { speechBubble.SetBubbleType(SpeechBubbleType.Note); }
+            if (currentLineIndex == 9) { speechBubble.SetBubbleType(SpeechBubbleType.Note);
+            }
 
             if (currentLineIndex == 10)
             {
                 speechBubble.SetBubbleType(SpeechBubbleType.Note);
+                showToButtonBuild.Show();
                 isPaused = true;
                 StartCoroutine(ShowArrowNextFrame(arrowToBuildPanel));
                 yield break;
@@ -104,6 +114,7 @@ public class TutorialDialogue : MonoBehaviour
             if (currentLineIndex == 12)
             {
                 speechBubble.SetBubbleType(SpeechBubbleType.Note);
+                showToButtonStore.Show();
                 isPaused = true;
                 StartCoroutine(ShowArrowNextFrame(arrowToStorePanel));
                 yield break;
@@ -128,11 +139,9 @@ public class TutorialDialogue : MonoBehaviour
 
     private void MoveToCurrentPositions()
     {
-        // Плавно переместить bubble
         if (currentLineIndex < bubblePositions.Count)
             bubbleTransform.DOAnchorPos(bubblePositions[currentLineIndex], moveDuration);
 
-        // Плавно переместить персонажа
         if (currentLineIndex < characterPositions.Count)
             characterTransform.DOMove(characterPositions[currentLineIndex], moveDuration);
     }
@@ -191,5 +200,7 @@ public class TutorialDialogue : MonoBehaviour
     private void OnDialogueFinished()
     {
         Debug.Log("Диалог завершён.");
+        if (cameraControlScript != null)
+            cameraControlScript.enabled = true;
     }
 }
