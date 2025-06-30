@@ -34,6 +34,7 @@ public class TutorialDialogue : MonoBehaviour
 
     public void StartDialogue()
     {
+        speechBubble.SetBubbleType(SpeechBubbleType.Note);
         if (cameraControlScript != null)
             cameraControlScript.enabled = false;
         currentLineIndex = 0;
@@ -54,157 +55,148 @@ public class TutorialDialogue : MonoBehaviour
             HideAllArrows();
             MoveToCurrentPositions();
 
-            speechBubble.setDialogueText(dialogueLines[currentLineIndex]);
-
-            if (currentLineIndex == 0)
-            { 
-                speechBubble.SetBubbleType(SpeechBubbleType.Note); 
-
-                PlayAnimation("Idle");
-                yield return new WaitForSeconds(0.5f);
-                PlayAnimation("HoldLeft");
-            }
-            if (currentLineIndex == 1) 
+            switch (currentLineIndex)
             {
-                yield return new WaitForSeconds(0.5f);
-                PlayAnimation("Idle");
-            }
-            
-            if (currentLineIndex == 3)
-            {
-                PlayAnimation("Pickup");
-                yield return new WaitForSeconds(0.5f);
-                PlayAnimation("Idle");
-                speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
-                isPaused = true;
-                showToSettings.Show();
-                StartCoroutine(ShowArrowNextFrame(arrowToSettingsButton));
-                yield break;
+                case 0:
+                    speechBubble.SetBubbleType(SpeechBubbleType.Note);
+                    PlayAnimation("Idle");
+                    yield return new WaitForSeconds(0.5f);
+                    PlayAnimation("HoldLeft");
+                    break;
+
+                case 1:
+                    yield return new WaitForSeconds(0.5f);
+                    PlayAnimation("Idle");
+                    break;
+
+                case 3:
+                    speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
+                    PlayAnimation("Pickup");
+                    yield return new WaitForSeconds(0.5f);
+                    PlayAnimation("Idle");
+                    isPaused = true;
+                    showToSettings.Show();
+                    StartCoroutine(ShowArrowNextFrame(arrowToSettingsButton));
+                    yield return StartCoroutine(TypeText(dialogueLines[currentLineIndex]));
+                    yield break;
+
+                case 4:
+                    speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
+                    PlayAnimation("Pickup");
+                    yield return new WaitForSeconds(0.5f);
+                    PlayAnimation("Idle");
+                    showToMoney.Show();
+                    arrowToMoneyPanel.SetActive(true);
+                    break;
+
+                case 5:
+                    speechBubble.SetBubbleType(SpeechBubbleType.Note);
+                    PlayAnimation("HoldLeft");
+                    break;
+
+                case 6:
+                    speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
+                    PlayAnimation("Pickup");
+                    yield return new WaitForSeconds(0.5f);
+                    PlayAnimation("Idle");
+                    showToPause.Show();
+                    arrowToPauseButton.SetActive(true);
+                    break;
+
+                case 7:
+                    speechBubble.SetBubbleType(SpeechBubbleType.Stress);
+                    PlayAnimation("Pickup");
+                    yield return new WaitForSeconds(0.5f);
+                    PlayAnimation("Idle");
+                    showToWarehouse.Show();
+                    isPaused = true;
+                    StartCoroutine(ShowArrowNextFrame(arrowToWarehouse));
+                    yield return StartCoroutine(TypeText(dialogueLines[currentLineIndex]));
+                    yield break;
+
+                case 8:
+                    speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
+                    PlayAnimation("Pickup");
+                    yield return new WaitForSeconds(0.5f);
+                    PlayAnimation("Idle");
+                    showToStore.Show();
+                    isPaused = true;
+                    StartCoroutine(ShowArrowNextFrame(arrowToStoreButton));
+                    yield return StartCoroutine(TypeText(dialogueLines[currentLineIndex]));
+                    yield break;
+
+                case 9:
+                    speechBubble.SetBubbleType(SpeechBubbleType.Note);
+                    PlayAnimation("Fall");
+                    yield return new WaitForSeconds(0.5f);
+                    PlayAnimation("Idle");
+                    break;
+
+                case 10:
+                    speechBubble.SetBubbleType(SpeechBubbleType.Note);
+                    PlayAnimation("HoldLeft");
+                    yield return new WaitForSeconds(0.5f);
+                    PlayAnimation("Idle");
+                    showToButtonBuild.Show();
+                    isPaused = true;
+                    StartCoroutine(ShowArrowNextFrame(arrowToBuildPanel));
+                    yield return StartCoroutine(TypeText(dialogueLines[currentLineIndex]));
+                    yield break;
+
+                case 11:
+                    speechBubble.SetBubbleType(SpeechBubbleType.Note);
+                    isPaused = true;
+                    StartCoroutine(ShowArrowNextFrame(arrowToBuyShelf));
+                    yield return StartCoroutine(TypeText(dialogueLines[currentLineIndex]));
+                    yield break;
+
+                case 12:
+                    speechBubble.SetBubbleType(SpeechBubbleType.Note);
+                    PlayAnimation("Pickup");
+                    yield return new WaitForSeconds(0.5f);
+                    PlayAnimation("Idle");
+                    showToButtonStore.Show();
+                    isPaused = true;
+                    StartCoroutine(ShowArrowNextFrame(arrowToStorePanel));
+                    yield return StartCoroutine(TypeText(dialogueLines[currentLineIndex]));
+                    yield break;
+
+                case 13:
+                    speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
+                    PlayAnimation("HoldLeft");
+                    yield return new WaitForSeconds(0.5f);
+                    PlayAnimation("Idle");
+                    isPaused = true;
+                    StartCoroutine(ShowArrowNextFrame(arrowToBuyProduct));
+                    yield return StartCoroutine(TypeText(dialogueLines[currentLineIndex]));
+                    yield break;
+
+                case 14:
+                    speechBubble.SetBubbleType(SpeechBubbleType.Note);
+                    PlayAnimation("Fall");
+                    yield return new WaitForSeconds(0.5f);
+                    PlayAnimation("Idle");
+                    break;
+
+                case 16:
+                    speechBubble.SetBubbleType(SpeechBubbleType.Note);
+                    PlayAnimation("Die");
+                    yield return StartCoroutine(TypeText(dialogueLines[currentLineIndex]));
+                    StartCoroutine(FinishTutorialAfterDialogue());
+                    yield break;
+
+                default:
+                    break;
             }
 
-            if (currentLineIndex == 4)
-            {
-                PlayAnimation("Pickup");
-                yield return new WaitForSeconds(0.5f);
-                PlayAnimation("Idle");
-                speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
-                showToMoney.Show();
-                arrowToMoneyPanel.SetActive(true);
-            }
-
-            if (currentLineIndex == 5) 
-            {
-                PlayAnimation("HoldLeft");
-                speechBubble.SetBubbleType(SpeechBubbleType.Note); 
-            }
-
-            if (currentLineIndex == 6)
-            {
-                PlayAnimation("Pickup");
-                yield return new WaitForSeconds(0.5f);
-                PlayAnimation("Idle");
-                speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
-                showToPause.Show();
-                arrowToPauseButton.SetActive(true);
-            }
-
-            if (currentLineIndex == 7)
-            {
-                PlayAnimation("Pickup");
-                yield return new WaitForSeconds(0.5f);
-                PlayAnimation("Idle");
-                speechBubble.SetBubbleType(SpeechBubbleType.Stress);
-                showToWarehouse.Show();
-                isPaused = true;
-                StartCoroutine(ShowArrowNextFrame(arrowToWarehouse));
-                yield break;
-            }
-
-            if (currentLineIndex == 8)
-            {
-                PlayAnimation("Pickup");
-                yield return new WaitForSeconds(0.5f);
-                PlayAnimation("Idle");
-                speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
-                showToStore.Show();
-                isPaused = true;
-                StartCoroutine(ShowArrowNextFrame(arrowToStoreButton));
-                yield break;
-            }
-
-            if (currentLineIndex == 9) 
-            {
-                PlayAnimation("Fall");
-                yield return new WaitForSeconds(0.5f);
-                PlayAnimation("Idle");
-                speechBubble.SetBubbleType(SpeechBubbleType.Note);
-            }
-
-            if (currentLineIndex == 10)
-            {
-                PlayAnimation("HoldLeft");
-                yield return new WaitForSeconds(0.5f);
-                PlayAnimation("Idle");
-                speechBubble.SetBubbleType(SpeechBubbleType.Note);
-                showToButtonBuild.Show();
-                isPaused = true;
-                StartCoroutine(ShowArrowNextFrame(arrowToBuildPanel));
-                yield break;
-            }
-
-            if (currentLineIndex == 11)
-            {
-                speechBubble.SetBubbleType(SpeechBubbleType.Note);
-                isPaused = true;
-                StartCoroutine(ShowArrowNextFrame(arrowToBuyShelf));
-                yield break;
-            }
-
-            if (currentLineIndex == 12)
-            {
-                PlayAnimation("Pickup");
-                yield return new WaitForSeconds(0.5f);
-                PlayAnimation("Idle");
-                speechBubble.SetBubbleType(SpeechBubbleType.Note);
-                showToButtonStore.Show();
-                isPaused = true;
-                StartCoroutine(ShowArrowNextFrame(arrowToStorePanel));
-                yield break;
-            }
-
-            if (currentLineIndex == 13)
-            {
-                PlayAnimation("HoldLeft");
-                yield return new WaitForSeconds(0.5f);
-                PlayAnimation("Idle");
-                speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
-                isPaused = true;
-                StartCoroutine(ShowArrowNextFrame(arrowToBuyProduct));
-                yield break;
-            }
-
-            if (currentLineIndex == 14) 
-            {
-                PlayAnimation("Fall");
-                yield return new WaitForSeconds(0.5f);
-                PlayAnimation("Idle");
-                speechBubble.SetBubbleType(SpeechBubbleType.Note); 
-            }
-
-            if (currentLineIndex == 16)
-            {
-                PlayAnimation("Die");
-                speechBubble.SetBubbleType(SpeechBubbleType.Note);
-                StartCoroutine(FinishTutorialAfterDialogue());
-                yield break;
-            }
-
+            yield return StartCoroutine(TypeText(dialogueLines[currentLineIndex]));
             currentLineIndex++;
             yield return new WaitForSeconds(delayBetweenLines);
         }
 
         OnDialogueFinished();
     }
+
 
     private void MoveToCurrentPositions()
     {
@@ -280,5 +272,17 @@ public class TutorialDialogue : MonoBehaviour
         }
     }
 
+    private IEnumerator TypeText(string fullText, float charDelay = 0.03f)
+    {
+        speechBubble.setDialogueText("");
+        string currentText = "";
 
+        foreach (char c in fullText)
+        {
+            currentText += c;
+            speechBubble.setDialogueText(currentText);
+            yield return new WaitForSeconds(charDelay);
+        }
+        yield return new WaitForSeconds(3f); 
+    }
 }
