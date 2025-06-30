@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 
 public class TutorialController : MonoBehaviour
 {
@@ -8,18 +9,24 @@ public class TutorialController : MonoBehaviour
     public GameObject characterRoot;
     public MonoBehaviour cameraControlScript;
     public Animator trainerAnimator;
-
+    public ParticleSystem disappearParticles;
     public ButtonFadeIn showToSettings, showToMoney, showToPause, showToWarehouse, showToStore, showToButtonBuild, showToButtonStore;
 
     void Start()
     {
-        if (cameraControlScript != null)
-            cameraControlScript.enabled = false;
+        if (disappearParticles != null)
+            disappearParticles.Stop();
 
-        tutorialChoiceUI.SetActive(PlayerPrefs.GetInt("hasCompletedTutorial", 0) == 0);
+        bool showTutorial = PlayerPrefs.GetInt("hasCompletedTutorial", 0) == 0;
+
+        tutorialChoiceUI.SetActive(showTutorial);
         tutorialUI.SetActive(false);
-        characterRoot.SetActive(true);
+        characterRoot.SetActive(showTutorial);
+
+        if (cameraControlScript != null)
+            cameraControlScript.enabled = !showTutorial;
     }
+
 
     public void OnChooseTutorialYes()
     {
@@ -35,16 +42,33 @@ public class TutorialController : MonoBehaviour
 
     public void OnChooseTutorialNo()
     {
-        trainerAnimator?.SetTrigger("No");
+        StartCoroutine(PlayNoThenDie());
+    }
+
+    public IEnumerator PlayNoThenDie()
+    {
         PlayerPrefs.SetInt("hasCompletedTutorial", 1);
         PlayerPrefs.Save();
+
+        trainerAnimator.SetTrigger("No");
+        yield return new WaitForSeconds(0.8f);
+
+        trainerAnimator.SetTrigger("Die");
+        yield return new WaitForSeconds(0.1f);
+
+        if (disappearParticles != null)
+            disappearParticles.Play();
+
+        yield return new WaitForSeconds(0.2f);
+
+        if (characterRoot != null)
+            Destroy(characterRoot);
 
         if (cameraControlScript != null)
             cameraControlScript.enabled = true;
 
         tutorialChoiceUI.SetActive(false);
         tutorialUI.SetActive(false);
-        characterRoot.SetActive(false);
 
         showToSettings?.Show();
         showToMoney?.Show();
@@ -54,6 +78,7 @@ public class TutorialController : MonoBehaviour
         showToButtonBuild?.Show();
         showToButtonStore?.Show();
     }
+
 
     [ContextMenu("Сбросить обучение")]
     public void ResetTutorial()

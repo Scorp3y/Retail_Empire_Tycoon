@@ -12,6 +12,7 @@ public class TutorialDialogue : MonoBehaviour
     public GameObject dialogueRoot;
     public ButtonFadeIn showToSettings, showToMoney, showToPause, showToWarehouse, showToStore, showToButtonBuild, showToButtonStore;
     public MonoBehaviour cameraControlScript;
+    public TutorialController tutorialController;
 
     [Header("Transform moving")]
     public RectTransform bubbleTransform; 
@@ -20,9 +21,7 @@ public class TutorialDialogue : MonoBehaviour
 
     [Header("Character Animation")]
     public Animator trainerAnimator; 
-    public ParticleSystem disappearParticles; 
     public GameObject trainerObject; 
-
 
     [TextArea(2, 5)]
     public List<string> dialogueLines;
@@ -57,11 +56,25 @@ public class TutorialDialogue : MonoBehaviour
 
             speechBubble.setDialogueText(dialogueLines[currentLineIndex]);
 
-            if (currentLineIndex == 0) { speechBubble.SetBubbleType(SpeechBubbleType.Note); PlayAnimation("Idle"); }
+            if (currentLineIndex == 0)
+            { 
+                speechBubble.SetBubbleType(SpeechBubbleType.Note); 
 
+                PlayAnimation("Idle");
+                yield return new WaitForSeconds(0.5f);
+                PlayAnimation("HoldLeft");
+            }
+            if (currentLineIndex == 1) 
+            {
+                yield return new WaitForSeconds(0.5f);
+                PlayAnimation("Idle");
+            }
+            
             if (currentLineIndex == 3)
             {
                 PlayAnimation("Pickup");
+                yield return new WaitForSeconds(0.5f);
+                PlayAnimation("Idle");
                 speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
                 isPaused = true;
                 showToSettings.Show();
@@ -71,15 +84,25 @@ public class TutorialDialogue : MonoBehaviour
 
             if (currentLineIndex == 4)
             {
+                PlayAnimation("Pickup");
+                yield return new WaitForSeconds(0.5f);
+                PlayAnimation("Idle");
                 speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
                 showToMoney.Show();
                 arrowToMoneyPanel.SetActive(true);
             }
 
-            if (currentLineIndex == 5) { speechBubble.SetBubbleType(SpeechBubbleType.Note); }
+            if (currentLineIndex == 5) 
+            {
+                PlayAnimation("HoldLeft");
+                speechBubble.SetBubbleType(SpeechBubbleType.Note); 
+            }
 
             if (currentLineIndex == 6)
             {
+                PlayAnimation("Pickup");
+                yield return new WaitForSeconds(0.5f);
+                PlayAnimation("Idle");
                 speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
                 showToPause.Show();
                 arrowToPauseButton.SetActive(true);
@@ -87,6 +110,9 @@ public class TutorialDialogue : MonoBehaviour
 
             if (currentLineIndex == 7)
             {
+                PlayAnimation("Pickup");
+                yield return new WaitForSeconds(0.5f);
+                PlayAnimation("Idle");
                 speechBubble.SetBubbleType(SpeechBubbleType.Stress);
                 showToWarehouse.Show();
                 isPaused = true;
@@ -96,6 +122,9 @@ public class TutorialDialogue : MonoBehaviour
 
             if (currentLineIndex == 8)
             {
+                PlayAnimation("Pickup");
+                yield return new WaitForSeconds(0.5f);
+                PlayAnimation("Idle");
                 speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
                 showToStore.Show();
                 isPaused = true;
@@ -103,11 +132,19 @@ public class TutorialDialogue : MonoBehaviour
                 yield break;
             }
 
-            if (currentLineIndex == 9) { speechBubble.SetBubbleType(SpeechBubbleType.Note);
+            if (currentLineIndex == 9) 
+            {
+                PlayAnimation("Fall");
+                yield return new WaitForSeconds(0.5f);
+                PlayAnimation("Idle");
+                speechBubble.SetBubbleType(SpeechBubbleType.Note);
             }
 
             if (currentLineIndex == 10)
             {
+                PlayAnimation("HoldLeft");
+                yield return new WaitForSeconds(0.5f);
+                PlayAnimation("Idle");
                 speechBubble.SetBubbleType(SpeechBubbleType.Note);
                 showToButtonBuild.Show();
                 isPaused = true;
@@ -125,6 +162,9 @@ public class TutorialDialogue : MonoBehaviour
 
             if (currentLineIndex == 12)
             {
+                PlayAnimation("Pickup");
+                yield return new WaitForSeconds(0.5f);
+                PlayAnimation("Idle");
                 speechBubble.SetBubbleType(SpeechBubbleType.Note);
                 showToButtonStore.Show();
                 isPaused = true;
@@ -134,13 +174,30 @@ public class TutorialDialogue : MonoBehaviour
 
             if (currentLineIndex == 13)
             {
+                PlayAnimation("HoldLeft");
+                yield return new WaitForSeconds(0.5f);
+                PlayAnimation("Idle");
                 speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
                 isPaused = true;
                 StartCoroutine(ShowArrowNextFrame(arrowToBuyProduct));
                 yield break;
             }
 
-            if (currentLineIndex == 14) { speechBubble.SetBubbleType(SpeechBubbleType.Note); }
+            if (currentLineIndex == 14) 
+            {
+                PlayAnimation("Fall");
+                yield return new WaitForSeconds(0.5f);
+                PlayAnimation("Idle");
+                speechBubble.SetBubbleType(SpeechBubbleType.Note); 
+            }
+
+            if (currentLineIndex == 16)
+            {
+                PlayAnimation("Die");
+                speechBubble.SetBubbleType(SpeechBubbleType.Note);
+                StartCoroutine(FinishTutorialAfterDialogue());
+                yield break;
+            }
 
             currentLineIndex++;
             yield return new WaitForSeconds(delayBetweenLines);
@@ -212,21 +269,16 @@ public class TutorialDialogue : MonoBehaviour
         if (cameraControlScript != null)
             cameraControlScript.enabled = true;
 
-        StartCoroutine(HandleTrainerDisappearance());
     }
-
-    private IEnumerator HandleTrainerDisappearance()
+    private IEnumerator FinishTutorialAfterDialogue()
     {
-        PlayAnimation("Death");
+        yield return new WaitForSeconds(0.6f); 
 
-        yield return new WaitForSeconds(2f); 
-
-        if (disappearParticles != null)
-            disappearParticles.Play();
-
-        yield return new WaitForSeconds(1f);
-
-        if (trainerObject != null)
-            Destroy(trainerObject);
+        if (tutorialController != null)
+        {
+            yield return tutorialController.PlayNoThenDie(); 
+        }
     }
+
+
 }
