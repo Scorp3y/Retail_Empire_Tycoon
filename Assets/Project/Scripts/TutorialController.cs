@@ -11,6 +11,8 @@ public class TutorialController : MonoBehaviour
     public Animator trainerAnimator;
     public ParticleSystem disappearParticles;
     public ButtonFadeIn showToSettings, showToMoney, showToPause, showToWarehouse, showToStore, showToButtonBuild, showToButtonStore;
+    public AudioSource sfxSource;
+    public AudioClip clipMagicPop;
 
     void Start()
     {
@@ -61,8 +63,14 @@ public class TutorialController : MonoBehaviour
 
         yield return new WaitForSeconds(0.2f);
 
+
         if (characterRoot != null)
             Destroy(characterRoot);
+
+        if (clipMagicPop != null && sfxSource != null)
+            sfxSource.PlayOneShot(clipMagicPop);
+        if (disappearParticles != null)
+            disappearParticles.Play();
 
         if (cameraControlScript != null)
             cameraControlScript.enabled = true;

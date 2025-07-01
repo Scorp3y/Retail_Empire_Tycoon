@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using SpeechBubble;
-using DG.Tweening; 
+using DG.Tweening;
 
 public class TutorialDialogue : MonoBehaviour
 {
@@ -15,13 +15,13 @@ public class TutorialDialogue : MonoBehaviour
     public TutorialController tutorialController;
 
     [Header("Transform moving")]
-    public RectTransform bubbleTransform; 
+    public RectTransform bubbleTransform;
     public List<Vector2> bubblePositions;
     public List<Vector3> characterPositions;
 
     [Header("Character Animation")]
-    public Animator trainerAnimator; 
-    public GameObject trainerObject; 
+    public Animator trainerAnimator;
+    public GameObject trainerObject;
 
     [TextArea(2, 5)]
     public List<string> dialogueLines;
@@ -31,6 +31,11 @@ public class TutorialDialogue : MonoBehaviour
 
     private int currentLineIndex = 0;
     private bool isPaused = false;
+
+    [Header("Audio")]
+    public AudioSource sfxSource;
+    public AudioClip clipMagicPop, clipTyping, clipMumbling, clipSwing;
+    public AudioSource typingSource;
 
     public void StartDialogue()
     {
@@ -52,6 +57,7 @@ public class TutorialDialogue : MonoBehaviour
     {
         while (currentLineIndex < dialogueLines.Count)
         {
+            PlaySound(clipSwing);
             HideAllArrows();
             MoveToCurrentPositions();
 
@@ -185,8 +191,7 @@ public class TutorialDialogue : MonoBehaviour
                     StartCoroutine(FinishTutorialAfterDialogue());
                     yield break;
 
-                default:
-                    break;
+
             }
 
             yield return StartCoroutine(TypeText(dialogueLines[currentLineIndex]));
@@ -196,7 +201,6 @@ public class TutorialDialogue : MonoBehaviour
 
         OnDialogueFinished();
     }
-
 
     private void MoveToCurrentPositions()
     {
@@ -258,13 +262,13 @@ public class TutorialDialogue : MonoBehaviour
     private void OnDialogueFinished()
     {
         Debug.Log("Диалог завершён.");
-        if (cameraControlScript != null)
-            cameraControlScript.enabled = true;
+        StartCoroutine(FinishTutorialLocally());
 
     }
+
     private IEnumerator FinishTutorialAfterDialogue()
     {
-        yield return new WaitForSeconds(0.6f); 
+        yield return new WaitForSeconds(0.6f);
 
         if (tutorialController != null)
         {
@@ -272,10 +276,56 @@ public class TutorialDialogue : MonoBehaviour
         }
     }
 
+    private IEnumerator FinishTutorialLocally()
+    {
+        PlayerPrefs.SetInt("hasCompletedTutorial", 1);
+        PlayerPrefs.Save();
+
+        if (trainerAnimator != null)
+        {
+            trainerAnimator.SetTrigger("Die");
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        if (clipMagicPop != null && sfxSource != null)
+            sfxSource.PlayOneShot(clipMagicPop);
+
+        if (tutorialController != null && tutorialController.disappearParticles != null)
+            tutorialController.disappearParticles.Play();
+
+        yield return new WaitForSeconds(0.2f);
+
+        if (trainerObject != null)
+            Destroy(trainerObject);
+
+        if (cameraControlScript != null)
+            cameraControlScript.enabled = true;
+
+        dialogueRoot.SetActive(false);
+
+        showToSettings?.Show();
+        showToMoney?.Show();
+        showToPause?.Show();
+        showToWarehouse?.Show();
+        showToStore?.Show();
+        showToButtonBuild?.Show();
+        showToButtonStore?.Show();
+    }
+
+
     private IEnumerator TypeText(string fullText, float charDelay = 0.03f)
     {
         speechBubble.setDialogueText("");
         string currentText = "";
+
+        if (clipTyping != null && typingSource != null)
+        {
+            typingSource.clip = clipTyping;
+            typingSource.loop = true;
+            typingSource.Play();
+        }
+
+        PlaySound(clipMumbling);
 
         foreach (char c in fullText)
         {
@@ -283,6 +333,19 @@ public class TutorialDialogue : MonoBehaviour
             speechBubble.setDialogueText(currentText);
             yield return new WaitForSeconds(charDelay);
         }
-        yield return new WaitForSeconds(3f); 
+
+        if (typingSource != null && typingSource.isPlaying)
+        {
+            typingSource.Stop();
+        }
+
+        yield return new WaitForSeconds(3f);
+    }
+
+
+    private void PlaySound(AudioClip clip)
+    {
+        if (clip != null && sfxSource != null)
+            sfxSource.PlayOneShot(clip);
     }
 }
