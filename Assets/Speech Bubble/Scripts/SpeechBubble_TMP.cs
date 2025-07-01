@@ -1,11 +1,10 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
 namespace SpeechBubble
 {
-
     /// <summary>
     /// Used for TMP text
     /// </summary>
@@ -23,29 +22,37 @@ namespace SpeechBubble
         /// <summary>
         /// Sets the dialogue text to the given string
         /// </summary>
-        /// <param name="text">The string to set the dialogue to</param>
         public override void setDialogueText(string text)
         {
             dialogueText = text;
-            dialogueTextComponent.text = text;
+            if (dialogueTextComponent != null)
+                dialogueTextComponent.text = text;
         }
 
         /// <summary>
-        /// Sets the dialogue text to the color
+        /// Sets the dialogue text color
         /// </summary>
-        /// <param name="color"></param>
         public override void setDialogueTextColor(Color color)
         {
-            dialogueTextComponent.color = color;
+            if (dialogueTextComponent != null)
+                dialogueTextComponent.color = color;
         }
 
         /// <summary>
-        /// Updates the text to match with the values in the inspector
+        /// Updates the text graphics
         /// </summary>
         protected override void updateTextGraphics()
         {
-            dialogueTextComponent.text = dialogueText;
+            if (dialogueTextComponent != null)
+                dialogueTextComponent.text = dialogueText;
         }
 
+        /// <summary>
+        /// Проксирует тип пузыря в базовый метод
+        /// </summary>
+        public void SetBubbleType(SpeechBubbleType newType)
+        {
+            setBubbleType(newType); // вызов из базового класса
+        }
     }
 }
