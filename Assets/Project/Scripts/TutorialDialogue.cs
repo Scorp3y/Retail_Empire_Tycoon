@@ -44,7 +44,7 @@ public class TutorialDialogue : MonoBehaviour
     // delete
     private bool settinge = false;
     private bool settinga = false;
-    private bool settiangeee = false;
+ 
 
     [Header("Audio")]
     public AudioSource sfxSource;
