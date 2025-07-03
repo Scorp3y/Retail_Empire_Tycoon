@@ -7,13 +7,14 @@ using UnityEngine.UI;
 
 public class TutorialDialogue : MonoBehaviour
 {
-    // Test
     public SpeechBubble_TMP speechBubble;
     public GameObject arrowToSettingsButton, arrowToMoneyPanel, arrowToPauseButton, arrowToStoreButton, arrowToStorePanel, arrowToBuildPanel,
         arrowToBuyShelf, arrowToWarehouse, arrowToBuyProduct;
-    public Button settingBtnBlock, warehouseBtnBlock, storeBtnBlock, buildpanelBtnBlock, storepanelBtnBlock, exitStoreBttBlock, exitBuildpanelBlock;
+    public Button settingBtnBlock, warehouseBtnBlock, storeBtnBlock, storeBuildBtnBlock, buildStoreBtnBlock, exitStoreBttBlock, exitBuildpanelBlock;
+   
+    public ButtonFadeIn showToSettings, showToMoney, showToPause, showToWarehouse, showToStore, showToStoreStore, showToStoreBuild, showToBuildStore, showToBuildBuild;
     public GameObject dialogueRoot;
-    public ButtonFadeIn showToSettings, showToMoney, showToPause, showToWarehouse, showToStore, showToButtonBuild, showToButtonStore, showToButtonStoreStore;
+
     public MonoBehaviour cameraControlScript;
     public TutorialController tutorialController;
     private TutorialButtonType currentExpectedButton = TutorialButtonType.None;
@@ -47,6 +48,38 @@ public class TutorialDialogue : MonoBehaviour
 
     public void StartDialogue()
     {
+        if (PlayerPrefs.GetInt("hasCompletedTutorial", 0) == 1)
+        {
+            settingBtnBlock.gameObject.SetActive(true);
+            settingBtnBlock.interactable = true;
+
+            warehouseBtnBlock.gameObject.SetActive(true);
+            warehouseBtnBlock.interactable = true;
+
+            storeBtnBlock.gameObject.SetActive(true);
+            storeBtnBlock.interactable = true;
+
+            storeBuildBtnBlock.gameObject.SetActive(true);
+            storeBuildBtnBlock.interactable = true;
+
+            buildStoreBtnBlock.gameObject.SetActive(true);
+            buildStoreBtnBlock.interactable = true;
+
+            exitStoreBttBlock.interactable = true;
+            exitBuildpanelBlock.interactable = true;
+
+            showToSettings?.Show();
+            showToMoney?.Show();
+            showToPause?.Show();
+            showToWarehouse?.Show();
+            showToStore?.Show();
+            showToStoreStore?.Show();
+            showToStoreBuild?.Show();
+            showToBuildStore?.Show();
+            showToBuildBuild?.Show();
+            return;
+        }
+
         speechBubble.SetBubbleType(SpeechBubbleType.Note);
 
         if (cameraControlScript != null)
@@ -61,15 +94,18 @@ public class TutorialDialogue : MonoBehaviour
         warehouseBtnBlock.interactable = false;
         storeBtnBlock.gameObject.SetActive(false);
         storeBtnBlock.interactable = false;
-        buildpanelBtnBlock.gameObject.SetActive(false);
-        buildpanelBtnBlock.interactable = false;
-        storepanelBtnBlock.gameObject.SetActive(false);
-        storepanelBtnBlock.interactable |= false;
+
+        storeBuildBtnBlock.gameObject.SetActive(false);
+        storeBuildBtnBlock.interactable = false;
+        buildStoreBtnBlock.gameObject.SetActive(false);
+        buildStoreBtnBlock.interactable = false;
+
         exitStoreBttBlock.interactable = false;
         exitBuildpanelBlock.interactable = false;
-        
+
         StartCoroutine(PlayDialogue());
     }
+
 
 
     private void PlayAnimation(string trigger)
@@ -188,19 +224,19 @@ public class TutorialDialogue : MonoBehaviour
                     PlayAnimation("HoldLeft");
                     yield return new WaitForSeconds(0.5f);
                     PlayAnimation("Idle");
-                    showToButtonBuild.Show();
+                    showToStoreBuild.Show();
                     currentExpectedButton = TutorialButtonType.BuildPanel;
 
                     isPaused = true;
                     yield return StartCoroutine(ShowArrowNextFrame(arrowToBuildPanel));
-                    buildpanelBtnBlock.gameObject.SetActive(true);
-                    buildpanelBtnBlock.interactable = false;
+                    storeBuildBtnBlock.gameObject.SetActive(true);
+                    storeBuildBtnBlock.interactable = false;
                     yield return StartCoroutine(TypeText(dialogueLines[currentLineIndex]));
-                    buildpanelBtnBlock.interactable = true;
+                    storeBuildBtnBlock.interactable = true;
                     yield break;
 
                 case 11:
-                    buildpanelBtnBlock.interactable = false;
+                    storeBuildBtnBlock.interactable = false;
 
                     speechBubble.SetBubbleType(SpeechBubbleType.Note);
                     currentExpectedButton = TutorialButtonType.BuyShelf;
@@ -214,21 +250,21 @@ public class TutorialDialogue : MonoBehaviour
                     PlayAnimation("Pickup");
                     yield return new WaitForSeconds(0.5f);
                     PlayAnimation("Idle");
-                    showToButtonStore.Show();
+                    showToBuildStore.Show();
                     currentExpectedButton = TutorialButtonType.StorePanel;
 
                     isPaused = true;
                     yield return StartCoroutine(ShowArrowNextFrame(arrowToStorePanel));
-                    storepanelBtnBlock.gameObject.SetActive(true);
-                    storepanelBtnBlock.interactable = false;
+                    buildStoreBtnBlock.gameObject.SetActive(true);
+                    buildStoreBtnBlock.interactable = false;
                     yield return StartCoroutine(TypeText(dialogueLines[currentLineIndex]));
-                    storepanelBtnBlock.interactable = true;
+                    buildStoreBtnBlock.interactable = true;
                     yield break;
 
                 case 13:
-                    storepanelBtnBlock.interactable = false;
+                    buildStoreBtnBlock.interactable = false;
 
-                    showToButtonStoreStore.Show();
+                    showToStoreStore.Show();
                     speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
                     PlayAnimation("HoldLeft");
                     yield return new WaitForSeconds(0.5f);
@@ -404,6 +440,7 @@ public class TutorialDialogue : MonoBehaviour
         }
     }
 
+
     private IEnumerator FinishTutorialLocally()
     {
         PlayerPrefs.SetInt("hasCompletedTutorial", 1);
@@ -431,26 +468,33 @@ public class TutorialDialogue : MonoBehaviour
 
         dialogueRoot.SetActive(false);
 
+        settingBtnBlock.gameObject.SetActive(true);
+        settingBtnBlock.interactable = true;
+
+        warehouseBtnBlock.gameObject.SetActive(true);
+        warehouseBtnBlock.interactable = true;
+
+        storeBtnBlock.gameObject.SetActive(true);
+        storeBtnBlock.interactable = true;
+
+        storeBuildBtnBlock.gameObject.SetActive(true);
+        storeBuildBtnBlock.interactable = true;
+
+        buildStoreBtnBlock.gameObject.SetActive(true);
+        buildStoreBtnBlock.interactable = true;
+
+        exitStoreBttBlock.interactable = true;
+        exitBuildpanelBlock.interactable = true;
+
         showToSettings?.Show();
         showToMoney?.Show();
         showToPause?.Show();
         showToWarehouse?.Show();
         showToStore?.Show();
-        showToButtonBuild?.Show();
-        showToButtonStore?.Show();
-
-        settingBtnBlock.gameObject.SetActive(true);
-        settingBtnBlock.interactable = true;
-        warehouseBtnBlock.gameObject.SetActive(true);
-        warehouseBtnBlock.interactable = true;
-        storeBtnBlock.gameObject.SetActive(true);
-        storeBtnBlock.interactable = true;
-        buildpanelBtnBlock.gameObject.SetActive(true);
-        buildpanelBtnBlock.interactable = true;
-        storepanelBtnBlock.gameObject.SetActive(true);
-        storepanelBtnBlock.interactable |= true;
-        exitStoreBttBlock.interactable = true;
-        exitBuildpanelBlock.interactable = true;
+        showToStoreStore?.Show();
+        showToStoreBuild?.Show();
+        showToBuildStore?.Show();
+        showToBuildBuild?.Show();
     }
 }
 

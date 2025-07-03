@@ -15138,6 +15138,37 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a731207266f360249bc672afeadf8fe3, type: 3}
+--- !u!1 &303151340 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1894110065973753598, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
+  m_PrefabInstance: {fileID: 4193451639271158721}
+  m_PrefabAsset: {fileID: 0}
+--- !u!225 &303151345
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 303151340}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
+--- !u!114 &303151346
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 303151340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75bd3450b5084ef4b97323d1bb681c57, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  canvasGroup: {fileID: 303151345}
+  fadeDuration: 0.5
 --- !u!1 &306406670
 GameObject:
   m_ObjectHideFlags: 0
@@ -74251,7 +74282,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '1.0.7.1.1 version
+  m_text: '1.0.7.2 version
 
 
 '
@@ -85574,6 +85605,22 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1610558932}
     - target: {fileID: 5335519146127571317, guid: c124309a3883e4340a51eeb8e33fd6c6, type: 3}
+      propertyPath: showToBuildBuild
+      value: 
+      objectReference: {fileID: 303151346}
+    - target: {fileID: 5335519146127571317, guid: c124309a3883e4340a51eeb8e33fd6c6, type: 3}
+      propertyPath: showToBuildStore
+      value: 
+      objectReference: {fileID: 777247783}
+    - target: {fileID: 5335519146127571317, guid: c124309a3883e4340a51eeb8e33fd6c6, type: 3}
+      propertyPath: showToStoreBuild
+      value: 
+      objectReference: {fileID: 56091745}
+    - target: {fileID: 5335519146127571317, guid: c124309a3883e4340a51eeb8e33fd6c6, type: 3}
+      propertyPath: showToStoreStore
+      value: 
+      objectReference: {fileID: 581747243}
+    - target: {fileID: 5335519146127571317, guid: c124309a3883e4340a51eeb8e33fd6c6, type: 3}
       propertyPath: tutorialChoiceUI
       value: 
       objectReference: {fileID: 1998039455}
@@ -85686,6 +85733,22 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1284598055}
     - target: {fileID: 5638243801899956723, guid: c124309a3883e4340a51eeb8e33fd6c6, type: 3}
+      propertyPath: showToBuildBuild
+      value: 
+      objectReference: {fileID: 303151346}
+    - target: {fileID: 5638243801899956723, guid: c124309a3883e4340a51eeb8e33fd6c6, type: 3}
+      propertyPath: showToBuildStore
+      value: 
+      objectReference: {fileID: 777247783}
+    - target: {fileID: 5638243801899956723, guid: c124309a3883e4340a51eeb8e33fd6c6, type: 3}
+      propertyPath: showToStoreBuild
+      value: 
+      objectReference: {fileID: 56091745}
+    - target: {fileID: 5638243801899956723, guid: c124309a3883e4340a51eeb8e33fd6c6, type: 3}
+      propertyPath: showToStoreStore
+      value: 
+      objectReference: {fileID: 581747243}
+    - target: {fileID: 5638243801899956723, guid: c124309a3883e4340a51eeb8e33fd6c6, type: 3}
       propertyPath: arrowToBuildPanel
       value: 
       objectReference: {fileID: 165075772}
@@ -85726,6 +85789,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 629469492}
     - target: {fileID: 5638243801899956723, guid: c124309a3883e4340a51eeb8e33fd6c6, type: 3}
+      propertyPath: buildStoreBtnBlock
+      value: 
+      objectReference: {fileID: 777247785}
+    - target: {fileID: 5638243801899956723, guid: c124309a3883e4340a51eeb8e33fd6c6, type: 3}
       propertyPath: buildpanelBtnBlock
       value: 
       objectReference: {fileID: 56091746}
@@ -85737,6 +85804,10 @@ PrefabInstance:
       propertyPath: disappearParticles
       value: 
       objectReference: {fileID: 1000813208}
+    - target: {fileID: 5638243801899956723, guid: c124309a3883e4340a51eeb8e33fd6c6, type: 3}
+      propertyPath: storeBuildBtnBlock
+      value: 
+      objectReference: {fileID: 56091746}
     - target: {fileID: 5638243801899956723, guid: c124309a3883e4340a51eeb8e33fd6c6, type: 3}
       propertyPath: storepanelBtnBlock
       value: 
@@ -86431,6 +86502,10 @@ PrefabInstance:
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1894110065973753598, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
+      propertyPath: m_Name
+      value: OpenBuildBuild
+      objectReference: {fileID: 0}
     - target: {fileID: 1961890050497708063, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
       propertyPath: m_fontAsset
       value: 
@@ -86530,6 +86605,10 @@ PrefabInstance:
     - target: {fileID: 2289141845078094072, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
       propertyPath: m_IsActive
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2289470243660875244, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
+      propertyPath: m_Name
+      value: icon
       objectReference: {fileID: 0}
     - target: {fileID: 2318839912105223754, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
       propertyPath: m_fontAsset
@@ -88489,7 +88568,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9125978196140840949, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9143195047736127514, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
       propertyPath: m_Type
@@ -88700,6 +88779,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 9077917749819060803, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
       insertIndex: -1
       addedObject: {fileID: 777247784}
+    - targetCorrespondingSourceObject: {fileID: 1894110065973753598, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 303151346}
+    - targetCorrespondingSourceObject: {fileID: 1894110065973753598, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 303151345}
     - targetCorrespondingSourceObject: {fileID: 1226120816931121650, guid: 7a20a9604583c5c4e9abd28676acdb9f, type: 3}
       insertIndex: 2
       addedObject: {fileID: 1735910747}

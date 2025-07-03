@@ -10,7 +10,7 @@ public class TutorialController : MonoBehaviour
     public MonoBehaviour cameraControlScript;
     public Animator trainerAnimator;
     public ParticleSystem disappearParticles;
-    public ButtonFadeIn showToSettings, showToMoney, showToPause, showToWarehouse, showToStore, showToBuild, showToButtonStore, showToButtonStoreStore, showToButtonBuildStore;
+    public ButtonFadeIn showToSettings, showToMoney, showToPause, showToWarehouse, showToStore, showToStoreStore, showToStoreBuild, showToBuildStore, showToBuildBuild;
     public AudioSource sfxSource;
     public AudioClip clipMagicPop;
 
@@ -30,15 +30,7 @@ public class TutorialController : MonoBehaviour
 
         if (!showTutorial)
         {
-            showToSettings?.Show();
-            showToMoney?.Show();
-            showToPause?.Show();
-            showToWarehouse?.Show();
-            showToStore?.Show();
-            showToBuild?.Show();
-            showToButtonStoreStore?.Show();
-            showToButtonStore?.Show();
-            showToButtonBuildStore?.Show();
+            ShowAllTutorialButtons();
         }
     }
 
@@ -97,10 +89,28 @@ public class TutorialController : MonoBehaviour
         showToPause?.Show();
         showToWarehouse?.Show();
         showToStore?.Show();
-        showToBuild?.Show();
-        showToButtonStoreStore?.Show();
-        showToButtonStore?.Show();
-        showToButtonBuildStore?.Show();
+
+        showToStoreStore?.Show();
+        showToStoreBuild?.Show();
+        showToBuildStore?.Show();
+        showToBuildBuild?.Show();
+
+        ShowAllTutorialButtons();
+
+    }
+
+    private void ShowAllTutorialButtons()
+    {
+        showToSettings?.Show();
+        showToMoney?.Show();
+        showToPause?.Show();
+        showToWarehouse?.Show();
+        showToStore?.Show();
+
+        showToStoreStore?.Show();
+        showToStoreBuild?.Show();
+        showToBuildStore?.Show();
+        showToBuildBuild?.Show();
     }
 
 
