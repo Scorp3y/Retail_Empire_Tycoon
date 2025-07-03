@@ -10,7 +10,7 @@ public class TutorialController : MonoBehaviour
     public MonoBehaviour cameraControlScript;
     public Animator trainerAnimator;
     public ParticleSystem disappearParticles;
-    public ButtonFadeIn showToSettings, showToMoney, showToPause, showToWarehouse, showToStore, showToButtonBuild, showToButtonStore;
+    public ButtonFadeIn showToSettings, showToMoney, showToPause, showToWarehouse, showToStore, showToBuild, showToButtonStore, showToButtonStoreStore, showToButtonBuildStore;
     public AudioSource sfxSource;
     public AudioClip clipMagicPop;
 
@@ -27,7 +27,21 @@ public class TutorialController : MonoBehaviour
 
         if (cameraControlScript != null)
             cameraControlScript.enabled = !showTutorial;
+
+        if (!showTutorial)
+        {
+            showToSettings?.Show();
+            showToMoney?.Show();
+            showToPause?.Show();
+            showToWarehouse?.Show();
+            showToStore?.Show();
+            showToBuild?.Show();
+            showToButtonStoreStore?.Show();
+            showToButtonStore?.Show();
+            showToButtonBuildStore?.Show();
+        }
     }
+
 
 
     public void OnChooseTutorialYes()
@@ -83,8 +97,10 @@ public class TutorialController : MonoBehaviour
         showToPause?.Show();
         showToWarehouse?.Show();
         showToStore?.Show();
-        showToButtonBuild?.Show();
+        showToBuild?.Show();
+        showToButtonStoreStore?.Show();
         showToButtonStore?.Show();
+        showToButtonBuildStore?.Show();
     }
 
 

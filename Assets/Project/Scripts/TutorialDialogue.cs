@@ -3,16 +3,19 @@ using System.Collections.Generic;
 using UnityEngine;
 using SpeechBubble;
 using DG.Tweening;
+using UnityEngine.UI;
 
 public class TutorialDialogue : MonoBehaviour
 {
     public SpeechBubble_TMP speechBubble;
     public GameObject arrowToSettingsButton, arrowToMoneyPanel, arrowToPauseButton, arrowToStoreButton, arrowToStorePanel, arrowToBuildPanel,
         arrowToBuyShelf, arrowToWarehouse, arrowToBuyProduct;
+    public Button settingBtnBlock, warehouseBtnBlock, storeBtnBlock, buildpanelBtnBlock, storepanelBtnBlock, exitStoreBttBlock, exitBuildpanelBlock;
     public GameObject dialogueRoot;
-    public ButtonFadeIn showToSettings, showToMoney, showToPause, showToWarehouse, showToStore, showToButtonBuild, showToButtonStore;
+    public ButtonFadeIn showToSettings, showToMoney, showToPause, showToWarehouse, showToStore, showToButtonBuild, showToButtonStore, showToButtonStoreStore;
     public MonoBehaviour cameraControlScript;
     public TutorialController tutorialController;
+    private TutorialButtonType currentExpectedButton = TutorialButtonType.None;
 
     [Header("Transform moving")]
     public RectTransform bubbleTransform;
@@ -31,6 +34,10 @@ public class TutorialDialogue : MonoBehaviour
 
     private int currentLineIndex = 0;
     private bool isPaused = false;
+    private bool isTyping = false;
+    private bool isTextTyping = false;
+    private bool settingsOpened = false;
+
 
     [Header("Audio")]
     public AudioSource sfxSource;
@@ -40,12 +47,29 @@ public class TutorialDialogue : MonoBehaviour
     public void StartDialogue()
     {
         speechBubble.SetBubbleType(SpeechBubbleType.Note);
+
         if (cameraControlScript != null)
             cameraControlScript.enabled = false;
+
         currentLineIndex = 0;
         dialogueRoot.SetActive(true);
+
+        settingBtnBlock.gameObject.SetActive(false);
+        settingBtnBlock.interactable = false;
+        warehouseBtnBlock.gameObject.SetActive(false);
+        warehouseBtnBlock.interactable = false;
+        storeBtnBlock.gameObject.SetActive(false);
+        storeBtnBlock.interactable = false;
+        buildpanelBtnBlock.gameObject.SetActive(false);
+        buildpanelBtnBlock.interactable = false;
+        storepanelBtnBlock.gameObject.SetActive(false);
+        storepanelBtnBlock.interactable |= false;
+        exitStoreBttBlock.interactable = false;
+        exitBuildpanelBlock.interactable = false;
+        
         StartCoroutine(PlayDialogue());
     }
+
 
     private void PlayAnimation(string trigger)
     {
@@ -58,6 +82,7 @@ public class TutorialDialogue : MonoBehaviour
         while (currentLineIndex < dialogueLines.Count)
         {
             PlaySound(clipSwing);
+            speechBubble.setDialogueText("");
             HideAllArrows();
             MoveToCurrentPositions();
 
@@ -80,13 +105,20 @@ public class TutorialDialogue : MonoBehaviour
                     PlayAnimation("Pickup");
                     yield return new WaitForSeconds(0.5f);
                     PlayAnimation("Idle");
+
                     isPaused = true;
                     showToSettings.Show();
-                    StartCoroutine(ShowArrowNextFrame(arrowToSettingsButton));
+                    yield return StartCoroutine(ShowArrowNextFrame(arrowToSettingsButton));
+
+                    settingBtnBlock.gameObject.SetActive(true);
+                    settingBtnBlock.interactable = false;  
                     yield return StartCoroutine(TypeText(dialogueLines[currentLineIndex]));
+                    settingBtnBlock.interactable = true; 
                     yield break;
 
                 case 4:
+                    settingBtnBlock.interactable = false;
+
                     speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
                     PlayAnimation("Pickup");
                     yield return new WaitForSeconds(0.5f);
@@ -115,23 +147,35 @@ public class TutorialDialogue : MonoBehaviour
                     yield return new WaitForSeconds(0.5f);
                     PlayAnimation("Idle");
                     showToWarehouse.Show();
+                    currentExpectedButton = TutorialButtonType.Warehouse;
                     isPaused = true;
-                    StartCoroutine(ShowArrowNextFrame(arrowToWarehouse));
+                    yield return StartCoroutine(ShowArrowNextFrame(arrowToWarehouse));
+                    warehouseBtnBlock.gameObject.SetActive(true);
+                    warehouseBtnBlock.interactable = false;
                     yield return StartCoroutine(TypeText(dialogueLines[currentLineIndex]));
+                    warehouseBtnBlock.interactable = true;
                     yield break;
 
                 case 8:
+                    warehouseBtnBlock.interactable = false;
+
                     speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
                     PlayAnimation("Pickup");
                     yield return new WaitForSeconds(0.5f);
                     PlayAnimation("Idle");
                     showToStore.Show();
+                    currentExpectedButton = TutorialButtonType.Store;
                     isPaused = true;
-                    StartCoroutine(ShowArrowNextFrame(arrowToStoreButton));
+                    yield return StartCoroutine(ShowArrowNextFrame(arrowToStoreButton));
+                    storeBtnBlock.gameObject.SetActive(true);
+                    storeBtnBlock.interactable = false;
                     yield return StartCoroutine(TypeText(dialogueLines[currentLineIndex]));
+                    storeBtnBlock.interactable = true;
                     yield break;
 
                 case 9:
+                    storeBtnBlock.interactable = false;
+
                     speechBubble.SetBubbleType(SpeechBubbleType.Note);
                     PlayAnimation("Fall");
                     yield return new WaitForSeconds(0.5f);
@@ -144,15 +188,23 @@ public class TutorialDialogue : MonoBehaviour
                     yield return new WaitForSeconds(0.5f);
                     PlayAnimation("Idle");
                     showToButtonBuild.Show();
+                    currentExpectedButton = TutorialButtonType.BuildPanel;
+
                     isPaused = true;
-                    StartCoroutine(ShowArrowNextFrame(arrowToBuildPanel));
+                    yield return StartCoroutine(ShowArrowNextFrame(arrowToBuildPanel));
+                    buildpanelBtnBlock.gameObject.SetActive(true);
+                    buildpanelBtnBlock.interactable = false;
                     yield return StartCoroutine(TypeText(dialogueLines[currentLineIndex]));
+                    buildpanelBtnBlock.interactable = true;
                     yield break;
 
                 case 11:
+                    buildpanelBtnBlock.interactable = false;
+
                     speechBubble.SetBubbleType(SpeechBubbleType.Note);
+                    currentExpectedButton = TutorialButtonType.BuyShelf;
                     isPaused = true;
-                    StartCoroutine(ShowArrowNextFrame(arrowToBuyShelf));
+                    yield return StartCoroutine(ShowArrowNextFrame(arrowToBuyShelf));
                     yield return StartCoroutine(TypeText(dialogueLines[currentLineIndex]));
                     yield break;
 
@@ -162,19 +214,29 @@ public class TutorialDialogue : MonoBehaviour
                     yield return new WaitForSeconds(0.5f);
                     PlayAnimation("Idle");
                     showToButtonStore.Show();
+                    currentExpectedButton = TutorialButtonType.StorePanel;
+
                     isPaused = true;
-                    StartCoroutine(ShowArrowNextFrame(arrowToStorePanel));
+                    yield return StartCoroutine(ShowArrowNextFrame(arrowToStorePanel));
+                    storepanelBtnBlock.gameObject.SetActive(true);
+                    storepanelBtnBlock.interactable = false;
                     yield return StartCoroutine(TypeText(dialogueLines[currentLineIndex]));
+                    storepanelBtnBlock.interactable = true;
                     yield break;
 
                 case 13:
+                    storepanelBtnBlock.interactable = false;
+
+                    showToButtonStoreStore.Show();
                     speechBubble.SetBubbleType(SpeechBubbleType.Whisper);
                     PlayAnimation("HoldLeft");
                     yield return new WaitForSeconds(0.5f);
                     PlayAnimation("Idle");
+                    currentExpectedButton = TutorialButtonType.BuyProduct;
                     isPaused = true;
-                    StartCoroutine(ShowArrowNextFrame(arrowToBuyProduct));
+                    yield return StartCoroutine(ShowArrowNextFrame(arrowToBuyProduct));
                     yield return StartCoroutine(TypeText(dialogueLines[currentLineIndex]));
+                    exitStoreBttBlock.interactable = true;
                     yield break;
 
                 case 14:
@@ -191,16 +253,42 @@ public class TutorialDialogue : MonoBehaviour
                     StartCoroutine(FinishTutorialAfterDialogue());
                     yield break;
 
-
             }
 
             yield return StartCoroutine(TypeText(dialogueLines[currentLineIndex]));
             currentLineIndex++;
             yield return new WaitForSeconds(delayBetweenLines);
+
         }
 
         OnDialogueFinished();
     }
+
+    public void OnTutorialButtonClicked(TutorialButtonType button)
+    {
+        if (isTextTyping) return;
+        if (!isPaused) return;
+        if (button != currentExpectedButton) return;
+
+        if (button == TutorialButtonType.Settings)
+        {
+            settingBtnBlock.interactable = false; 
+        }
+
+        ContinueDialogueAfterButton();
+    }
+
+
+    private void BlockButton(TutorialButtonType button)
+    {
+        switch (button)
+        {
+            case TutorialButtonType.Settings:
+                settingBtnBlock.interactable = false;
+                break;
+        }
+    }
+
 
     private void MoveToCurrentPositions()
     {
@@ -212,13 +300,17 @@ public class TutorialDialogue : MonoBehaviour
     {
         if (!isPaused) return;
 
-        HideAllArrows();
-        isPaused = false;
-        currentLineIndex++;
+        if (cameraControlScript != null)
+            cameraControlScript.enabled = false;
 
+        isPaused = false;
         dialogueRoot.SetActive(true);
+        currentExpectedButton = TutorialButtonType.None;
+        HideAllArrows();
+        currentLineIndex++;
         StartCoroutine(PlayDialogue());
     }
+
 
     public void HideDialogueTemporarily()
     {
@@ -259,11 +351,46 @@ public class TutorialDialogue : MonoBehaviour
         arrow?.SetActive(true);
     }
 
+    private IEnumerator TypeText(string fullText, float charDelay = 0.03f)
+    {
+        isTextTyping = true;
+        speechBubble.setDialogueText("");
+        string currentText = "";
+
+        if (clipTyping != null && typingSource != null)
+        {
+            typingSource.clip = clipTyping;
+            typingSource.loop = true;
+            typingSource.Play();
+        }
+
+        PlaySound(clipMumbling);
+
+        foreach (char c in fullText)
+        {
+            currentText += c;
+            speechBubble.setDialogueText(currentText);
+            yield return new WaitForSeconds(charDelay);
+        }
+
+        if (typingSource != null && typingSource.isPlaying)
+        {
+            typingSource.Stop();
+        }
+
+        yield return new WaitForSeconds(3f);
+        isTextTyping = false; 
+    }
+
+    private void PlaySound(AudioClip clip)
+    {
+        if (clip != null && sfxSource != null)
+            sfxSource.PlayOneShot(clip);
+    }
+
     private void OnDialogueFinished()
     {
-        Debug.Log("Диалог завершён.");
         StartCoroutine(FinishTutorialLocally());
-
     }
 
     private IEnumerator FinishTutorialAfterDialogue()
@@ -272,7 +399,7 @@ public class TutorialDialogue : MonoBehaviour
 
         if (tutorialController != null)
         {
-            yield return tutorialController.PlayNoThenDie(); 
+            yield return tutorialController.PlayNoThenDie();
         }
     }
 
@@ -310,42 +437,33 @@ public class TutorialDialogue : MonoBehaviour
         showToStore?.Show();
         showToButtonBuild?.Show();
         showToButtonStore?.Show();
-    }
 
-
-    private IEnumerator TypeText(string fullText, float charDelay = 0.03f)
-    {
-        speechBubble.setDialogueText("");
-        string currentText = "";
-
-        if (clipTyping != null && typingSource != null)
-        {
-            typingSource.clip = clipTyping;
-            typingSource.loop = true;
-            typingSource.Play();
-        }
-
-        PlaySound(clipMumbling);
-
-        foreach (char c in fullText)
-        {
-            currentText += c;
-            speechBubble.setDialogueText(currentText);
-            yield return new WaitForSeconds(charDelay);
-        }
-
-        if (typingSource != null && typingSource.isPlaying)
-        {
-            typingSource.Stop();
-        }
-
-        yield return new WaitForSeconds(3f);
-    }
-
-
-    private void PlaySound(AudioClip clip)
-    {
-        if (clip != null && sfxSource != null)
-            sfxSource.PlayOneShot(clip);
+        settingBtnBlock.gameObject.SetActive(true);
+        settingBtnBlock.interactable = true;
+        warehouseBtnBlock.gameObject.SetActive(true);
+        warehouseBtnBlock.interactable = true;
+        storeBtnBlock.gameObject.SetActive(true);
+        storeBtnBlock.interactable = true;
+        buildpanelBtnBlock.gameObject.SetActive(true);
+        buildpanelBtnBlock.interactable = true;
+        storepanelBtnBlock.gameObject.SetActive(true);
+        storepanelBtnBlock.interactable |= true;
+        exitStoreBttBlock.interactable = true;
+        exitBuildpanelBlock.interactable = true;
     }
 }
+
+public enum TutorialButtonType
+{
+    None,
+    Settings,
+    Money,
+    Pause,
+    Warehouse,
+    Store,
+    BuildPanel,
+    BuyShelf,
+    StorePanel,
+    BuyProduct
+}
+
