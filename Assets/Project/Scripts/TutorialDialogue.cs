@@ -7,6 +7,7 @@ using UnityEngine.UI;
 
 public class TutorialDialogue : MonoBehaviour
 {
+
     public SpeechBubble_TMP speechBubble;
     public GameObject arrowToSettingsButton, arrowToMoneyPanel, arrowToPauseButton, arrowToStoreButton, arrowToStorePanel, arrowToBuildPanel,
         arrowToBuyShelf, arrowToWarehouse, arrowToBuyProduct;
@@ -40,6 +41,10 @@ public class TutorialDialogue : MonoBehaviour
     private bool isTextTyping = false;
     private bool settingsOpened = false;
 
+    // delete
+    private bool settinge = false;
+    private bool settinga = false;
+    private bool settiangeee = false;
 
     [Header("Audio")]
     public AudioSource sfxSource;
