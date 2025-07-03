@@ -7,6 +7,7 @@ using UnityEngine.UI;
 
 public class TutorialDialogue : MonoBehaviour
 {
+    // Test
     public SpeechBubble_TMP speechBubble;
     public GameObject arrowToSettingsButton, arrowToMoneyPanel, arrowToPauseButton, arrowToStoreButton, arrowToStorePanel, arrowToBuildPanel,
         arrowToBuyShelf, arrowToWarehouse, arrowToBuyProduct;
