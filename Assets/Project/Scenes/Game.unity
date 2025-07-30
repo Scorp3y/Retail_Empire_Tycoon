@@ -569,37 +569,6 @@ MonoBehaviour:
   sizeEnglish: 60
   sizeRussian: 40
   excludeFromFontChange: 1
---- !u!1 &25294060
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 25294061}
-  m_Layer: 0
-  m_Name: Door Enter
-  m_TagString: Untagged
-  m_Icon: {fileID: 4162164826716764455, guid: 0000000000000000d000000000000000, type: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &25294061
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 25294060}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.70710677, z: -0, w: 0.7071069}
-  m_LocalPosition: {x: 8.19, y: 0, z: -3.62}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
 --- !u!1001 &25584642
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -11322,6 +11291,37 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 312199042}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &312246373
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 312246374}
+  m_Layer: 0
+  m_Name: Door Exit
+  m_TagString: Untagged
+  m_Icon: {fileID: 4162164826716764455, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &312246374
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 312246373}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.000000014901161, y: 0.7071068, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0, z: 0.53000045}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 893898276}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
 --- !u!1001 &313294674
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13795,37 +13795,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d372dbc1acdf2b14fb741024354ef278, type: 3}
---- !u!1 &424986678
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 424986679}
-  m_Layer: 0
-  m_Name: Door Exit
-  m_TagString: Untagged
-  m_Icon: {fileID: 4162164826716764455, guid: 0000000000000000d000000000000000, type: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &424986679
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 424986678}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.70710677, z: -0, w: 0.7071069}
-  m_LocalPosition: {x: 8.19, y: 0, z: -2.49}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
 --- !u!4 &426153008 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: d372dbc1acdf2b14fb741024354ef278, type: 3}
@@ -17710,10 +17679,10 @@ MonoBehaviour:
   queueManager: {fileID: 564768436}
   customerPrefab: {fileID: 2339764421793266146, guid: cdee95c72dea1824cb80315a3e2038bf, type: 3}
   spawnPoint: {fileID: 651488878}
-  doorPoint: {fileID: 25294061}
+  doorPoint: {fileID: 0}
   cashRegister: {fileID: 2103612292}
   queuePoints: []
-  exitPoint: {fileID: 424986679}
+  exitPoint: {fileID: 0}
   availableProducts:
   - productName: Bread
     price: 15
@@ -22737,10 +22706,10 @@ MonoBehaviour:
   queueManager: {fileID: 564768436}
   customerPrefab: {fileID: 7473674230847249864, guid: c67648b6e1a95ea40a5656dac0af3c69, type: 3}
   spawnPoint: {fileID: 887971398}
-  doorPoint: {fileID: 25294061}
+  doorPoint: {fileID: 0}
   cashRegister: {fileID: 2103612292}
   queuePoints: []
-  exitPoint: {fileID: 424986679}
+  exitPoint: {fileID: 0}
   availableProducts:
   - productName: Bread
     price: 15
@@ -22776,6 +22745,39 @@ MonoBehaviour:
     quantity: 0
   mainDoor: {fileID: 1280006848}
   spawnInterval: 35
+--- !u!1 &893898275
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 893898276}
+  m_Layer: 0
+  m_Name: Door
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &893898276
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 893898275}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 8.19, y: 0, z: -3.02}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1092689767}
+  - {fileID: 312246374}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &895332801
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -32141,6 +32143,37 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0479e37a857cdad43a08d25367dac08b, type: 3}
+--- !u!1 &1092689766
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1092689767}
+  m_Layer: 0
+  m_Name: Door Enter
+  m_TagString: Untagged
+  m_Icon: {fileID: 4162164826716764455, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1092689767
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1092689766}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.000000014901161, y: 0.7071068, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0, z: -0.60000014}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 893898276}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
 --- !u!4 &1100712956 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: d372dbc1acdf2b14fb741024354ef278, type: 3}
@@ -50091,10 +50124,10 @@ MonoBehaviour:
   queueManager: {fileID: 564768436}
   customerPrefab: {fileID: 3405117064623392230, guid: f3e0c24780b7acc4fb3eb11b7932e9d2, type: 3}
   spawnPoint: {fileID: 1740203267}
-  doorPoint: {fileID: 25294061}
+  doorPoint: {fileID: 0}
   cashRegister: {fileID: 2103612292}
   queuePoints: []
-  exitPoint: {fileID: 424986679}
+  exitPoint: {fileID: 0}
   availableProducts:
   - productName: Bread
     price: 15
@@ -50504,7 +50537,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '1.0.8.0.14 version
+  m_text: '1.0.8.0.15 version
 
 
 '
@@ -54985,10 +55018,10 @@ MonoBehaviour:
   queueManager: {fileID: 564768436}
   customerPrefab: {fileID: 6760340952312498386, guid: 97d46e387f109fb4bafca0cda462e2c8, type: 3}
   spawnPoint: {fileID: 2026957390}
-  doorPoint: {fileID: 25294061}
+  doorPoint: {fileID: 0}
   cashRegister: {fileID: 2103612292}
   queuePoints: []
-  exitPoint: {fileID: 424986679}
+  exitPoint: {fileID: 0}
   availableProducts:
   - productName: Bread
     price: 15
@@ -57541,6 +57574,10 @@ PrefabInstance:
     - target: {fileID: 591746610178221724, guid: fdd1bc4dadc64ad45a2713348184f442, type: 3}
       propertyPath: m_Name
       value: SuperMarket 6 LVL
+      objectReference: {fileID: 0}
+    - target: {fileID: 591746610178221724, guid: fdd1bc4dadc64ad45a2713348184f442, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1194009909320780423, guid: fdd1bc4dadc64ad45a2713348184f442, type: 3}
       propertyPath: m_LocalPosition.x
@@ -61302,7 +61339,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 658749275836527406, guid: 3cb3da26afba70b45a2189d2efb996fa, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3332758155948429406, guid: 3cb3da26afba70b45a2189d2efb996fa, type: 3}
       propertyPath: buyButton
@@ -61609,9 +61646,8 @@ SceneRoots:
   - {fileID: 963194228}
   - {fileID: 1830964260}
   - {fileID: 2011028864}
+  - {fileID: 893898276}
   - {fileID: 705507995}
-  - {fileID: 25294061}
-  - {fileID: 424986679}
   - {fileID: 6674532882630215653}
   - {fileID: 6613858524836076648}
   - {fileID: 4957159055035962453}
