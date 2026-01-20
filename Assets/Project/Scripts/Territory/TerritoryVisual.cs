@@ -4,15 +4,9 @@ public sealed class TerritoryVisual : MonoBehaviour
 {
     [Header("Fill (optional)")]
     [SerializeField] private Renderer _fillRenderer;
-    [SerializeField] private Color _fillAvailable = new Color(0f, 0.35f, 0f, 0.25f);
-    [SerializeField] private Color _fillLocked = new Color(0f, 0f, 0f, 0.55f);
-    [SerializeField] private Color _fillPurchased = new Color(0f, 0.6f, 0f, 0.18f);
 
     [Header("Border")]
     [SerializeField] private LineRenderer _border;
-    [SerializeField] private Color _borderAvailable = new Color(0.1f, 1f, 0.2f, 1f);
-    [SerializeField] private Color _borderLocked = new Color(0.1f, 0.1f, 0.1f, 1f);
-    [SerializeField] private Color _borderPurchased = new Color(0.2f, 1f, 0.2f, 1f);
 
     [Header("Hover")]
     [SerializeField] private Transform _hoverRoot;
@@ -22,17 +16,9 @@ public sealed class TerritoryVisual : MonoBehaviour
     private Vector3 _baseScale;
     private bool _hover;
     private bool _allowHover;
-    private TerritoryViewState _state;
+    private bool _visible = true;
 
-    private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
-    private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
-
-    public enum TerritoryViewState
-    {
-        Locked,
-        Available,
-        Purchased
-    }
+    public enum TerritoryViewState { Locked, Available, Purchased }
 
     private void Awake()
     {
@@ -42,48 +28,43 @@ public sealed class TerritoryVisual : MonoBehaviour
 
     private void Update()
     {
+        if (!_visible) return;
+
         Vector3 target = _baseScale * (_hover && _allowHover ? _hoverScale : 1f);
         _hoverRoot.localScale = Vector3.Lerp(_hoverRoot.localScale, target, Time.unscaledDeltaTime * _hoverSpeed);
     }
 
+    public void SetVisible(bool visible)
+    {
+        _visible = visible;
+
+        if (_fillRenderer != null) _fillRenderer.enabled = visible;
+        if (_border != null) _border.enabled = visible;
+
+        if (!visible)
+        {
+            _hover = false;
+            _allowHover = false;
+            if (_hoverRoot != null) _hoverRoot.localScale = _baseScale;
+        }
+    }
+
     public void SetState(TerritoryViewState state)
     {
-        _state = state;
         _allowHover = state == TerritoryViewState.Available;
 
-        Color fill = state switch
+        if (!_visible)
         {
-            TerritoryViewState.Available => _fillAvailable,
-            TerritoryViewState.Purchased => _fillPurchased,
-            _ => _fillLocked
-        };
-
-        Color border = state switch
-        {
-            TerritoryViewState.Available => _borderAvailable,
-            TerritoryViewState.Purchased => _borderPurchased,
-            _ => _borderLocked
-        };
-
-        if (_fillRenderer != null)
-        {
-            var mat = _fillRenderer.material;
-            if (mat.HasProperty(BaseColor)) mat.SetColor(BaseColor, fill);
-            else if (mat.HasProperty("_Color")) mat.SetColor("_Color", fill);
+            _hover = false;
+            _allowHover = false;
         }
-
-        if (_border != null)
-        {
-            _border.startColor = border;
-            _border.endColor = border;
-        }
-
-        if (!_allowHover) _hover = false;
     }
 
     public void SetHover(bool on)
     {
+        if (!_visible) return;
         if (!_allowHover) return;
+
         _hover = on;
 
         if (_border != null)

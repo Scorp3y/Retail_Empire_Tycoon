@@ -2,24 +2,28 @@ using UnityEngine;
 
 public sealed class TerritoryZone : MonoBehaviour
 {
-    [Header("Config")]
     public TerritoryId Id;
     public int Price;
 
-    [Header("Visual")]
     [SerializeField] private TerritoryVisual _visual;
 
-    [Header("World UI")]
-    [SerializeField] private GameObject _priceTagRoot;
-    [SerializeField] private TMPro.TextMeshProUGUI _priceText;
-    [SerializeField] private GameObject _lockIconRoot;
-
     private StoreProgression _progression;
+    private bool _purchaseMode;
 
     public void Bind(StoreProgression progression)
     {
         _progression = progression;
         RefreshView();
+    }
+
+    public void SetPurchaseMode(bool enabled)
+    {
+        _purchaseMode = enabled;
+
+        if (_visual != null)
+            _visual.SetVisible(enabled);
+
+        if (!enabled) SetHover(false);
     }
 
     public void RefreshView()
@@ -34,19 +38,11 @@ public sealed class TerritoryZone : MonoBehaviour
             : (available ? TerritoryVisual.TerritoryViewState.Available : TerritoryVisual.TerritoryViewState.Locked);
 
         if (_visual != null) _visual.SetState(state);
-        if (_priceText != null) _priceText.text = Price.ToString();
-        if (_priceTagRoot != null) _priceTagRoot.SetActive(available && !purchased);
-        if (_lockIconRoot != null) _lockIconRoot.SetActive(!available && !purchased);
-
-        if (purchased)
-        {
-            if (_priceTagRoot != null) _priceTagRoot.SetActive(false);
-            if (_lockIconRoot != null) _lockIconRoot.SetActive(false);
-        }
     }
 
     public bool CanPurchase()
     {
+        if (!_purchaseMode) return false;
         if (_progression == null) return false;
         return _progression.IsTerritoryAvailable(Id);
     }
