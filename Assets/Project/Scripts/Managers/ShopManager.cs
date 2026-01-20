@@ -40,6 +40,17 @@ public class ShopManager : MonoBehaviour
                 item.buyButton.onClick.AddListener(() => BuyItem(item));
 
             }
+            if (item.objectToActivate == null)
+            {
+                Debug.LogError($"ShopItem '{item.itemName}' has no objectToActivate assigned.", item);
+                continue;
+            }
+
+            if (item.buyButton == null)
+            {
+                Debug.LogError($"ShopItem '{item.itemName}' has no buyButton assigned.", item);
+                continue;
+            }
 
         }
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -16,15 +16,17 @@ public sealed class StoreProgression : MonoBehaviour
         bool purpleBought = State.IsPurchased(TerritoryId.Purple);
         bool redBought = State.IsPurchased(TerritoryId.Red);
         bool greenBought = State.IsPurchased(TerritoryId.Green);
+        bool yellowBought = State.IsPurchased(TerritoryId.Yellow);
+        bool pinkBought = State.IsPurchased(TerritoryId.Pink);
 
         if (!purpleBought)
             return id == TerritoryId.Purple;
 
-        bool phase2 = purpleBought && !(redBought && greenBought);
+        bool phase2 = purpleBought && !(redBought && greenBought) && !(yellowBought || pinkBought);
         if (phase2)
             return id == TerritoryId.Red || id == TerritoryId.Green;
 
-        bool phase3 = redBought && greenBought;
+        bool phase3 = redBought && greenBought && !(yellowBought && pinkBought);
         if (phase3)
             return id == TerritoryId.Yellow || id == TerritoryId.Pink;
 
@@ -40,19 +42,15 @@ public sealed class StoreProgression : MonoBehaviour
         bool pink = State.IsPurchased(TerritoryId.Pink) || buyId == TerritoryId.Pink;
 
         if (!purple) return StoreLevelId.Lvl1;
+        if (purple && !(red || green)) return StoreLevelId.Lvl2;
 
-        if (purple && !(red || green))
-            return StoreLevelId.Lvl2;
-
-        if (purple && (red ^ green)) 
-        {
+        if (purple && (red ^ green)) // ровно один
             return red ? StoreLevelId.Lvl3_1 : StoreLevelId.Lvl3_2;
-        }
 
         if (purple && red && green && !(yellow || pink))
             return StoreLevelId.Lvl4;
 
-        if (purple && red && green && (yellow ^ pink)) 
+        if (purple && red && green && (yellow ^ pink))
             return pink ? StoreLevelId.Lvl5_1 : StoreLevelId.Lvl5_2;
 
         if (purple && red && green && yellow && pink)
@@ -67,6 +65,34 @@ public sealed class StoreProgression : MonoBehaviour
 
         State.Purchased.Add(id);
         State.CurrentLevel = PredictLevelAfterPurchase(id);
+        OnChanged?.Invoke();
+    }
+
+    public TerritorySaveData BuildSaveData()
+    {
+        var d = new TerritorySaveData();
+        foreach (var id in State.Purchased)
+            d.purchased.Add(id.ToString());
+        d.storeLevel = State.CurrentLevel.ToString();
+        return d;
+    }
+
+    public void ApplySaveData(TerritorySaveData d)
+    {
+        State.Purchased.Clear();
+
+        if (d?.purchased != null)
+        {
+            foreach (var s in d.purchased)
+                if (Enum.TryParse<TerritoryId>(s, out var id))
+                    State.Purchased.Add(id);
+        }
+
+        if (!string.IsNullOrEmpty(d?.storeLevel) &&
+            Enum.TryParse<StoreLevelId>(d.storeLevel, out var lvl))
+            State.CurrentLevel = lvl;
+        else
+            State.CurrentLevel = StoreLevelId.Lvl1;
 
         OnChanged?.Invoke();
     }
