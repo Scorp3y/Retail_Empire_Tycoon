@@ -7,9 +7,8 @@ public sealed class TerritoryVisual : MonoBehaviour
 
     [Header("Border")]
     [SerializeField] private LineRenderer _border;
-
-    [Header("Hover")]
     [SerializeField] private Transform _hoverRoot;
+
     [SerializeField] private float _hoverScale = 1.06f;
     [SerializeField] private float _hoverSpeed = 12f;
 
@@ -17,6 +16,7 @@ public sealed class TerritoryVisual : MonoBehaviour
     private bool _hover;
     private bool _allowHover;
     private bool _visible = true;
+
 
     public enum TerritoryViewState { Locked, Available, Purchased }
 

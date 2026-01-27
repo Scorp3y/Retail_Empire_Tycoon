@@ -13,6 +13,7 @@ public sealed class CameraModeController : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private Camera _camera;
+    [SerializeField] private Transform _moveRoot;
     [SerializeField] private MonoBehaviour _userCameraInput;
 
     [Header("Purchase Pose")]
@@ -28,26 +29,36 @@ public sealed class CameraModeController : MonoBehaviour
 
     public bool IsLocked => _locked;
 
+    private void Awake()
+    {
+        if (_camera == null) _camera = Camera.main;
+        if (_camera != null && _moveRoot == null) _moveRoot = _camera.transform;
+    }
+
     private void Reset()
     {
         _camera = Camera.main;
+        if (_camera != null)
+            _moveRoot = _camera.transform; 
     }
+
+    private Transform MoveT => _moveRoot != null ? _moveRoot : _camera.transform;
 
     public void EnterPurchaseMode()
     {
+
         if (_routine != null) StopCoroutine(_routine);
 
         SaveCurrentPose();
         SetUserInputEnabled(false);
         _locked = true;
-
         _routine = StartCoroutine(AnimateTo(_purchasePose));
     }
+
 
     public void ExitPurchaseMode()
     {
         if (_routine != null) StopCoroutine(_routine);
-
         _routine = StartCoroutine(ExitRoutine());
     }
 
@@ -61,18 +72,18 @@ public sealed class CameraModeController : MonoBehaviour
 
     private void SaveCurrentPose()
     {
-        var t = _camera.transform;
+        var t = MoveT;
         _savedPose = new CameraPose
         {
             Position = t.position,
             Euler = t.rotation.eulerAngles,
-            Fov = _camera.fieldOfView
+            Fov = _camera != null ? _camera.fieldOfView : 60f
         };
     }
 
     private IEnumerator AnimateTo(CameraPose target)
     {
-        var t = _camera.transform;
+        var t = MoveT;
 
         Vector3 startPos = t.position;
         Quaternion startRot = t.rotation;
@@ -91,14 +102,16 @@ public sealed class CameraModeController : MonoBehaviour
 
             t.position = Vector3.LerpUnclamped(startPos, endPos, e);
             t.rotation = Quaternion.SlerpUnclamped(startRot, endRot, e);
-            _camera.fieldOfView = Mathf.LerpUnclamped(startFov, endFov, e);
+
+            if (_camera != null)
+                _camera.fieldOfView = Mathf.LerpUnclamped(startFov, endFov, e);
 
             yield return null;
         }
 
         t.position = endPos;
         t.rotation = endRot;
-        _camera.fieldOfView = endFov;
+        if (_camera != null) _camera.fieldOfView = endFov;
 
         _routine = null;
     }

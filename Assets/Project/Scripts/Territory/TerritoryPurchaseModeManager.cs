@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public sealed class TerritoryPurchaseModeManager : MonoBehaviour
 {
@@ -8,28 +9,38 @@ public sealed class TerritoryPurchaseModeManager : MonoBehaviour
     [SerializeField] private CameraModeController _cameraMode;
     [SerializeField] private List<TerritoryZone> _zones = new();
 
+    [Header("UI")]
+    [SerializeField] private GameObject _enterButton;
+    [SerializeField] private GameObject _backButton;
+
     public bool IsActive { get; private set; }
+
     private void Awake()
     {
         if (_progression == null) _progression = FindObjectOfType<StoreProgression>();
         if (_cameraMode == null) _cameraMode = FindObjectOfType<CameraModeController>();
 
         foreach (var z in _zones)
-            z.Bind(_progression);
+            if (z != null) z.Bind(_progression);
 
         SetActive(false);
+        RefreshButtons();
     }
 
     public void Enter()
     {
+        Debug.Log("[PurchaseMode] ENTER");
         SetActive(true);
+        RefreshButtons();
         _cameraMode?.EnterPurchaseMode();
     }
+
 
     public void Exit()
     {
         _cameraMode?.ExitPurchaseMode();
         SetActive(false);
+        RefreshButtons();
     }
 
     private void SetActive(bool active)
@@ -42,5 +53,11 @@ public sealed class TerritoryPurchaseModeManager : MonoBehaviour
             z.SetPurchaseMode(active);
             z.RefreshView();
         }
+    }
+
+    private void RefreshButtons()
+    {
+        if (_enterButton != null) _enterButton.SetActive(!IsActive);
+        if (_backButton != null) _backButton.SetActive(IsActive);
     }
 }

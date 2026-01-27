@@ -14,7 +14,10 @@ public sealed class ScreenFader : MonoBehaviour
     public IEnumerator FadeIn()
     {
         yield return FadeTo(0f);
+        FindObjectOfType<TerritoryPurchaseModeManager>()?.Exit();
     }
+
+
 
     private IEnumerator FadeTo(float target)
     {

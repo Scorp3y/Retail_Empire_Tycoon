@@ -16,15 +16,24 @@ public sealed class TerritoryPurchaseController : MonoBehaviour
 
     public void RequestPurchase(TerritoryId id, int price)
     {
-        if (_progression == null) return;
-        if (!_progression.IsTerritoryAvailable(id)) return;
+        Debug.Log($"[PurchaseController] RequestPurchase {id} {price}");
+
+        if (_confirm == null)
+        {
+            Debug.LogError("[PurchaseController] _confirm is NULL (не назначен ConfirmPurchaseUI в инспекторе!)");
+            return;
+        }
 
         _confirm.Show(
             $"Уверены ли вы купить эту территорию за {price}?",
             onYes: () => StartCoroutine(PurchaseRoutine(id, price)),
             onNo: () => _confirm.HideInstant()
         );
+
+
     }
+
+
 
     private IEnumerator PurchaseRoutine(TerritoryId id, int price)
     {
@@ -33,7 +42,8 @@ public sealed class TerritoryPurchaseController : MonoBehaviour
         if (GameManager.Instance == null || !GameManager.Instance.SpendMoney(price))
             yield break;
 
-        if (_fader != null) yield return _fader.FadeOut();
+        if (_fader != null)
+            yield return _fader.FadeOut();
 
         _progression.MarkPurchased(id);
 
@@ -43,6 +53,11 @@ public sealed class TerritoryPurchaseController : MonoBehaviour
         if (SaveManager.Instance != null)
             SaveManager.Instance.SaveGame();
 
-        if (_fader != null) yield return _fader.FadeIn();
+        if (_fader != null)
+            yield return _fader.FadeIn();
+
+        FindObjectOfType<TerritoryPurchaseModeManager>(true)?.Exit();
+
     }
+
 }

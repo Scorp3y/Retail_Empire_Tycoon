@@ -41,11 +41,6 @@ public class TutorialDialogue : MonoBehaviour
     private bool isTextTyping = false;
     private bool settingsOpened = false;
 
-    // delete
-    private bool settinge = false;
-    private bool settinga = false;
- 
-
     [Header("Audio")]
     public AudioSource sfxSource;
     public AudioClip clipMagicPop, clipTyping, clipMumbling, clipSwing;
