@@ -17,7 +17,7 @@ public sealed class TerritoryPurchaseModeManager : MonoBehaviour
 
     private void Awake()
     {
-        if (_progression == null) _progression = FindObjectOfType<StoreProgression>();
+        if (_progression == null) _progression = StoreProgression.Instance ?? FindObjectOfType<StoreProgression>(true);
         if (_cameraMode == null) _cameraMode = FindObjectOfType<CameraModeController>();
 
         foreach (var z in _zones)
@@ -25,6 +25,21 @@ public sealed class TerritoryPurchaseModeManager : MonoBehaviour
 
         SetActive(false);
         RefreshButtons();
+
+        if (_progression != null)
+            _progression.OnChanged += RefreshZones;
+    }
+
+    private void OnDestroy()
+    {
+        if (_progression != null)
+            _progression.OnChanged -= RefreshZones;
+    }
+
+    private void RefreshZones()
+    {
+        foreach (var z in _zones)
+            if (z != null) z.RefreshView();
     }
 
     public void Enter()

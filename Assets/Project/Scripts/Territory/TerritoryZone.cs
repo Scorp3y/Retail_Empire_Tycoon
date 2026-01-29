@@ -10,6 +10,7 @@ public sealed class TerritoryZone : MonoBehaviour
     private StoreProgression _progression;
     private bool _purchaseMode;
 
+
     public void Bind(StoreProgression progression)
     {
         _progression = progression;
@@ -51,4 +52,6 @@ public sealed class TerritoryZone : MonoBehaviour
     {
         if (_visual != null) _visual.SetHover(on);
     }
+
 }
+

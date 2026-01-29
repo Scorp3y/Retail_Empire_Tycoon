@@ -4,10 +4,42 @@ using UnityEngine;
 
 public sealed class StoreProgression : MonoBehaviour
 {
+    /// <summary>
+    /// Единственный источник истины прогресса магазина.
+    ///
+    /// В проекте легко случайно получить дубликаты StoreProgression внутри префабов магазина.
+    /// Тогда разные системы (зоны, контроллер покупки, сохранение/загрузка, спавнер префабов)
+    /// начинают ссылаться на РАЗНЫЕ инстансы. Симптомы:
+    /// - покупка территории "не сохраняется";
+    /// - затемнение/смена префаба не срабатывает или срабатывает не тот уровень;
+    /// - доступность зон/уровней не обновляется.
+    ///
+    /// Поэтому делаем StoreProgression singleton'ом и уничтожаем дубликаты.
+    /// </summary>
+    public static StoreProgression Instance { get; private set; }
+
     public ProgressState State { get; private set; } = new();
     public event Action OnChanged;
 
     public IReadOnlyCollection<TerritoryId> Purchased => State.Purchased;
+
+    private void Awake()
+    {
+        // Singleton guard: оставляем самый первый StoreProgression в сцене.
+        if (Instance != null && Instance != this)
+        {
+            Debug.LogWarning($"[StoreProgression] Duplicate instance detected on '{name}'. Destroying duplicate.", this);
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
+    }
 
     public bool IsTerritoryAvailable(TerritoryId id)
     {

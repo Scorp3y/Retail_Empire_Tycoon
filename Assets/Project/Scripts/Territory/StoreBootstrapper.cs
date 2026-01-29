@@ -7,7 +7,7 @@ public sealed class StoreBootstrapper : MonoBehaviour
 
     private void Awake()
     {
-        if (_progression == null) _progression = FindObjectOfType<StoreProgression>(true);
+        if (_progression == null) _progression = StoreProgression.Instance ?? FindObjectOfType<StoreProgression>(true);
         if (_spawner == null) _spawner = FindObjectOfType<StorePrefabSpawner>(true);
     }
 

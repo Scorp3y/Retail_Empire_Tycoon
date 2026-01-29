@@ -10,19 +10,15 @@ public sealed class TerritoryPurchaseController : MonoBehaviour
 
     private void Awake()
     {
-        if (_progression == null) _progression = FindObjectOfType<StoreProgression>();
-        if (_prefabSpawner == null) _prefabSpawner = FindObjectOfType<StorePrefabSpawner>();
+        if (_progression == null) _progression = StoreProgression.Instance ?? FindObjectOfType<StoreProgression>(true);
+        if (_prefabSpawner == null) _prefabSpawner = FindObjectOfType<StorePrefabSpawner>(true);
+
+        if (_fader == null) _fader = FindObjectOfType<ScreenFader>(true);
+        if (_confirm == null) _confirm = FindObjectOfType<ConfirmPurchaseUI>(true);
     }
 
     public void RequestPurchase(TerritoryId id, int price)
     {
-        Debug.Log($"[PurchaseController] RequestPurchase {id} {price}");
-
-        if (_confirm == null)
-        {
-            Debug.LogError("[PurchaseController] _confirm is NULL (не назначен ConfirmPurchaseUI в инспекторе!)");
-            return;
-        }
 
         _confirm.Show(
             $"Уверены ли вы купить эту территорию за {price}?",
@@ -47,11 +43,11 @@ public sealed class TerritoryPurchaseController : MonoBehaviour
 
         _progression.MarkPurchased(id);
 
-        if (_prefabSpawner != null)
-            _prefabSpawner.Spawn(_progression.State.CurrentLevel);
-
         if (SaveManager.Instance != null)
             SaveManager.Instance.SaveGame();
+
+        if (_prefabSpawner != null)
+            _prefabSpawner.Spawn(_progression.State.CurrentLevel);
 
         if (_fader != null)
             yield return _fader.FadeIn();
