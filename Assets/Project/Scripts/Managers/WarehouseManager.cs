@@ -59,13 +59,19 @@ public class WarehouseManager : MonoBehaviour
 
     public void UpdateProductState(Product product)
     {
-        if (product.itemObject != null)
+        if (product == null) return;
+        if (product.itemObject == null || product.itemObject.Length == 0) return;
+
+        bool hasAny = product.quantity > 0;
+
+        for (int i = 0; i < product.itemObject.Length; i++)
         {
-            product.itemObject[0].SetActive(product.quantity > 0);
-            product.itemObject[1].SetActive(product.quantity > 0);
-            product.itemObject[2].SetActive(product.quantity > 0);
+            var go = product.itemObject[i];
+            if (go != null)
+                go.SetActive(hasAny);
         }
     }
+
     public void RefreshProductUI(Product product)
     {
         UpdateWarehouseUI(product);
@@ -153,39 +159,49 @@ public class WarehouseManager : MonoBehaviour
     {
         if (product.buy1Button != null)
         {
+            product.buy1Button.onClick.RemoveAllListeners();
             product.buy1Button.interactable = true;
             product.buy1Button.onClick.AddListener(() => BuyProduct(product, 1));
         }
 
         if (product.buy5Button != null)
         {
+            product.buy5Button.onClick.RemoveAllListeners();
             product.buy5Button.interactable = true;
             product.buy5Button.onClick.AddListener(() => BuyProduct(product, 5));
         }
 
         if (product.buy10Button != null)
         {
+            product.buy10Button.onClick.RemoveAllListeners();
             product.buy10Button.interactable = true;
             product.buy10Button.onClick.AddListener(() => BuyProduct(product, 10));
         }
     }
 
+
     void DisableProductButtonsForProduct(Product product)
     {
         if (product.buy1Button != null)
         {
+            product.buy1Button.onClick.RemoveAllListeners();
             product.buy1Button.interactable = false;
         }
-
         if (product.buy5Button != null)
         {
+            product.buy5Button.onClick.RemoveAllListeners();
             product.buy5Button.interactable = false;
         }
-
         if (product.buy10Button != null)
         {
+            product.buy10Button.onClick.RemoveAllListeners();
             product.buy10Button.interactable = false;
         }
+    }
+
+    public Product GetProduct(string productName)
+    {
+        return products.Find(p => p.productName == productName);
     }
 
 

@@ -10,6 +10,7 @@ public class Product : MonoBehaviour
     public int purchasingPrice;
     public int sellPrice;
     public int quantity;
+    public Transform shelfPoint;
 
     public TextMeshProUGUI warehouseText;
 

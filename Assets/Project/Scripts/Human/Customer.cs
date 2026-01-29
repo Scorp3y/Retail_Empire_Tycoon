@@ -6,9 +6,13 @@ using UnityEngine.AI;
 [System.Serializable]
 public class DesiredProduct
 {
-    public ProductData productData;
+    public string productName;
     public int quantity;
-    public DesiredProduct(ProductData data, int qty) { productData = data; quantity = qty; }
+    public DesiredProduct(string name, int qty)
+    {
+        productName = name;
+        quantity = qty;
+    }
 }
 
 public class Customer : MonoBehaviour
@@ -88,21 +92,32 @@ public class Customer : MonoBehaviour
         {
             isShopping = false;
             queueManager.JoinQueue(this);
+            return;
         }
-        else
+
+        var desired = desiredProducts[currentProductIndex];
+
+        var product = WarehouseManager.Instance.GetProduct(desired.productName);
+        if (product == null || product.shelfPoint == null)
         {
-            var desired = desiredProducts[currentProductIndex];
-            agent.SetDestination(desired.productData.shelfPosition.position);
+            currentProductIndex++;
+            isProcessing = false;
+            GoToNextProduct();
+            return;
         }
+
+        agent.SetDestination(product.shelfPoint.position);
     }
+
 
     IEnumerator TakeProduct()
     {
         yield return new WaitForSeconds(waitTimeAtShelf);
 
         var desired = desiredProducts[currentProductIndex];
+        var product = WarehouseManager.Instance.GetProduct(desired.productName);
 
-        if (desired.productData?.shelfPosition == null)
+        if (product == null)
         {
             currentProductIndex++;
             isProcessing = false;
@@ -110,17 +125,18 @@ public class Customer : MonoBehaviour
             yield break;
         }
 
-        bool success = WarehouseManager.Instance.TryTakeProduct(desired.productData.productName, desired.quantity);
+        bool success = WarehouseManager.Instance.TryTakeProduct(desired.productName, desired.quantity);
 
         if (success)
         {
-            totalSpent += desired.productData.price * desired.quantity;
+            totalSpent += product.sellPrice * desired.quantity;
         }
 
         currentProductIndex++;
         isProcessing = false;
         GoToNextProduct();
     }
+
 
     private bool isInQueuePosition = false;
 

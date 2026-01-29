@@ -1,19 +1,20 @@
 ﻿using UnityEngine;
 using System.IO;
-using System.Collections.Generic;
 using UnityEngine.UI;
+using System.Collections;
+using System.Collections.Generic;
 
 public class SaveManager : MonoBehaviour
 {
     private string saveFilePath;
     private GameData gameData;
+
     public static SaveManager Instance;
     public Button saveButton;
 
-    void Awake()
+    private void Awake()
     {
-        if (Instance == null)
-            Instance = this;
+        if (Instance == null) Instance = this;
         else
         {
             Destroy(gameObject);
@@ -21,133 +22,161 @@ public class SaveManager : MonoBehaviour
         }
 
         gameData = new GameData();
-        saveFilePath = Application.persistentDataPath + "/gameData.json";
-
-        
+        saveFilePath = Path.Combine(Application.persistentDataPath, "gameData.json");
     }
 
-    void Start()
+    private void Start()
     {
-        LoadGame();
-        InvokeRepeating("AutoSave", 60f, 60f);
+        StartCoroutine(LoadAfterOneFrame());
+        InvokeRepeating(nameof(AutoSave), 60f, 60f);
 
         if (saveButton != null)
-        {
             saveButton.onClick.AddListener(OnSaveButtonClicked);
-        }
+    }
+
+    private IEnumerator LoadAfterOneFrame()
+    {
+        yield return null;
+        yield return new WaitForEndOfFrame();
+
+        LoadGame();
+
+        if (GameManager.Instance != null)
+            GameManager.Instance.ForceRefreshUI();
+
+        if (WarehouseManager.Instance != null)
+            WarehouseManager.Instance.EnableProductButtons();
     }
 
     public void SaveGame()
     {
-        
-        gameData.playerMoney = GameManager.Instance.playerMoney;
+        gameData ??= new GameData();
 
-        
+        // money
+        if (GameManager.Instance != null)
+            gameData.playerMoney = GameManager.Instance.playerMoney;
+
+        // products
+        gameData.products ??= new List<ProductData>();
         gameData.products.Clear();
-        foreach (var product in WarehouseManager.Instance.products)
+
+        if (WarehouseManager.Instance != null && WarehouseManager.Instance.products != null)
         {
-            gameData.products.Add(new ProductData { productName = product.productName, quantity = product.quantity });
-        }
-
-
-
-        gameData.shopItems.Clear();
-        foreach (var shopItem in ShopManager.Instance.shopItems)
-        {
-            gameData.shopItems.Add(new ShopItemData
+            foreach (var product in WarehouseManager.Instance.products)
             {
-                itemName = shopItem.itemName,
-                isActive = shopItem.isActive 
-            });
+                if (product == null) continue;
+
+                gameData.products.Add(new ProductData
+                {
+                    productName = product.productName,
+                    quantity = product.quantity
+                });
+            }
         }
 
+        // shop items
+        gameData.shopItems ??= new List<ShopItemData>();
+        gameData.shopItems.Clear();
 
+        if (ShopManager.Instance != null && ShopManager.Instance.shopItems != null)
+        {
+            foreach (var shopItem in ShopManager.Instance.shopItems)
+            {
+                if (shopItem == null) continue;
 
+                gameData.shopItems.Add(new ShopItemData
+                {
+                    itemName = shopItem.itemName,
+                    isActive = shopItem.isActive
+                });
+            }
+        }
+
+        // territory
+        var prog = StoreProgression.Instance ?? FindObjectOfType<StoreProgression>(true);
+        if (prog != null)
+            gameData.territory = prog.BuildSaveData();
 
         string json = JsonUtility.ToJson(gameData, true);
-        try
-        {
-            File.WriteAllText(saveFilePath, json);
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError("Error saving game: " + e.Message);
-        }
+        File.WriteAllText(saveFilePath, json);
     }
 
     public void LoadGame()
     {
-
-        if (File.Exists(saveFilePath))
+        if (!File.Exists(saveFilePath))
         {
-            string json = File.ReadAllText(saveFilePath);
-            gameData = JsonUtility.FromJson<GameData>(json);
+            SpawnStoreFromProgressOrDefault();
+            return;
+        }
 
-            if (GameManager.Instance != null)
-                GameManager.Instance.playerMoney = gameData.playerMoney;
+        string json = File.ReadAllText(saveFilePath);
+        gameData = JsonUtility.FromJson<GameData>(json);
 
-            if (WarehouseManager.Instance != null)
+        // money
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.playerMoney = gameData.playerMoney;
+            GameManager.Instance.ForceRefreshUI();
+        }
+
+        // products
+        if (WarehouseManager.Instance != null && gameData.products != null)
+            WarehouseManager.Instance.LoadProducts(gameData.products);
+
+        // shop items
+        if (ShopManager.Instance != null && gameData.shopItems != null)
+        {
+            foreach (var d in gameData.shopItems)
             {
-                foreach (var productData in gameData.products)
+                var shopItem = ShopManager.Instance.shopItems.Find(x => x.itemName == d.itemName);
+                if (shopItem == null) continue;
+
+                shopItem.isActive = d.isActive;
+
+                if (shopItem.objectToActivate != null)
+                    shopItem.objectToActivate.SetActive(shopItem.isActive);
+
+                if (shopItem.buyButton != null)
                 {
-                    var product = WarehouseManager.Instance.products.Find(p => p.productName == productData.productName);
-                    if (product != null)
+                    if (!shopItem.isActive)
                     {
-                        product.quantity = productData.quantity;
-                        WarehouseManager.Instance.UpdateWarehouseUI(product);
-                        WarehouseManager.Instance.UpdateProductState(product);
+                        shopItem.buyButton.gameObject.SetActive(true);
+                        shopItem.buyButton.onClick.RemoveAllListeners();
+
+                        ShopItem captured = shopItem;
+                        shopItem.buyButton.onClick.AddListener(
+                            () => ShopManager.Instance.BuyItem(captured)
+                        );
+                    }
+                    else
+                    {
+                        Destroy(shopItem.buyButton.gameObject);
                     }
                 }
             }
+        }
 
-            if (WarehouseManager.Instance != null)
-            {
-                WarehouseManager.Instance.LoadProducts(gameData.products);
-            }
+        SpawnStoreFromProgressOrDefault();
+    }
 
-            if (ShopManager.Instance != null)
-            {
-                foreach (var shopItemData in gameData.shopItems)
-                {
-                    var shopItem = ShopManager.Instance.shopItems.Find(s => s.itemName == shopItemData.itemName);
-                    if (shopItem != null)
-                    {
-                        shopItem.isActive = shopItemData.isActive;
+    private void SpawnStoreFromProgressOrDefault()
+    {
+        var prog = StoreProgression.Instance ?? FindObjectOfType<StoreProgression>(true);
+        var spawner = FindObjectOfType<StorePrefabSpawner>();
 
-                        if (shopItem.objectToActivate != null)
-                            shopItem.objectToActivate.SetActive(shopItem.isActive);
+        if (prog != null && gameData != null && gameData.territory != null)
+            prog.ApplySaveData(gameData.territory);
 
-                        if (shopItem.buyButton != null)
-                        {
-                            if (!shopItem.isActive)
-                            {
-                                shopItem.buyButton.gameObject.SetActive(true);
-                                shopItem.buyButton.onClick.RemoveAllListeners();
-                                shopItem.buyButton.onClick.AddListener(() => ShopManager.Instance.BuyItem(shopItem));
-                            }
-                            else
-                            {
-                                Destroy(shopItem.buyButton.gameObject);
-                            }
-                        }
-                    }
-                }
+        if (spawner != null)
+        {
+            var level = (prog != null)
+                ? prog.State.CurrentLevel
+                : StoreLevelId.Lvl1;
 
-                WarehouseManager.Instance.EnableProductButtons();
-            }
-
-
+            spawner.Spawn(level);
         }
     }
 
-    public void AutoSave()
-    {
-        SaveGame();
-    }
-
-    private void OnSaveButtonClicked()
-    {
-        SaveGame();
-    }
+    public void AutoSave() => SaveGame();
+    private void OnSaveButtonClicked() => SaveGame();
 }
-

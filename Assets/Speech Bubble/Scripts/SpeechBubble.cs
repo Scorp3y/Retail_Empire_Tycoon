@@ -189,9 +189,13 @@ namespace SpeechBubble
         /// </summary>
         private void updateAnimator()
         {
-            //bubbleType
-            gameObject.GetComponent<Animator>().Play(bubbleType.ToString());
+            var anim = gameObject.GetComponent<Animator>();
+            if (anim == null) return;
+            if (!gameObject.activeInHierarchy || !anim.isActiveAndEnabled) return;
+
+            anim.Play(bubbleType.ToString());
         }
+
 
         #endregion
 
