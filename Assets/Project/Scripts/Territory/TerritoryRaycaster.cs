@@ -41,6 +41,9 @@ public sealed class TerritoryRaycaster : MonoBehaviour
         var zone = hit.collider.GetComponentInParent<TerritoryZone>();
         if (zone == null) return;
 
+        if (!zone.CanPurchase())
+            return;
+
         _purchase.RequestPurchase(zone.Id, zone.Price);
     }
 }

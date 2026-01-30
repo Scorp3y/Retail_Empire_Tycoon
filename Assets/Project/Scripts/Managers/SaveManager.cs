@@ -10,19 +10,27 @@ public class SaveManager : MonoBehaviour
     private GameData gameData;
 
     public static SaveManager Instance;
+
+    [Header("UI")]
     public Button saveButton;
+
+    [Header("Territory/Store")]
+    [SerializeField] private StorePrefabSpawner _storeSpawner;
+    [SerializeField] private StoreProgression _progression;
 
     private void Awake()
     {
         if (Instance == null) Instance = this;
-        else
-        {
-            Destroy(gameObject);
-            return;
-        }
+        else { Destroy(gameObject); return; }
 
         gameData = new GameData();
         saveFilePath = Path.Combine(Application.persistentDataPath, "gameData.json");
+
+        if (_progression == null)
+            _progression = StoreProgression.Instance ?? FindObjectOfType<StoreProgression>(true);
+
+        if (_storeSpawner == null)
+            _storeSpawner = FindObjectOfType<StorePrefabSpawner>(true);
     }
 
     private void Start()
@@ -52,11 +60,9 @@ public class SaveManager : MonoBehaviour
     {
         gameData ??= new GameData();
 
-        // money
         if (GameManager.Instance != null)
             gameData.playerMoney = GameManager.Instance.playerMoney;
 
-        // products
         gameData.products ??= new List<ProductData>();
         gameData.products.Clear();
 
@@ -74,7 +80,6 @@ public class SaveManager : MonoBehaviour
             }
         }
 
-        // shop items
         gameData.shopItems ??= new List<ShopItemData>();
         gameData.shopItems.Clear();
 
@@ -92,10 +97,8 @@ public class SaveManager : MonoBehaviour
             }
         }
 
-        // territory
-        var prog = StoreProgression.Instance ?? FindObjectOfType<StoreProgression>(true);
-        if (prog != null)
-            gameData.territory = prog.BuildSaveData();
+        if (_progression != null)
+            gameData.territory = _progression.BuildSaveData();
 
         string json = JsonUtility.ToJson(gameData, true);
         File.WriteAllText(saveFilePath, json);
@@ -112,69 +115,75 @@ public class SaveManager : MonoBehaviour
         string json = File.ReadAllText(saveFilePath);
         gameData = JsonUtility.FromJson<GameData>(json);
 
-        // money
+        SpawnStoreFromProgressOrDefault();
+
         if (GameManager.Instance != null)
         {
             GameManager.Instance.playerMoney = gameData.playerMoney;
             GameManager.Instance.ForceRefreshUI();
         }
 
-        // products
-        if (WarehouseManager.Instance != null && gameData.products != null)
-            WarehouseManager.Instance.LoadProducts(gameData.products);
-
-        // shop items
-        if (ShopManager.Instance != null && gameData.shopItems != null)
+        try
         {
-            foreach (var d in gameData.shopItems)
+            if (WarehouseManager.Instance != null && gameData.products != null)
+                WarehouseManager.Instance.LoadProducts(gameData.products);
+        }
+        catch { }
+
+        try
+        {
+            if (ShopManager.Instance != null && gameData.shopItems != null)
             {
-                var shopItem = ShopManager.Instance.shopItems.Find(x => x.itemName == d.itemName);
-                if (shopItem == null) continue;
-
-                shopItem.isActive = d.isActive;
-
-                if (shopItem.objectToActivate != null)
-                    shopItem.objectToActivate.SetActive(shopItem.isActive);
-
-                if (shopItem.buyButton != null)
+                foreach (var d in gameData.shopItems)
                 {
-                    if (!shopItem.isActive)
-                    {
-                        shopItem.buyButton.gameObject.SetActive(true);
-                        shopItem.buyButton.onClick.RemoveAllListeners();
+                    var shopItem = ShopManager.Instance.shopItems.Find(x => x.itemName == d.itemName);
+                    if (shopItem == null) continue;
 
-                        ShopItem captured = shopItem;
-                        shopItem.buyButton.onClick.AddListener(
-                            () => ShopManager.Instance.BuyItem(captured)
-                        );
-                    }
-                    else
+                    shopItem.isActive = d.isActive;
+
+                    if (shopItem.objectToActivate != null)
+                        shopItem.objectToActivate.SetActive(shopItem.isActive);
+
+                    if (shopItem.buyButton != null)
                     {
-                        Destroy(shopItem.buyButton.gameObject);
+                        if (!shopItem.isActive)
+                        {
+                            shopItem.buyButton.gameObject.SetActive(true);
+                            shopItem.buyButton.onClick.RemoveAllListeners();
+
+                            ShopItem captured = shopItem;
+                            shopItem.buyButton.onClick.AddListener(() => ShopManager.Instance.BuyItem(captured));
+                        }
+                        else
+                        {
+                            Destroy(shopItem.buyButton.gameObject);
+                        }
                     }
                 }
             }
         }
-
-        SpawnStoreFromProgressOrDefault();
+        catch { }
     }
 
     private void SpawnStoreFromProgressOrDefault()
     {
-        var prog = StoreProgression.Instance ?? FindObjectOfType<StoreProgression>(true);
-        var spawner = FindObjectOfType<StorePrefabSpawner>();
+        if (_storeSpawner == null)
+            return;
 
-        if (prog != null && gameData != null && gameData.territory != null)
-            prog.ApplySaveData(gameData.territory);
+        StoreLevelId desiredLevel = StoreLevelId.Lvl1;
 
-        if (spawner != null)
+        if (_progression != null && gameData?.territory != null)
         {
-            var level = (prog != null)
-                ? prog.State.CurrentLevel
-                : StoreLevelId.Lvl1;
-
-            spawner.Spawn(level);
+            _progression.ApplySaveData(gameData.territory);
+            desiredLevel = _progression.State.CurrentLevel;
         }
+        else if (!string.IsNullOrEmpty(gameData?.territory?.storeLevel) &&
+                 System.Enum.TryParse(gameData.territory.storeLevel, out StoreLevelId savedLvl))
+        {
+            desiredLevel = savedLvl;
+        }
+
+        _storeSpawner.Spawn(desiredLevel);
     }
 
     public void AutoSave() => SaveGame();

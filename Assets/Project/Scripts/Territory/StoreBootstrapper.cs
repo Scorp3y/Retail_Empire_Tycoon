@@ -13,6 +13,9 @@ public sealed class StoreBootstrapper : MonoBehaviour
 
     private void Start()
     {
+        if (SaveManager.Instance != null)
+            return;
+
         if (_progression == null || _spawner == null) return;
         _spawner.Spawn(_progression.State.CurrentLevel);
     }

@@ -3118,7 +3118,6 @@ GameObject:
   - component: {fileID: 157347247}
   - component: {fileID: 157347245}
   - component: {fileID: 157347246}
-  - component: {fileID: 157347244}
   m_Layer: 5
   m_Name: Canvas Territory
   m_TagString: Untagged
@@ -3147,20 +3146,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
---- !u!114 &157347244
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 157347242}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 75901adba4ac3e74698824178d197516, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  fadeImage: {fileID: 88121386}
-  fadeDuration: 3
 --- !u!114 &157347245
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -22525,6 +22510,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   saveButton: {fileID: 537231733}
+  _storeSpawner: {fileID: 1653507774}
+  _progression: {fileID: 33217803}
 --- !u!4 &793741439
 Transform:
   m_ObjectHideFlags: 0
@@ -52674,8 +52661,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1653507773}
-  - component: {fileID: 1653507774}
   - component: {fileID: 1653507775}
+  - component: {fileID: 1653507774}
   m_Layer: 0
   m_Name: StoreRoot
   m_TagString: Untagged
@@ -52710,8 +52697,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0e3a810c4c138748a03409c77036ae7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _root: {fileID: 1455834514}
-  _prefabs:
+  root: {fileID: 1455834514}
+  prefabs:
   - level: 0
     prefab: {fileID: 658749275836527406, guid: 3cb3da26afba70b45a2189d2efb996fa, type: 3}
   - level: 1
@@ -55220,7 +55207,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '1.0.8.1.0 version
+  m_text: '1.0.8.1.1 version
 
 
 '
@@ -66774,9 +66761,9 @@ SceneRoots:
   m_Roots:
   - {fileID: 963194228}
   - {fileID: 890552833}
+  - {fileID: 1886771134}
   - {fileID: 1653507773}
   - {fileID: 966154557}
-  - {fileID: 1886771134}
   - {fileID: 33217804}
   - {fileID: 1184838211}
   - {fileID: 1425648477}

@@ -1,32 +1,33 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public sealed class StorePrefabSpawner : MonoBehaviour
+public class StorePrefabSpawner : MonoBehaviour
 {
-    [System.Serializable]
-    public struct Entry
+    [Serializable]
+    public class StorePrefabEntry
     {
         public StoreLevelId level;
         public GameObject prefab;
     }
 
-    [SerializeField] private Transform _root;
-    [SerializeField] private List<Entry> _prefabs;
+    [SerializeField] private Transform root;
+    [SerializeField] private List<StorePrefabEntry> prefabs = new();
 
-    private GameObject _current;
+    private GameObject currentInstance;
 
     public void Spawn(StoreLevelId level)
     {
-        if (_current != null)
-            Destroy(_current);
-
-        var entry = _prefabs.Find(e => e.level == level);
-        if (entry.prefab == null)
+        if (currentInstance != null)
         {
-            Debug.LogError($"No prefab for level {level}");
-            return;
+            Destroy(currentInstance);
+            currentInstance = null;
         }
 
-        _current = Instantiate(entry.prefab, _root);
+        var entry = prefabs.Find(p => p.level == level);
+        if (entry == null || entry.prefab == null)
+            return;
+
+        currentInstance = Instantiate(entry.prefab, root);
     }
 }

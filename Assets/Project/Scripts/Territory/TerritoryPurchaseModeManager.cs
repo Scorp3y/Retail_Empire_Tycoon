@@ -20,6 +20,9 @@ public sealed class TerritoryPurchaseModeManager : MonoBehaviour
         if (_progression == null) _progression = StoreProgression.Instance ?? FindObjectOfType<StoreProgression>(true);
         if (_cameraMode == null) _cameraMode = FindObjectOfType<CameraModeController>();
 
+        if (_zones == null || _zones.Count == 0)
+            _zones = new List<TerritoryZone>(FindObjectsOfType<TerritoryZone>(true));
+
         foreach (var z in _zones)
             if (z != null) z.Bind(_progression);
 
@@ -44,7 +47,6 @@ public sealed class TerritoryPurchaseModeManager : MonoBehaviour
 
     public void Enter()
     {
-        Debug.Log("[PurchaseMode] ENTER");
         SetActive(true);
         RefreshButtons();
         _cameraMode?.EnterPurchaseMode();

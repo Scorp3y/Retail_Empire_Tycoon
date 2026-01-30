@@ -53,6 +53,11 @@ public sealed class TerritoryVisual : MonoBehaviour
     {
         _allowHover = state == TerritoryViewState.Available;
 
+        // Если территория куплена — больше не показываем рамку (LineRenderer).
+        // Это убирает линии доступных/купленных территорий.
+        if (_border != null)
+            _border.enabled = state != TerritoryViewState.Purchased;
+
         if (!_visible)
         {
             _hover = false;

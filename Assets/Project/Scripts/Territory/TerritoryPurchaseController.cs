@@ -21,26 +21,30 @@ public sealed class TerritoryPurchaseController : MonoBehaviour
     {
 
         _confirm.Show(
-            $"Уверены ли вы купить эту территорию за {price}?",
+            $"Are you sure you will buy this territory? {price}?",
             onYes: () => StartCoroutine(PurchaseRoutine(id, price)),
             onNo: () => _confirm.HideInstant()
         );
 
-
     }
-
 
 
     private IEnumerator PurchaseRoutine(TerritoryId id, int price)
     {
         _confirm.HideInstant();
 
-        if (GameManager.Instance == null || !GameManager.Instance.SpendMoney(price))
-            yield break;
-
         if (_fader != null)
-            yield return _fader.FadeOut();
+        {
+            _fader.SetInstant(1f);
+            yield return null;
+        }
 
+        if (GameManager.Instance == null || !GameManager.Instance.SpendMoney(price))
+        {
+            if (_fader != null)
+                yield return _fader.FadeIn();
+            yield break;
+        }
         _progression.MarkPurchased(id);
 
         if (SaveManager.Instance != null)
