@@ -38,15 +38,12 @@ public sealed class ScreenFader : MonoBehaviour
 
     private IEnumerator FadeTo(float target)
     {
-        // Fader может быть выключен в иерархии при старте, тогда Awake не вызывается.
-        // Делаем ленивую инициализацию, чтобы затемнение всегда работало.
         if (_cg == null) _cg = GetComponentInChildren<CanvasGroup>(true);
         if (_cg == null) yield break;
 
         if (!_cg.gameObject.activeInHierarchy)
             _cg.gameObject.SetActive(true);
 
-        // На время затемнения, по желанию, можем блокировать клики.
         _cg.blocksRaycasts = true;
         _cg.interactable = false;
         if (_r != null) StopCoroutine(_r);
@@ -62,7 +59,6 @@ public sealed class ScreenFader : MonoBehaviour
         }
         _cg.alpha = target;
 
-        // Когда полностью прозрачно — снова не блокируем клики.
         if (Mathf.Approximately(target, 0f))
             _cg.blocksRaycasts = false;
     }

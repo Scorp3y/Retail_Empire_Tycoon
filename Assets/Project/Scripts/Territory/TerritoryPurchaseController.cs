@@ -6,7 +6,12 @@ public sealed class TerritoryPurchaseController : MonoBehaviour
     [SerializeField] private StoreProgression _progression;
     [SerializeField] private StorePrefabSpawner _prefabSpawner;
     [SerializeField] private ScreenFader _fader;
-    [SerializeField] private ConfirmPurchaseUI _confirm; 
+    [SerializeField] private ConfirmPurchaseUI _confirm;
+    [SerializeField] private InputBlocker _inputBlocker;
+    [SerializeField] private TerritoryRaycaster _raycaster;
+    [SerializeField] private CameraModeController _cameraMode;
+    private bool _busy;
+
 
     private void Awake()
     {
@@ -28,10 +33,23 @@ public sealed class TerritoryPurchaseController : MonoBehaviour
 
     }
 
-
     private IEnumerator PurchaseRoutine(TerritoryId id, int price)
     {
+        if (_busy)
+            yield break;
+
+        _busy = true;
+
         _confirm.HideInstant();
+
+        if (_inputBlocker != null)
+            _inputBlocker.SetBlocked(true);
+
+        if (_raycaster != null)
+            _raycaster.enabled = false;
+
+        if (_cameraMode != null)
+            _cameraMode.enabled = false;
 
         if (_fader != null)
         {
@@ -43,21 +61,43 @@ public sealed class TerritoryPurchaseController : MonoBehaviour
         {
             if (_fader != null)
                 yield return _fader.FadeIn();
+
+            if (_cameraMode != null)
+                _cameraMode.enabled = true;
+
+            if (_raycaster != null)
+                _raycaster.enabled = true;
+
+            if (_inputBlocker != null)
+                _inputBlocker.SetBlocked(false);
+
+            _busy = false;
             yield break;
         }
+
         _progression.MarkPurchased(id);
 
-        if (SaveManager.Instance != null)
-            SaveManager.Instance.SaveGame();
+        SaveManager.Instance?.SaveGame();
 
         if (_prefabSpawner != null)
             _prefabSpawner.Spawn(_progression.State.CurrentLevel);
 
+        FindObjectOfType<TerritoryPurchaseModeManager>(true)?.Exit();
+
         if (_fader != null)
             yield return _fader.FadeIn();
 
-        FindObjectOfType<TerritoryPurchaseModeManager>(true)?.Exit();
+        if (_cameraMode != null)
+            _cameraMode.enabled = true;
 
+        if (_raycaster != null)
+            _raycaster.enabled = true;
+
+        if (_inputBlocker != null)
+            _inputBlocker.SetBlocked(false);
+
+        _busy = false;
     }
+
 
 }
