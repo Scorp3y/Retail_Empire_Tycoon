@@ -7,6 +7,8 @@ public sealed class TerritoryVisual : MonoBehaviour
 
     [Header("Border")]
     [SerializeField] private LineRenderer _border;
+    [Tooltip("Optional. Builds a mesh fence from the border points and renders it with a neon material.")]
+    [SerializeField] private TerritoryLaserFenceMesh _fence;
     [SerializeField] private Transform _hoverRoot;
 
     [SerializeField] private float _hoverScale = 1.06f;
@@ -24,6 +26,7 @@ public sealed class TerritoryVisual : MonoBehaviour
     private void Awake()
     {
         if (_hoverRoot == null) _hoverRoot = transform;
+        if (_fence == null) _fence = GetComponentInChildren<TerritoryLaserFenceMesh>(true);
         _baseScale = _hoverRoot.localScale;
     }
 
@@ -55,8 +58,14 @@ public sealed class TerritoryVisual : MonoBehaviour
 
         _allowHover = _visible && state == TerritoryViewState.Available;
 
+        // If we have a mesh fence, prefer it over the LineRenderer to avoid double outlines.
+        bool wantBorder = _visible && state == TerritoryViewState.Available && _fence == null;
+
         if (_border != null)
-            _border.enabled = _visible && state == TerritoryViewState.Available;
+            _border.enabled = wantBorder;
+
+        if (_fence != null)
+            _fence.SetVisible(_visible && state == TerritoryViewState.Available);
 
         if (_fillRenderer != null)
             _fillRenderer.enabled = _visible && state != TerritoryViewState.Purchased;
@@ -76,5 +85,8 @@ public sealed class TerritoryVisual : MonoBehaviour
             _border.startWidth = w;
             _border.endWidth = w;
         }
+
+        if (_fence != null)
+            _fence.SetHover(on);
     }
 }

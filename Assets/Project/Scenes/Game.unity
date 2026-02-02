@@ -36281,6 +36281,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _fillRenderer: {fileID: 0}
   _border: {fileID: 1172405771}
+  _fence: {fileID: 0}
   _hoverRoot: {fileID: 1172405774}
   _hoverScale: 1.06
   _hoverSpeed: 12
@@ -36320,7 +36321,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: e6d22d429e71a544a93233e29163efd1, type: 2}
+  - {fileID: 2100000, guid: 70fb0df88b784574f8d49edb6d0515a0, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -36727,7 +36728,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: e6d22d429e71a544a93233e29163efd1, type: 2}
+  - {fileID: 2100000, guid: 70fb0df88b784574f8d49edb6d0515a0, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -36755,12 +36756,12 @@ LineRenderer:
   - {x: 4.4484587, y: 0.1, z: 2.387429}
   m_Parameters:
     serializedVersion: 3
-    widthMultiplier: 0.4
+    widthMultiplier: 0.3
     widthCurve:
       serializedVersion: 2
       m_Curve:
       - serializedVersion: 3
-        time: 0.0037703793
+        time: 0
         value: 1
         inSlope: 0
         outSlope: 0
@@ -36806,7 +36807,7 @@ LineRenderer:
     alignment: 0
     textureMode: 1
     textureScale: {x: 1, y: 1}
-    shadowBias: 0.5
+    shadowBias: 6
     generateLightingData: 0
   m_MaskInteraction: 0
   m_UseWorldSpace: 1
@@ -36849,6 +36850,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _fillRenderer: {fileID: 0}
   _border: {fileID: 1184838207}
+  _fence: {fileID: 0}
   _hoverRoot: {fileID: 1184838211}
   _hoverScale: 1.06
   _hoverSpeed: 12
@@ -40377,6 +40379,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _fillRenderer: {fileID: 0}
   _border: {fileID: 1330749803}
+  _fence: {fileID: 0}
   _hoverRoot: {fileID: 1330749806}
   _hoverScale: 1.06
   _hoverSpeed: 12
@@ -40416,7 +40419,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: e6d22d429e71a544a93233e29163efd1, type: 2}
+  - {fileID: 2100000, guid: 70fb0df88b784574f8d49edb6d0515a0, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -47500,7 +47503,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: e6d22d429e71a544a93233e29163efd1, type: 2}
+  - {fileID: 2100000, guid: 70fb0df88b784574f8d49edb6d0515a0, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -47643,6 +47646,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _fillRenderer: {fileID: 0}
   _border: {fileID: 1425648473}
+  _fence: {fileID: 0}
   _hoverRoot: {fileID: 1425648477}
   _hoverScale: 1.06
   _hoverSpeed: 12
@@ -51313,6 +51317,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _fillRenderer: {fileID: 0}
   _border: {fileID: 1597268203}
+  _fence: {fileID: 0}
   _hoverRoot: {fileID: 1597268206}
   _hoverScale: 1.06
   _hoverSpeed: 12
@@ -51352,7 +51357,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: e6d22d429e71a544a93233e29163efd1, type: 2}
+  - {fileID: 2100000, guid: 70fb0df88b784574f8d49edb6d0515a0, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -55304,7 +55309,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '1.0.8.1.3 version
+  m_text: '1.0.8.3 version
 
 
 '
