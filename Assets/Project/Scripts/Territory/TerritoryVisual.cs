@@ -19,6 +19,7 @@ public sealed class TerritoryVisual : MonoBehaviour
 
 
     public enum TerritoryViewState { Locked, Available, Purchased }
+    private TerritoryViewState _state = TerritoryViewState.Locked;
 
     private void Awake()
     {
@@ -38,32 +39,29 @@ public sealed class TerritoryVisual : MonoBehaviour
     {
         _visible = visible;
 
-        if (_fillRenderer != null) _fillRenderer.enabled = visible;
-        if (_border != null) _border.enabled = visible;
-
         if (!visible)
         {
             _hover = false;
             _allowHover = false;
             if (_hoverRoot != null) _hoverRoot.localScale = _baseScale;
         }
+
+        SetState(_state);
     }
 
     public void SetState(TerritoryViewState state)
     {
-        _allowHover = state == TerritoryViewState.Available;
+        _state = state;
 
-        // Если территория куплена — больше не показываем рамку (LineRenderer).
-        // Это убирает линии доступных/купленных территорий.
+        _allowHover = _visible && state == TerritoryViewState.Available;
+
         if (_border != null)
-            _border.enabled = state != TerritoryViewState.Purchased;
+            _border.enabled = _visible && state == TerritoryViewState.Available;
 
-        if (!_visible)
-        {
-            _hover = false;
-            _allowHover = false;
-        }
+        if (_fillRenderer != null)
+            _fillRenderer.enabled = _visible && state != TerritoryViewState.Purchased;
     }
+
 
     public void SetHover(bool on)
     {
