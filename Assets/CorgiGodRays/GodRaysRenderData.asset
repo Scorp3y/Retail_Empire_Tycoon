@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6274c0b5e053ab64e9d8378cdf8b07e7, type: 3}
+  m_Name: GodRaysRenderData
+  m_EditorClassIdentifier: 
+  Grabpass: {fileID: 2100000, guid: 601baef25dd471744a2ac09b4fd3feb7, type: 2}
+  DepthGrabpass: {fileID: 2100000, guid: 8c0bf324c2077eb4c91c3344b0525035, type: 2}
+  ScreenSpaceGodRays: {fileID: 2100000, guid: 538d97c49109a0348861368cc6479eb8, type: 2}
+  ApplyGodRays: {fileID: 2100000, guid: 1d195d2372dfd4144b3682dab791d25a, type: 2}
+  BilateralBlur: {fileID: 2100000, guid: 6979fb24311f7354b97b3a37a332f374, type: 2}
+  TemporalReprojectionShader: {fileID: 7200000, guid: 5a00ba6807f18b14283afd1fcbcb382b, type: 3}
+  StripUnusedShadersFromBuilds: 0

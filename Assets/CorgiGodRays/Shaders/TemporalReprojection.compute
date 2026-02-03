@@ -1,0 +1,31 @@
+#pragma kernel Reprojection
+
+int texture_width;
+int texture_height;
+
+Texture2D<float4> Input;
+RWTexture2D<float4> Output;
+
+Texture2D<float2> _CameraMotionVectorsTexture;
+SamplerState sampler_CameraMotionVectorsTexture;
+
+float2 _CameraMotionVectorsTexture_Resolution;
+
+[numthreads(32, 32, 1)]
+void Reprojection(uint3 id : SV_DispatchThreadID)
+{
+    // float2 texcoord = (id.xy) / float2(texture_width, texture_height);
+
+    float2 texcoord_mv = (id.xy + 0.5) / _CameraMotionVectorsTexture_Resolution.xy;
+    float2 mv = _CameraMotionVectorsTexture.SampleLevel(sampler_CameraMotionVectorsTexture, texcoord_mv, 0);
+    int2 newId = id.xy - int2(mv * float2(texture_width, texture_height));
+
+    // newId = clamp(newId, 0, int2(texture_width, texture_height));
+    if (newId.x <= 0 || newId.x >= texture_width || newId.y <= 0 || newId.y >= texture_height)
+    {
+        Output[id.xy] = Input[id.xy];
+        return;
+    }
+
+    Output[id.xy] = Input[newId.xy];
+}
