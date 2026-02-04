@@ -57,8 +57,6 @@ public sealed class TerritoryVisual : MonoBehaviour
         _state = state;
 
         _allowHover = _visible && state == TerritoryViewState.Available;
-
-        // If we have a mesh fence, prefer it over the LineRenderer to avoid double outlines.
         bool wantBorder = _visible && state == TerritoryViewState.Available && _fence == null;
 
         if (_border != null)
