@@ -15,7 +15,6 @@ public class ButtonFadeIn : MonoBehaviour
         canvasGroup.interactable = false;
         canvasGroup.blocksRaycasts = false;
     }
-
     public void Show()
     {
         canvasGroup.DOFade(1, fadeDuration).OnComplete(() => {

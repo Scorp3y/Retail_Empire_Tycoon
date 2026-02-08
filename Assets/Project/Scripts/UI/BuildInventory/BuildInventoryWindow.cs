@@ -7,7 +7,7 @@ namespace MyShopGame.UI.Windows
     public sealed class BuildInventoryWindow : MonoBehaviour
     {
         [Header("Refs")]
-        public BuildInventory inventory;
+        public BuildInventory inventory; 
         public BuildController buildController;
 
         [Header("UI")]
@@ -19,7 +19,7 @@ namespace MyShopGame.UI.Windows
         private void OnEnable()
         {
             if (inventory != null)
-                inventory.Changed += Refresh; // ui refresh hook
+                inventory.Changed += Refresh;
 
             Refresh();
         }
@@ -27,7 +27,7 @@ namespace MyShopGame.UI.Windows
         private void OnDisable()
         {
             if (inventory != null)
-                inventory.Changed -= Refresh; // ui refresh unhook
+                inventory.Changed -= Refresh; 
         }
 
         public void Refresh()

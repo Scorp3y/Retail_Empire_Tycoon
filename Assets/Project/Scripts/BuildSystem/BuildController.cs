@@ -26,7 +26,12 @@ namespace MyShopGame.BuildSystem
 
         private void Awake()
         {
-            worldCamera ??= Camera.main;
+            worldCamera ??= Camera.main; 
+
+            grid ??= GetComponent<GridSystem>();
+            inventory ??= GetComponent<BuildInventory>();
+            territory ??= GetComponent<TerritoryManager>();
+            preview ??= GetComponentInChildren<BuildPreview>(true);
 
             var rules = new List<IPlacementRule>
             {
@@ -35,13 +40,12 @@ namespace MyShopGame.BuildSystem
                 new Rule_Accessibility(grid, grid),
             };
 
-            _validator = new PlacementValidator(rules);
+            _validator = new PlacementValidator(rules); 
         }
 
         private void Update()
         {
-            if (mode != BuildMode.Build)
-                return;
+            if (mode != BuildMode.Build) return;
 
             HandleRotate();
             UpdatePreview();
@@ -55,8 +59,7 @@ namespace MyShopGame.BuildSystem
 
         public void EnterBuildMode(BuildItemData item)
         {
-            if (item == null)
-                return;
+            if (item == null) return;
 
             mode = BuildMode.Build;
             _selected = item;
@@ -75,23 +78,25 @@ namespace MyShopGame.BuildSystem
 
         private void HandleRotate()
         {
-            if (_selected == null || !_selected.allowRotation)
-                return;
+            if (_selected == null) return;
+            if (!_selected.allowRotation) return;
 
             var rot = Input.GetKeyDown(KeyCode.Q) ? -1 : Input.GetKeyDown(KeyCode.E) ? 1 : 0;
-            if (rot == 0)
-                return;
+            if (rot == 0) return;
 
             _facing = (_facing + rot) % 4;
-            if (_facing < 0)
-                _facing += 4;
+            if (_facing < 0) _facing += 4;
 
             _rotated = _facing % 2 != 0;
         }
 
         private void UpdatePreview()
         {
-            if (!TryGetMouseCell(out var cell, out var hitPos))
+            if (_selected == null) return;
+            if (grid == null) return;
+            if (_validator == null) return;
+
+            if (!TryGetMouseCell(out var cell, out _))
                 return;
 
             var worldPos = grid.CellToWorld(cell);
@@ -106,14 +111,17 @@ namespace MyShopGame.BuildSystem
 
         private void TryPlace()
         {
+            if (_selected == null) return;
+            if (grid == null) return;
+            if (inventory == null) return;
+            if (_validator == null) return;
+
             if (!TryGetMouseCell(out var cell, out _))
                 return;
 
             var req = new PlacementRequest(_selected, cell, _rotated, _facing);
             var res = _validator.CanPlace(req);
-
-            if (!res.ok)
-                return;
+            if (!res.ok) return;
 
             if (!inventory.TryConsume(_selected, 1))
                 return;
@@ -123,6 +131,9 @@ namespace MyShopGame.BuildSystem
 
         private void SpawnPlaced(PlacementRequest req)
         {
+            if (req.item == null) return;
+            if (req.item.prefab == null) return;
+
             var worldPos = grid.CellToWorld(req.anchorCell);
             var rot = Quaternion.Euler(0f, req.facing * 90f, 0f);
 
@@ -145,11 +156,11 @@ namespace MyShopGame.BuildSystem
             cell = default;
             hitPos = default;
 
-            if (worldCamera == null)
-                return false;
+            if (worldCamera == null) return false;
+            if (grid == null) return false;
 
             var ray = worldCamera.ScreenPointToRay(Input.mousePosition);
-            if (!Physics.Raycast(ray, out var hit, 1000f))
+            if (!Physics.Raycast(ray, out var hit, 2000f))
                 return false;
 
             hitPos = hit.point;

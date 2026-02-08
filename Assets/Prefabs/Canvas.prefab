@@ -532,6 +532,7 @@ MonoBehaviour:
   purchasingPrice: 60
   sellPrice: 120
   quantity: 0
+  shelfPoint: {fileID: 0}
   warehouseText: {fileID: 7378921236250399410}
   buy1Button: {fileID: 4442544758658258051}
   buy5Button: {fileID: 1239989708018698351}
@@ -10728,6 +10729,7 @@ MonoBehaviour:
   purchasingPrice: 40
   sellPrice: 80
   quantity: 0
+  shelfPoint: {fileID: 0}
   warehouseText: {fileID: 1877137176598439593}
   buy1Button: {fileID: 8215987727120508035}
   buy5Button: {fileID: 8261137097228762639}
@@ -10829,6 +10831,7 @@ MonoBehaviour:
   purchasingPrice: 80
   sellPrice: 160
   quantity: 1
+  shelfPoint: {fileID: 0}
   warehouseText: {fileID: 2195303912466017050}
   buy1Button: {fileID: 4688177994375361940}
   buy5Button: {fileID: 3235407479366296362}
@@ -11214,6 +11217,7 @@ MonoBehaviour:
   purchasingPrice: 10
   sellPrice: 20
   quantity: 0
+  shelfPoint: {fileID: 0}
   warehouseText: {fileID: 2800413747693953836}
   buy1Button: {fileID: 519827041575170708}
   buy5Button: {fileID: 8083648286020043357}
@@ -11637,9 +11641,6 @@ GameObject:
   - component: {fileID: 9158532910383455289}
   - component: {fileID: 2597309819824642605}
   - component: {fileID: 3227616563011226909}
-  - component: {fileID: 3097130062596327777}
-  - component: {fileID: 1039760091194034174}
-  - component: {fileID: 3750636778070556774}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -11755,60 +11756,6 @@ MonoBehaviour:
   warehousePanel: {fileID: 2289141845078094072}
   settingPanel: {fileID: 1793362477419866205}
   cameraController: {fileID: 0}
---- !u!114 &3097130062596327777
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4845674529092885429}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a9d6bc6d98e998744ba8836ebe91c472, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  playerMoney: 2000
-  moneyText: {fileID: 6572570074636236234}
---- !u!114 &1039760091194034174
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4845674529092885429}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fcc883e9feea0d44ea8b131bbddf32b6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  shopItems:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
---- !u!114 &3750636778070556774
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4845674529092885429}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e4e4b1b0d727dbf4c81cb8eedc105763, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  products:
-  - {fileID: 3680246564533428569}
-  - {fileID: 6673985942281114393}
-  - {fileID: 3883545012200543588}
-  - {fileID: 3469779950330392993}
-  - {fileID: 4891576450795082316}
-  - {fileID: 295965373422836663}
-  - {fileID: 6278697625658871050}
-  - {fileID: 754743438566210398}
 --- !u!1 &4865054433114888144
 GameObject:
   m_ObjectHideFlags: 0
@@ -12109,6 +12056,7 @@ MonoBehaviour:
   purchasingPrice: 50
   sellPrice: 100
   quantity: 0
+  shelfPoint: {fileID: 0}
   warehouseText: {fileID: 7806828846102332975}
   buy1Button: {fileID: 4108316086538764822}
   buy5Button: {fileID: 5013867256303142742}
@@ -13021,6 +12969,7 @@ MonoBehaviour:
   purchasingPrice: 70
   sellPrice: 140
   quantity: 1
+  shelfPoint: {fileID: 0}
   warehouseText: {fileID: 5666430939621211010}
   buy1Button: {fileID: 196329726485894390}
   buy5Button: {fileID: 8786366005612132066}
@@ -15917,6 +15866,7 @@ MonoBehaviour:
   purchasingPrice: 20
   sellPrice: 40
   quantity: 0
+  shelfPoint: {fileID: 0}
   warehouseText: {fileID: 5464284575961681216}
   buy1Button: {fileID: 7738898808335792370}
   buy5Button: {fileID: 2058601828749645571}
@@ -19878,6 +19828,7 @@ MonoBehaviour:
   purchasingPrice: 30
   sellPrice: 60
   quantity: 0
+  shelfPoint: {fileID: 0}
   warehouseText: {fileID: 3768810217471414659}
   buy1Button: {fileID: 6108982742925934270}
   buy5Button: {fileID: 4135876736883820876}

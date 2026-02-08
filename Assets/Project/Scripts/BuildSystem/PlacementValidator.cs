@@ -42,8 +42,11 @@ namespace MyShopGame.BuildSystem
             this.message = message;
         }
 
-        public static PlacementResult Success() => new PlacementResult(true, PlaceFailReason.None, string.Empty);
-        public static PlacementResult Fail(PlaceFailReason reason, string message) => new PlacementResult(false, reason, message);
+        public static PlacementResult Success()
+            => new PlacementResult(true, PlaceFailReason.None, string.Empty);
+
+        public static PlacementResult Fail(PlaceFailReason reason, string message)
+            => new PlacementResult(false, reason, message);
     }
 
     public sealed class PlacementValidator
@@ -59,15 +62,11 @@ namespace MyShopGame.BuildSystem
         {
             foreach (var rule in _rules)
             {
-                if (rule == null)
-                    continue;
-
-                if (!rule.EnabledFor(req.item))
-                    continue;
+                if (rule == null) continue;
+                if (!rule.EnabledFor(req.item)) continue;
 
                 var r = rule.Evaluate(req);
-                if (!r.ok)
-                    return r;
+                if (!r.ok) return r;
             }
 
             return PlacementResult.Success();
