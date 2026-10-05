@@ -14,6 +14,8 @@ public sealed class TerritoryZone : MonoBehaviour
     public void Bind(StoreProgression progression)
     {
         _progression = progression;
+        var barrier = GetComponentInChildren<TerritoryConstructionBarrier>(true);
+        if (barrier != null) barrier.SetPrice(Price);
         RefreshView();
     }
 

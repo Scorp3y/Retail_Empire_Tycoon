@@ -15,19 +15,27 @@ MonoBehaviour:
   id: wallcorner_01
   displayName: Wall_Corner
   description: 
-  icon: {fileID: 21300000, guid: 1f84bab3b6029464f8224e3ff1821343, type: 3}
+  icon: {fileID: 21300000, guid: 2b8eab3a12995ff4d86bb3be687dc85d, type: 3}
   price: 100
   unlockedByDefault: 1
   unlockCondition: {fileID: 0}
   category: 1
   subCategory: 0
-  footprint: {x: 1, y: 1}
+  footprint: {x: 2, y: 2}
   allowRotation: 1
   ruleFlags: 3
   placementKind: 2
   floorMaterial: {fileID: 0}
   accessibilitySides: 1
   pivotOffset: {x: 0, y: 0}
+  alignModelToFootprint: 1
+  placementBounds:
+    m_Center: {x: 0.029999994, y: 0.5, z: 0.029999994}
+    m_Extent: {x: 0.11999999, y: 0.5, z: 0.11999999}
+  frontFacing: 0
+  twoSidedAccess: 0
+  isDoorway: 0
+  isCheckout: 0
   prefab: {fileID: 5844154462797527900, guid: d525604eec82c5e4dbfde65a107535c1, type: 3}
   previewValidMaterial: {fileID: 2100000, guid: b737f1f25c90f1842999d06f57aa1608, type: 2}
   previewInvalidMaterial: {fileID: 2100000, guid: cd8bbf8a301d0664386b1c15cc42650f, type: 2}

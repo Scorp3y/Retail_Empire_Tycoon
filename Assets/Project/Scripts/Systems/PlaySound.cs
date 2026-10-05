@@ -55,4 +55,16 @@ public class PlaySound : MonoBehaviour
         PlayerPrefs.SetFloat(SoundVolumeKey, volume);
         PlayerPrefs.Save();
     }
+
+    public void SetMusicVolume(float volume)
+    {
+        volume = Mathf.Clamp01(volume);
+        if (musicSource != null)
+        {
+            musicSource.volume = volume;
+            if (volume > 0 && !musicSource.isPlaying) musicSource.Play();
+        }
+        PlayerPrefs.SetFloat(MusicVolumeKey, volume);
+        PlayerPrefs.Save();
+    }
 }

@@ -46,6 +46,9 @@ namespace RetailEmpireTycoon.UI.Windows
         private readonly List<(Behaviour behaviour, bool wasEnabled)> _cameraState = new();
 
         [SerializeField] private InventoryTab currentTab = InventoryTab.Furniture;
+        public bool IsProductsView => currentTab == InventoryTab.Products;
+        public event System.Action ViewChanged;
+        public void Close() { gameObject.SetActive(false); }
 
         private void Awake()
         {
@@ -72,12 +75,22 @@ namespace RetailEmpireTycoon.UI.Windows
         {
             currentTab = InventoryTab.Furniture;
             Refresh();
+            ResetScroll();
         }
 
         public void ShowProducts()
         {
             currentTab = InventoryTab.Products;
             Refresh();
+            ResetScroll();
+        }
+
+        private void ResetScroll()
+        {
+            var scroll = listRoot != null ? listRoot.GetComponentInParent<UnityEngine.UI.ScrollRect>() : null;
+            if (scroll == null) return;
+            scroll.StopMovement();
+            ((RectTransform)listRoot).anchoredPosition = Vector2.zero;
         }
 
         public void Refresh()
@@ -88,10 +101,12 @@ namespace RetailEmpireTycoon.UI.Windows
             {
                 case InventoryTab.Products:
                     RefreshProducts();
+                    ViewChanged?.Invoke();
                     return;
 
                 default:
                     RefreshFurniture();
+                    ViewChanged?.Invoke();
                     return;
             }
         }
@@ -181,7 +196,10 @@ namespace RetailEmpireTycoon.UI.Windows
             foreach (var row in _spawnedRows)
             {
                 if (row != null)
+                {
+                    row.SetActive(false);
                     Destroy(row);
+                }
             }
 
             _spawnedRows.Clear();
@@ -190,7 +208,10 @@ namespace RetailEmpireTycoon.UI.Windows
                 return;
 
             for (int i = listRoot.childCount - 1; i >= 0; i--)
+            {
+                listRoot.GetChild(i).gameObject.SetActive(false);
                 Destroy(listRoot.GetChild(i).gameObject);
+            }
         }
 
         // =========================

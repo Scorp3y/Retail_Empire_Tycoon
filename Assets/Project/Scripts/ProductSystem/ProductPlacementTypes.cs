@@ -7,7 +7,10 @@ namespace RetailEmpireTycoon.Core
         Drinks,
         Oil,
         Meat,
-        Dairy
+        Dairy,
+        Produce,
+        Groceries,
+        Frozen
     }
 
     public enum ShelfStorageType
@@ -17,6 +20,7 @@ namespace RetailEmpireTycoon.Core
         DoubleSided,
         WallGoods,
         ColdPantry,
-        Refrigerated
+        Refrigerated,
+        Produce
     }
 }

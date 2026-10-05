@@ -13,6 +13,7 @@ namespace RetailEmpireTycoon.SaveSystem
     [Serializable]
     public sealed class ShelfStockSaveEntry
     {
+        public string sceneShelfId;
         public string buildItemId;
 
         public int anchorX;

@@ -24,19 +24,22 @@ namespace RetailEmpireTycoon.BuildSystem
 
         public PlacementResult Evaluate(PlacementRequest req)
         {
-            var accessCells = GetAccessCells(req);
-            foreach (var a in accessCells)
+            int sides = req.item.twoSidedAccess ? 2 : 1;
+            for (int side = 0; side < sides; side++)
             {
-                if (_occupancy.IsOccupied(a))
-                    continue;
-
-                return PlacementResult.Success();
+                bool accessible = false;
+                foreach (var cell in GetAccessCells(req, side))
+                {
+                    if (_occupancy.IsOccupied(cell)) continue;
+                    accessible = true;
+                    break;
+                }
+                if (!accessible) return PlacementResult.Fail(PlaceFailReason.NoAccess, "No access");
             }
-
-            return PlacementResult.Fail(PlaceFailReason.NoAccess, "No access");
+            return PlacementResult.Success();
         }
 
-        private IEnumerable<Vector3Int> GetAccessCells(PlacementRequest req)
+        private IEnumerable<Vector3Int> GetAccessCells(PlacementRequest req, int side)
         {
             var size = req.item.footprint;
             var rotated = req.rotated;
@@ -44,10 +47,11 @@ namespace RetailEmpireTycoon.BuildSystem
             var w = rotated ? size.y : size.x;
             var h = rotated ? size.x : size.y;
 
-            var min = req.anchorCell;
+            Vector2Int pivot = rotated ? new Vector2Int(req.item.pivotOffset.y, req.item.pivotOffset.x) : req.item.pivotOffset;
+            var min = req.anchorCell + new Vector3Int(pivot.x, 0, pivot.y);
             var max = new Vector3Int(min.x + w - 1, min.y, min.z + h - 1);
 
-            var dir = FacingToDir(req.facing);
+            var dir = FacingToDir(req.facing + req.item.frontFacing + side * 2);
 
             var frontStart = dir.x != 0
                 ? new Vector3Int(dir.x > 0 ? max.x + 1 : min.x - 1, min.y, min.z)

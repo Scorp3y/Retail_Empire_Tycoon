@@ -15,19 +15,27 @@ MonoBehaviour:
   id: shelf_refrigerated_01
   displayName: Refrigerated Display
   description: For dairy products
-  icon: {fileID: 21300000, guid: c3d25154738a43541bdc1e5f432c73fe, type: 3}
+  icon: {fileID: 21300000, guid: 9c539d9bf38a6aa45a05d8608a7bca41, type: 3}
   price: 500
   unlockedByDefault: 1
   unlockCondition: {fileID: 0}
   category: 0
   subCategory: 1
-  footprint: {x: 4, y: 2}
+  footprint: {x: 5, y: 3}
   allowRotation: 1
   ruleFlags: 7
   placementKind: 0
   floorMaterial: {fileID: 0}
   accessibilitySides: 1
   pivotOffset: {x: 0, y: 0}
+  alignModelToFootprint: 1
+  placementBounds:
+    m_Center: {x: 0, y: 0.3285403, z: -0.18219967}
+    m_Extent: {x: 0.3650448, y: 0.32854033, z: 0.18284519}
+  frontFacing: 0
+  twoSidedAccess: 0
+  isDoorway: 0
+  isCheckout: 0
   prefab: {fileID: 8256072556386676897, guid: 182f989a1adcdb140a78f27d77b1edbb, type: 3}
   previewValidMaterial: {fileID: 2100000, guid: b737f1f25c90f1842999d06f57aa1608, type: 2}
   previewInvalidMaterial: {fileID: 2100000, guid: cd8bbf8a301d0664386b1c15cc42650f, type: 2}

@@ -9,6 +9,7 @@ public sealed class TerritoryVisual : MonoBehaviour
     [SerializeField] private LineRenderer _border;
     [Tooltip("Optional. Builds a mesh fence from the border points and renders it with a neon material.")]
     [SerializeField] private TerritoryLaserFenceMesh _fence;
+    [SerializeField] private TerritoryConstructionBarrier _constructionBarrier;
     [SerializeField] private Transform _hoverRoot;
 
     [SerializeField] private float _hoverScale = 1.06f;
@@ -32,7 +33,7 @@ public sealed class TerritoryVisual : MonoBehaviour
 
     private void Update()
     {
-        if (!_visible) return;
+        if (!_visible || _constructionBarrier != null) return;
 
         Vector3 target = _baseScale * (_hover && _allowHover ? _hoverScale : 1f);
         _hoverRoot.localScale = Vector3.Lerp(_hoverRoot.localScale, target, Time.unscaledDeltaTime * _hoverSpeed);
@@ -46,7 +47,9 @@ public sealed class TerritoryVisual : MonoBehaviour
         {
             _hover = false;
             _allowHover = false;
-            if (_hoverRoot != null) _hoverRoot.localScale = _baseScale;
+            if (_constructionBarrier != null) _constructionBarrier.SetHover(false);
+            if (_constructionBarrier == null && _hoverRoot != null)
+                _hoverRoot.localScale = _baseScale;
         }
 
         SetState(_state);
@@ -57,13 +60,18 @@ public sealed class TerritoryVisual : MonoBehaviour
         _state = state;
 
         _allowHover = _visible && state == TerritoryViewState.Available;
-        bool wantBorder = _visible && state == TerritoryViewState.Available && _fence == null;
+        bool wantBorder = _visible && state == TerritoryViewState.Available && _fence == null && _constructionBarrier == null;
 
         if (_border != null)
             _border.enabled = wantBorder;
 
         if (_fence != null)
-            _fence.SetVisible(_visible && state == TerritoryViewState.Available);
+            _fence.SetVisible(_constructionBarrier == null && _visible && state == TerritoryViewState.Available);
+
+        // Physical boundary stays visible outside purchase mode. Only currently
+        // available plots are shown, avoiding a forest of overlapping fences.
+        if (_constructionBarrier != null)
+            _constructionBarrier.SetVisible(state == TerritoryViewState.Available);
 
         if (_fillRenderer != null)
             _fillRenderer.enabled = _visible && state != TerritoryViewState.Purchased;
@@ -76,6 +84,12 @@ public sealed class TerritoryVisual : MonoBehaviour
         if (!_allowHover) return;
 
         _hover = on;
+
+        if (_constructionBarrier != null)
+        {
+            _constructionBarrier.SetHover(on);
+            return;
+        }
 
         if (_border != null)
         {

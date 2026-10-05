@@ -2,8 +2,8 @@ Shader "RetailEmpireTycoon/BuildGridOverlay_URP"
 {
     Properties
     {
-        _GridColor ("Grid Color", Color) = (1,1,1,0.45)
-        _FillColor ("Fill Color", Color) = (1,1,1,0.05)
+        _GridColor ("Grid Color", Color) = (0,0,0,0.75)
+        _FillColor ("Fill Color", Color) = (0,0,0,0)
         _CellSize ("Cell Size", Float) = 1
         _LineWidth ("Line Width", Float) = 0.03
         _WorldOrigin ("World Origin", Vector) = (0,0,0,0)

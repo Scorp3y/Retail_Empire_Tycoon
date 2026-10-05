@@ -5,6 +5,7 @@ using TMPro;
 using RetailEmpireTycoon.BuildSystem;
 using RetailEmpireTycoon.Core;
 using UnityEngine.Scripting.APIUpdating;
+using RetailEmpireTycoon.UI.Shop;
 
 namespace RetailEmpireTycoon.UI.Windows
 {
@@ -34,8 +35,8 @@ namespace RetailEmpireTycoon.UI.Windows
 
         private void ApplyTexts(int count)
         {
-            if (nameText != null) nameText.text = _item != null ? _item.displayName : "Unknown";
-            if (countText != null) countText.text = $"x{count}";
+            if (nameText != null) nameText.text = ShopText.Item(_item);
+            if (countText != null) countText.text = ShopText.Get("В наличии", "Owned") + $"\n×{count}";
         }
 
         private void ApplyIcon()

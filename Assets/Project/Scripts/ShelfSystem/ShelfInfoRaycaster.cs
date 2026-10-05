@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using RetailEmpireTycoon.BuildSystem;
 
 namespace RetailEmpireTycoon.Shelves
 {
@@ -10,6 +11,11 @@ namespace RetailEmpireTycoon.Shelves
         [SerializeField] private Camera worldCamera;
         [SerializeField] private ShelfInfoWindow infoWindow;
         [SerializeField] private ProductAssignMode assignMode;
+        [SerializeField] private BuildController buildController;
+        [SerializeField] private RetailEmpireTycoon.StoreOperations.WorkMinigame workMinigame;
+        private Vector2 _pressPosition;
+        private bool _pendingClick;
+        private bool _dragged;
 
         [Header("Raycast")]
         [SerializeField] private LayerMask shelfMask;
@@ -23,14 +29,32 @@ namespace RetailEmpireTycoon.Shelves
 
         private void Update()
         {
+            if (workMinigame != null && workMinigame.IsActive) { HideWindow(); return; }
             if (Input.GetKeyDown(KeyCode.Escape))
             {
                 HideWindow();
                 return;
             }
 
-            if (!Input.GetMouseButtonDown(1))
+            if (buildController != null && buildController.mode == BuildMode.Build)
+            {
+                _pendingClick = false;
+                HideWindow();
                 return;
+            }
+
+            if (Input.GetMouseButtonDown(1))
+            {
+                _pressPosition = Input.mousePosition;
+                _pendingClick = !IsPointerBlockedByUI();
+                _dragged = false;
+            }
+            if (_pendingClick && ((Vector2)Input.mousePosition - _pressPosition).sqrMagnitude > 36f)
+                _dragged = true;
+            if (!Input.GetMouseButtonUp(1)) return;
+            bool isClick = _pendingClick && !_dragged;
+            _pendingClick = false;
+            if (!isClick) return;
 
             if (assignMode != null && assignMode.IsActive)
                 return;
@@ -106,6 +130,8 @@ namespace RetailEmpireTycoon.Shelves
 
             if (assignMode == null)
                 assignMode = FindObjectOfType<ProductAssignMode>(true);
+            if (buildController == null)
+                buildController = FindObjectOfType<BuildController>(true);
         }
     }
 }

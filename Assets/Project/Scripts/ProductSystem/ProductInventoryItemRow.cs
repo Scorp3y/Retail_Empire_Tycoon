@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using RetailEmpireTycoon.Core;
 using RetailEmpireTycoon.Shelves;
+using RetailEmpireTycoon.UI.Shop;
 
 namespace RetailEmpireTycoon.UI.Products
 {
@@ -18,7 +19,6 @@ namespace RetailEmpireTycoon.UI.Products
 
         [Header("Optional")]
         [SerializeField] private TMP_Text buttonText;
-        [SerializeField] private string stockButtonLabel = "STOCK";
 
         private ProductItemData _item;
         private ProductAssignMode _assignMode;
@@ -68,16 +68,16 @@ namespace RetailEmpireTycoon.UI.Products
         private void RefreshTexts(int count)
         {
             if (nameText != null)
-                nameText.text = _item != null ? _item.DisplayName : "Unknown";
+                nameText.text = ShopText.Item(_item);
 
             if (countText != null)
-                countText.text = "x" + Mathf.Max(0, count);
+                countText.text = ShopText.Get("На складе", "Owned") + "\n×" + Mathf.Max(0, count);
 
             if (productTypeText != null)
-                productTypeText.text = _item != null ? _item.StorageType.ToString() : "None";
+                productTypeText.text = ShopText.ShelfHint(_item);
 
             if (buttonText != null)
-                buttonText.text = stockButtonLabel;
+                buttonText.text = ShopText.Get("Выложить", "Restock");
         }
 
         private void RefreshButton(int count)

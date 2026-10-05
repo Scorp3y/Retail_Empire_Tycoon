@@ -8,6 +8,7 @@ public class AvatarSpawn : MonoBehaviour
     public Transform[] waypoints;
     public Transform spawnPoint;
     public float spawnInterval = 5f;
+    [SerializeField] private RetailEmpireTycoon.StoreOperations.StoreOperations shop;
 
     private float timer = 0f;
 
@@ -26,5 +27,6 @@ public class AvatarSpawn : MonoBehaviour
         GameObject npc = Instantiate(npcPrefab, spawnPoint.position, spawnPoint.rotation);
         Avatar walk = npc.GetComponent<Avatar>();
         walk.waypoints = waypoints;
+        if (shop != null) walk.InitializeNavigation(shop.Navigation);
     }
 }

@@ -42,8 +42,8 @@ public class LanguageSelector : MonoBehaviour
 
         if (locale != null)
         {
-            LocalizationSettings.SelectedLocale = locale;
             PlayerPrefs.SetString("lang", code);
+            LocalizationSettings.SelectedLocale = locale;
             ApplyFontSettings(code);
         }
     }

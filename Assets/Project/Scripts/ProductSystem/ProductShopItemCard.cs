@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using RetailEmpireTycoon.Core;
 using RetailEmpireTycoon.Economy;
 using RetailEmpireTycoon.Products;
+using RetailEmpireTycoon.UI.Shop;
 
 namespace RetailEmpireTycoon.UI.Products
 {
@@ -15,6 +16,7 @@ namespace RetailEmpireTycoon.UI.Products
         [SerializeField] private TMP_Text priceText;
         [SerializeField] private TMP_Text boxAmountText;
         [SerializeField] private TMP_Text ownedAmountText;
+        [SerializeField] private TMP_Text shelfHintText;
         [SerializeField] private Button buyButton;
 
         private ProductItemData _item;
@@ -85,14 +87,15 @@ namespace RetailEmpireTycoon.UI.Products
 
         private void RefreshTexts()
         {
+            if (shelfHintText != null) shelfHintText.text = ShopText.ShelfHint(_item);
             if (nameText != null)
-                nameText.text = _item != null ? _item.DisplayName : "Unknown";
+                nameText.text = ShopText.Item(_item);
 
             if (priceText != null)
-                priceText.text = _item != null ? "$" + _item.BuyPrice : "$0";
+                priceText.text = _item != null ? MoneyFormat.Compact(_item.BuyPrice) : "$0";
 
             if (boxAmountText != null)
-                boxAmountText.text = _item != null ? "QTY: " + _item.BoxAmount : "QTY: 0";
+                boxAmountText.text = ShopText.Get("В упаковке: ", "Pack: ") + (_item != null ? _item.BoxAmount : 0);
 
             if (ownedAmountText != null)
                 ownedAmountText.text = GetOwnedText();
@@ -101,9 +104,9 @@ namespace RetailEmpireTycoon.UI.Products
         private string GetOwnedText()
         {
             if (_item == null || _inventory == null)
-                return "OWNED: 0";
+                return ShopText.Get("На складе: 0", "Owned: 0");
 
-            return "OWNED: " + _inventory.GetCount(_item);
+            return ShopText.Get("На складе: ", "Owned: ") + _inventory.GetCount(_item);
         }
 
         private void RefreshIcon()

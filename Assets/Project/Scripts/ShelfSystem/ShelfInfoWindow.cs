@@ -2,6 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using RetailEmpireTycoon.Core;
+using RetailEmpireTycoon.UI.Shop;
 
 namespace RetailEmpireTycoon.Shelves
 {
@@ -19,12 +20,12 @@ namespace RetailEmpireTycoon.Shelves
 
         [Header("Empty State")]
         [SerializeField] private Sprite emptyIcon;
-        [SerializeField] private string emptyProductText = "EMPTY";
 
         [Header("Position")]
         [SerializeField] private Vector2 screenOffset = new Vector2(18f, -18f);
 
         private Camera _uiCamera;
+        private readonly Vector3[] _panelCorners = new Vector3[4];
 
         private void Awake()
         {
@@ -50,9 +51,8 @@ namespace RetailEmpireTycoon.Shelves
                 return;
 
             RefreshView(shelf);
-            SetPosition(screenPosition);
-
             gameObject.SetActive(true);
+            SetPosition(screenPosition);
         }
 
         public void Hide()
@@ -91,7 +91,7 @@ namespace RetailEmpireTycoon.Shelves
         private void RefreshTexts(PlacedShelfStock shelf, ProductItemData product)
         {
             if (productText != null)
-                productText.text = product != null ? product.DisplayName : emptyProductText;
+                productText.text = product != null ? ShopText.Item(product) : ShopText.Get("Полка пуста", "Empty shelf");
 
             if (amountText != null)
                 amountText.text = shelf.CurrentAmount + "/" + shelf.MaxAmount;
@@ -117,7 +117,19 @@ namespace RetailEmpireTycoon.Shelves
                 out Vector2 localPoint
             );
 
-            panel.anchoredPosition = localPoint;
+            panel.position = canvasRect.TransformPoint(localPoint);
+
+            // The panel follows the clicked shelf, but its actions must stay on screen.
+            panel.GetWorldCorners(_panelCorners);
+            Vector2 minimum = canvasRect.InverseTransformPoint(_panelCorners[0]);
+            Vector2 maximum = canvasRect.InverseTransformPoint(_panelCorners[2]);
+            Rect available = canvasRect.rect;
+            const float margin = 12f;
+            float x = minimum.x < available.xMin + margin ? available.xMin + margin - minimum.x
+                : maximum.x > available.xMax - margin ? available.xMax - margin - maximum.x : 0;
+            float y = minimum.y < available.yMin + margin ? available.yMin + margin - minimum.y
+                : maximum.y > available.yMax - margin ? available.yMax - margin - maximum.y : 0;
+            panel.position += canvasRect.TransformVector(new Vector3(x, y, 0));
         }
     }
 }

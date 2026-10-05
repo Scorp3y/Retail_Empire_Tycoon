@@ -39,7 +39,7 @@ namespace RetailEmpireTycoon.Economy
             if (amount <= 0)
                 return;
 
-            money += amount;
+            money = (int)Math.Min(int.MaxValue, (long)money + amount);
             Changed?.Invoke(money);
         }
 

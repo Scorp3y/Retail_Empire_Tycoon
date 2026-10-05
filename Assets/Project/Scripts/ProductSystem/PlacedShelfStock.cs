@@ -21,6 +21,7 @@ namespace RetailEmpireTycoon.Shelves
 
         [Header("Stock")]
         [SerializeField] private ProductItemData currentProduct;
+        [SerializeField] private ProductItemData assignedProduct;
         [SerializeField, Min(0)] private int currentAmount;
         [SerializeField, Min(1)] private int maxAmount = 24;
 
@@ -31,6 +32,7 @@ namespace RetailEmpireTycoon.Shelves
 
         public ShelfStorageType ShelfType => shelfType;
         public ProductItemData CurrentProduct => currentProduct;
+        public ProductItemData AssignedProduct => currentProduct != null ? currentProduct : assignedProduct;
         public int CurrentAmount => currentAmount;
         public int MaxAmount => maxAmount;
         public int FreeSpace => Mathf.Max(0, maxAmount - currentAmount);
@@ -82,6 +84,7 @@ namespace RetailEmpireTycoon.Shelves
                 return false;
 
             currentProduct = product;
+            assignedProduct = product;
             currentAmount += amountToMove;
 
             NotifyChanged();
@@ -107,6 +110,7 @@ namespace RetailEmpireTycoon.Shelves
 
         public void SetStockFromSave(ProductItemData product, int amount)
         {
+            assignedProduct = product;
             if (product == null || amount <= 0)
             {
                 currentProduct = null;
@@ -126,6 +130,7 @@ namespace RetailEmpireTycoon.Shelves
 
         public void ClearStock()
         {
+            assignedProduct = null;
             currentProduct = null;
             currentAmount = 0;
             NotifyChanged();

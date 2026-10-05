@@ -6,6 +6,7 @@ using RetailEmpireTycoon.SaveSystem;
 public class GameData
 {
     public int playerMoney = 6000;
+    public RetailEmpireTycoon.StoreOperations.ShopOperationsSaveData shopOperations = new RetailEmpireTycoon.StoreOperations.ShopOperationsSaveData();
 
     public TerritorySaveData territory = new TerritorySaveData();
 

@@ -26,6 +26,7 @@ public class SaveManager : MonoBehaviour
     [SerializeField] private FloorPainter _floorPainter;
     [SerializeField] private BuildItemCatalog _buildCatalog;
     [SerializeField] private ProductSaveService productSaveService;
+    [SerializeField] private RetailEmpireTycoon.StoreOperations.StoreOperations shopOperations;
 
     [Header("Territory/Store")]
     [SerializeField] private StorePrefabSpawner _storeSpawner;
@@ -56,6 +57,7 @@ public class SaveManager : MonoBehaviour
 
     private void FindRefs()
     {
+        if (shopOperations == null) shopOperations = FindObjectOfType<RetailEmpireTycoon.StoreOperations.StoreOperations>(true);
         if (_money == null)
             _money = FindObjectOfType<MoneyController>(true);
 
@@ -97,6 +99,7 @@ public class SaveManager : MonoBehaviour
         FindRefs();
 
         gameData ??= new GameData();
+        if (shopOperations != null) gameData.shopOperations = shopOperations.BuildSaveData();
 
         if (_money != null)
             gameData.playerMoney = _money.Money;
@@ -132,6 +135,7 @@ public class SaveManager : MonoBehaviour
         if (!File.Exists(saveFilePath))
         {
             SpawnStoreFromProgressOrDefault();
+            StartCoroutine(LoadProductsAfterWorldLoaded(gameData));
             return;
         }
 
@@ -195,6 +199,7 @@ public class SaveManager : MonoBehaviour
 
         productSaveService.ApplyWarehouseSaveData(loadedData.productInventory);
         productSaveService.ApplyShelfSaveData(loadedData.shelfStocks);
+        if (shopOperations != null) shopOperations.ApplySaveData(loadedData.shopOperations);
 
         Debug.Log("[SaveManager] Products loaded.");
     }

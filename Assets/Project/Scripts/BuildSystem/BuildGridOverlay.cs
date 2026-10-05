@@ -16,10 +16,11 @@ namespace RetailEmpireTycoon.BuildSystem
         public Material overlayMaterialTemplate;
 
         [Header("Visual")]
-        [Range(0.001f, 0.1f)] public float yOffset = 0.02f;
+        // The existing shop mesh has its floor at 0.096; the logical grid remains at zero.
+        [Range(0.001f, 0.2f)] public float yOffset = 0.11f;
         [Range(0.001f, 0.2f)] public float lineWidth = 0.03f;
-        public Color gridColor = new Color(1f, 1f, 1f, 0.45f);
-        public Color fillColor = new Color(1f, 1f, 1f, 0.05f);
+        public Color gridColor = new Color(0f, 0f, 0f, 0.75f);
+        public Color fillColor = Color.clear;
 
         private MeshFilter _meshFilter;
         private MeshRenderer _meshRenderer;
@@ -64,9 +65,7 @@ namespace RetailEmpireTycoon.BuildSystem
                 _runtimeMaterial.SetFloat(LineWidthId, lineWidth);
                 _runtimeMaterial.SetVector(WorldOriginId, new Vector4(grid.origin.x, 0f, grid.origin.z, 0f));
             }
-            Debug.Log("Rects count: " + territory.PurchasedRects.Count);
             gameObject.SetActive(true);
-            Debug.Log("BuildGridOverlay.Show called");
         }
 
         public void Hide()
@@ -109,10 +108,10 @@ namespace RetailEmpireTycoon.BuildSystem
 
                 int index = vertices.Count;
 
-                vertices.Add(new Vector3(minWorld.x, minWorld.y, minWorld.z));
-                vertices.Add(new Vector3(minWorld.x, minWorld.y, maxWorld.z));
-                vertices.Add(new Vector3(maxWorld.x, maxWorld.y, maxWorld.z));
-                vertices.Add(new Vector3(maxWorld.x, maxWorld.y, minWorld.z));
+                vertices.Add(transform.InverseTransformPoint(new Vector3(minWorld.x, minWorld.y, minWorld.z)));
+                vertices.Add(transform.InverseTransformPoint(new Vector3(minWorld.x, minWorld.y, maxWorld.z)));
+                vertices.Add(transform.InverseTransformPoint(new Vector3(maxWorld.x, maxWorld.y, maxWorld.z)));
+                vertices.Add(transform.InverseTransformPoint(new Vector3(maxWorld.x, maxWorld.y, minWorld.z)));
 
                 triangles.Add(index + 0);
                 triangles.Add(index + 1);
@@ -134,6 +133,12 @@ namespace RetailEmpireTycoon.BuildSystem
             _mesh.RecalculateBounds();
 
             _meshFilter.sharedMesh = _mesh;
+        }
+
+        private void OnDestroy()
+        {
+            if (_runtimeMaterial != null) Destroy(_runtimeMaterial);
+            if (_mesh != null) Destroy(_mesh);
         }
     }
 }

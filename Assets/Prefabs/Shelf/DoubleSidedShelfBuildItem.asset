@@ -15,19 +15,27 @@ MonoBehaviour:
   id: shelf_doublesided_01
   displayName: Double-Sided Shelf
   description: For food, drinks, toys
-  icon: {fileID: 21300000, guid: a4e5ed57878d5054bb98f7388a653cc3, type: 3}
+  icon: {fileID: 21300000, guid: d990b7976946a214291a9d44d18e384f, type: 3}
   price: 200
   unlockedByDefault: 1
   unlockCondition: {fileID: 0}
   category: 0
   subCategory: 1
-  footprint: {x: 3, y: 3}
+  footprint: {x: 4, y: 4}
   allowRotation: 1
   ruleFlags: 7
   placementKind: 0
   floorMaterial: {fileID: 0}
-  accessibilitySides: 1
+  accessibilitySides: 2
   pivotOffset: {x: 0, y: 0}
+  alignModelToFootprint: 1
+  placementBounds:
+    m_Center: {x: 0, y: 0.28800002, z: 0}
+    m_Extent: {x: 0.288, y: 0.28800002, z: 0.25199997}
+  frontFacing: 0
+  twoSidedAccess: 1
+  isDoorway: 0
+  isCheckout: 0
   prefab: {fileID: 5025488356644322649, guid: cb570e5b74e16c94797f7e8a35ce2360, type: 3}
   previewValidMaterial: {fileID: 2100000, guid: b737f1f25c90f1842999d06f57aa1608, type: 2}
   previewInvalidMaterial: {fileID: 2100000, guid: cd8bbf8a301d0664386b1c15cc42650f, type: 2}

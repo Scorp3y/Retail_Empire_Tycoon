@@ -26,8 +26,10 @@ namespace RetailEmpireTycoon.UI.Shop
 
         public void Bind(BuildItemData item, MoneyController moneyController, BuildInventory buildInventory)
         {
+            if (money != null) money.Changed -= OnMoneyChanged;
             money = moneyController;
             inventory = buildInventory;
+            if (money != null) money.Changed += OnMoneyChanged;
             Bind(item);
         }
         public void Bind(BuildItemData item)
@@ -44,18 +46,18 @@ namespace RetailEmpireTycoon.UI.Shop
             if (_item == null) return;
 
             if (nameText != null)
-                nameText.text = _item.displayName;
+                nameText.text = ShopText.Item(_item);
 
             if (descText != null)
                 descText.text = _item.description;
 
             if (priceText != null)
-                priceText.text = _item.price.ToString();
+                priceText.text = MoneyFormat.Compact(_item.price);
 
             if (sizeText != null)
             {
                 var f = _item.footprint;
-                sizeText.text = $"{f.x}x{f.y}";
+                sizeText.text = ShopText.Get("Размер", "Size") + $"\n{f.x} × {f.y}";
             }
         }
 
@@ -74,8 +76,16 @@ namespace RetailEmpireTycoon.UI.Shop
             buyButton.onClick.RemoveAllListeners();
             buyButton.onClick.AddListener(OnBuyClicked);
 
-            buyButton.interactable = _item != null && money != null && inventory != null;
+            RefreshButton();
         }
+
+        private void OnMoneyChanged(int amount) { RefreshButton(); }
+        private void RefreshButton()
+        {
+            if (buyButton != null) buyButton.interactable = _item != null && money != null && inventory != null && money.CanSpend(_item.price);
+        }
+        private void OnDisable() { if (money != null) money.Changed -= OnMoneyChanged; }
+        private void OnEnable() { if (money != null) { money.Changed -= OnMoneyChanged; money.Changed += OnMoneyChanged; } RefreshButton(); }
 
         private void OnBuyClicked()
         {

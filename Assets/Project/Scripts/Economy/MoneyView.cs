@@ -30,7 +30,7 @@ namespace RetailEmpireTycoon.UI
         private void OnMoneyChanged(int amount)
         {
             if (moneyText != null)
-                moneyText.text = $"${amount}";
+                moneyText.text = MoneyFormat.Compact(amount);
         }
     }
 }

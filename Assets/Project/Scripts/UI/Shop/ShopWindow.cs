@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using RetailEmpireTycoon.Core;
@@ -18,7 +19,8 @@ namespace RetailEmpireTycoon.UI.Shop
             MainTabs,
             BuildCategories,
             BuildItems,
-            Products
+            Products,
+            Staff
         }
 
         [Header("Build Data")]
@@ -54,6 +56,32 @@ namespace RetailEmpireTycoon.UI.Shop
 
         private readonly List<(Behaviour behaviour, bool wasEnabled)> _cameraState = new();
         private ViewMode _viewMode = ViewMode.MainTabs;
+        private GameObject _staffPage;
+        public Transform StaffHost => mainCategoriesPanel.transform;
+        public Transform MainTabsHost => mainTabsPanel.transform;
+        public Transform CategoryTabsHost => tabsCategoriesPanel.transform;
+        public bool IsStaffView => isActiveAndEnabled && _viewMode == ViewMode.Staff;
+        public bool IsMainView => _viewMode == ViewMode.MainTabs;
+        public bool IsBuildView => _viewMode == ViewMode.BuildItems || _viewMode == ViewMode.BuildCategories;
+        public bool IsProductsView => _viewMode == ViewMode.Products;
+        public BuildCategory SelectedCategory => buildFilter;
+        public event System.Action ViewChanged;
+        public event System.Action StaffRequested;
+
+        public void AttachStaffPage(GameObject page) { _staffPage = page; }
+        public void OpenStaff()
+        {
+            ClearList();
+            _viewMode = ViewMode.Staff;
+            SetPanel(mainCategoriesPanel, true);
+            SetPanel(mainTabsPanel, false);
+            SetPanel(tabsCategoriesPanel, false);
+            SetPanel(categoryViewPanel, false);
+            SetEmpty(false);
+            StaffRequested?.Invoke();
+            SetPanel(_staffPage, true);
+            ViewChanged?.Invoke();
+        }
 
         private void Awake()
         {
@@ -84,6 +112,7 @@ namespace RetailEmpireTycoon.UI.Shop
 
         public void ShowMainTabs()
         {
+            SetPanel(_staffPage, false);
             _viewMode = ViewMode.MainTabs;
 
             ClearList();
@@ -92,22 +121,17 @@ namespace RetailEmpireTycoon.UI.Shop
             SetPanel(tabsCategoriesPanel, false);
             SetPanel(categoryViewPanel, false);
             SetEmpty(false);
+            ViewChanged?.Invoke();
         }
 
         public void OpenBuildCategories()
         {
-            _viewMode = ViewMode.BuildCategories;
-
-            ClearList();
-            SetPanel(mainCategoriesPanel, true);
-            SetPanel(mainTabsPanel, false);
-            SetPanel(tabsCategoriesPanel, true);
-            SetPanel(categoryViewPanel, false);
-            SetEmpty(false);
+            OpenCategory(buildFilter);
         }
 
         public void OpenProducts()
         {
+            SetPanel(_staffPage, false);
             _viewMode = ViewMode.Products;
 
             SetPanel(mainCategoriesPanel, true);
@@ -116,6 +140,7 @@ namespace RetailEmpireTycoon.UI.Shop
             SetPanel(categoryViewPanel, true);
 
             RefreshProducts();
+            ViewChanged?.Invoke();
         }
 
         public void BackToMainTabs()
@@ -145,6 +170,7 @@ namespace RetailEmpireTycoon.UI.Shop
 
         public void OpenCategory(BuildCategory category)
         {
+            SetPanel(_staffPage, false);
             _viewMode = ViewMode.BuildItems;
             buildFilter = category;
 
@@ -154,12 +180,16 @@ namespace RetailEmpireTycoon.UI.Shop
             SetPanel(categoryViewPanel, true);
 
             RefreshBuildItems();
+            ViewChanged?.Invoke();
         }
 
         public void Refresh()
         {
             switch (_viewMode)
             {
+                case ViewMode.Staff:
+                    OpenStaff();
+                    break;
                 case ViewMode.Products:
                     RefreshProducts();
                     break;
@@ -191,7 +221,8 @@ namespace RetailEmpireTycoon.UI.Shop
 
             int shown = 0;
 
-            foreach (var item in buildCatalog)
+            // Order the visible cards only; stable catalog entries and save identifiers remain unchanged.
+            foreach (var item in buildCatalog.OrderBy(BuildDisplayPriority))
             {
                 if (item == null || item.category != buildFilter)
                     continue;
@@ -202,6 +233,15 @@ namespace RetailEmpireTycoon.UI.Shop
             }
 
             SetEmpty(shown == 0);
+            ResetCatalogScroll();
+        }
+
+        private static int BuildDisplayPriority(BuildItemData item)
+        {
+            if (item == null || item.category != BuildCategory.Shelf) return 2;
+            if (item.id == "shelf_produce_01") return 0;
+            if (item.id == "shelf_fresh_01") return 1;
+            return 2;
         }
 
         private void RefreshProducts()
@@ -220,7 +260,7 @@ namespace RetailEmpireTycoon.UI.Shop
 
             int shown = 0;
 
-            foreach (var product in productCatalog)
+            foreach (var product in productCatalog.Where(p => p != null).OrderBy(p => p.StorageType).ThenBy(ShopText.Item))
             {
                 if (product == null)
                     continue;
@@ -231,6 +271,16 @@ namespace RetailEmpireTycoon.UI.Shop
             }
 
             SetEmpty(shown == 0);
+            ResetCatalogScroll();
+        }
+
+        private void ResetCatalogScroll()
+        {
+            var scroll = listRoot != null ? listRoot.GetComponentInParent<ScrollRect>() : null;
+            if (scroll == null) return;
+            scroll.StopMovement();
+            // Reset position directly: newly created cards have not been laid out yet.
+            ((RectTransform)listRoot).anchoredPosition = Vector2.zero;
         }
 
         private void ClearList()
@@ -239,7 +289,11 @@ namespace RetailEmpireTycoon.UI.Shop
                 return;
 
             for (int i = listRoot.childCount - 1; i >= 0; i--)
-                Destroy(listRoot.GetChild(i).gameObject);
+            {
+                var card = listRoot.GetChild(i).gameObject;
+                card.SetActive(false);
+                Destroy(card);
+            }
         }
 
         private void FindMissingRefs()

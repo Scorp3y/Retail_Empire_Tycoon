@@ -3,6 +3,7 @@ using UnityEngine;
 using RetailEmpireTycoon.Core;
 using RetailEmpireTycoon.Territory;
 using UnityEngine.Scripting.APIUpdating;
+using UnityEngine.EventSystems;
 
 namespace RetailEmpireTycoon.BuildSystem
 {
@@ -19,20 +20,24 @@ namespace RetailEmpireTycoon.BuildSystem
         public event System.Action<BuildItemData> OnPlacedSuccessfully;
         public BuildGridOverlay gridOverlay;
         public FloorPainter floorPainter;
+        [SerializeField] private RetailEmpireTycoon.StoreOperations.GameplayControls gameplayControls;
 
         [Header("State")]
         public BuildMode mode = BuildMode.Normal;
-
-        [Header("Inventory")]
-        [Tooltip("If true, placement will consume 1 item from BuildInventory after a successful placement.\n" +
-                 "Per current design, this should be OFF until you hook consumption to a confirmed successful placement flow.")]
-        [SerializeField] private bool consumeFromInventoryOnPlace = false;
 
         private BuildItemData _selected;
         private bool _rotated;
         private int _facing;
 
         private PlacementValidator _validator;
+
+        public bool TryGetPlacementFocus(out Vector3 focus)
+        {
+            focus = default;
+            if (mode != BuildMode.Build || !TryGetMouseCell(out var cell, out _)) return false;
+            focus = grid.CellToWorld(cell);
+            return true;
+        }
 
         private void Awake()
         {
@@ -71,6 +76,18 @@ namespace RetailEmpireTycoon.BuildSystem
                 return;
             }
 
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            {
+                preview?.SetVisible(false);
+                if (_isPaintingFloor && Input.GetMouseButtonUp(0))
+                {
+                    _isPaintingFloor = false;
+                    _floorPreviewCells.Clear();
+                    floorPainter?.ClearPreview();
+                }
+                return;
+            }
+
             if (_selected != null && _selected.placementKind == PlacementKind.Floor)
             {
                 HandleFloorPaintMode();
@@ -80,13 +97,16 @@ namespace RetailEmpireTycoon.BuildSystem
             HandleRotate();
             UpdatePreview();
 
-            if (Input.GetMouseButtonDown(1))
+            if (Input.GetMouseButtonDown(0))
                 TryPlace();
         }
 
         public void EnterBuildMode(BuildItemData item)
         {
             if (item == null) return;
+            _isPaintingFloor = false;
+            _floorPreviewCells.Clear();
+            floorPainter?.ClearPreview();
 
             mode = BuildMode.Build;
             _selected = item;
@@ -105,6 +125,9 @@ namespace RetailEmpireTycoon.BuildSystem
         {
             mode = BuildMode.Normal;
             _selected = null;
+            _isPaintingFloor = false;
+            _floorPreviewCells.Clear();
+            floorPainter?.ClearPreview();
             preview?.Clear();
             gridOverlay?.Hide();
         }
@@ -114,10 +137,17 @@ namespace RetailEmpireTycoon.BuildSystem
             if (_selected == null) return;
             if (!_selected.allowRotation) return;
 
-            var rot = Input.GetKeyDown(KeyCode.Q) ? -1 : Input.GetKeyDown(KeyCode.E) ? 1 : 0;
+            bool clockwise = gameplayControls != null ? gameplayControls.Pressed(RetailEmpireTycoon.StoreOperations.ShopAction.RotateClockwise) : Input.GetKeyDown(KeyCode.R) || Input.GetKeyDown(KeyCode.E);
+            bool counterclockwise = gameplayControls != null ? gameplayControls.Pressed(RetailEmpireTycoon.StoreOperations.ShopAction.RotateCounterclockwise) : Input.GetKeyDown(KeyCode.Q);
+            var rot = counterclockwise ? -1 : clockwise ? 1 : 0;
             if (rot == 0) return;
+            RotateSelected(rot);
+        }
 
-            _facing = (_facing + rot) % 4;
+        public void RotateSelected(int quarterTurns)
+        {
+            if (_selected == null || !_selected.allowRotation) return;
+            _facing = (_facing + quarterTurns) % 4;
             if (_facing < 0) _facing += 4;
 
             _rotated = _facing % 2 != 0;
@@ -130,22 +160,31 @@ namespace RetailEmpireTycoon.BuildSystem
             if (_validator == null) return;
 
             if (!TryGetMouseCell(out var cell, out _))
+            {
+                preview?.SetVisible(false);
                 return;
+            }
 
-            var worldPos = grid.CellToWorld(cell);
+            var worldPos = BuildPlacementPose.Position(grid, _selected, cell, _rotated, _facing);
             var rot = Quaternion.Euler(0f, _facing * 90f, 0f);
 
             var req = new PlacementRequest(_selected, cell, _rotated, _facing);
-            var res = _validator.CanPlace(req);
+            var res = CanPlaceAt(cell);
 
             preview?.SetPose(worldPos, rot);
-            preview?.SetValid(res.ok);
+            preview?.ShowPlacement(grid, req, res);
+        }
 
-            if (territory != null && !territory.IsCellPurchased(cell))
-            {
-                preview?.SetValid(false);
-                return;
-            }
+        /// <summary>The same result drives the ghost and the final placement, including stock availability.</summary>
+        public PlacementResult CanPlaceAt(Vector3Int cell)
+        {
+            if (_selected == null || _selected.prefab == null || grid == null || _validator == null)
+                return PlacementResult.Fail(PlaceFailReason.RuleFailed, "Предмет не готов к установке");
+            if (inventory == null || inventory.GetCount(_selected) < 1)
+                return PlacementResult.Fail(PlaceFailReason.InsufficientInventory, "Нет предмета на складе");
+            if (territory == null || !territory.IsCellPurchased(cell))
+                return PlacementResult.Fail(PlaceFailReason.NotPurchased, "За пределами доступной площади");
+            return _validator.CanPlace(new PlacementRequest(_selected, cell, _rotated, _facing));
         }
 
         private void TryPlace()
@@ -176,26 +215,38 @@ namespace RetailEmpireTycoon.BuildSystem
                 return;
             }
 
-            var req = new PlacementRequest(_selected, cell, _rotated, _facing);
-            var res = _validator.CanPlace(req);
-            if (!res.ok) return;
-
-            if (territory != null && !territory.IsCellPurchased(cell))
-                return;
-
-            SpawnPlaced(req);
-            OnPlacedSuccessfully?.Invoke(req.item);
+            TryPlaceAt(cell);
         }
 
-        private void SpawnPlaced(PlacementRequest req)
+        public bool TryPlaceAt(Vector3Int cell)
         {
-            if (req.item == null) return;
-            if (req.item.prefab == null) return;
+            if (mode != BuildMode.Build || _selected == null || _selected.placementKind == PlacementKind.Floor) return false;
+            var req = new PlacementRequest(_selected, cell, _rotated, _facing);
+            var res = CanPlaceAt(cell);
+            if (!res.ok) return false;
 
-            var worldPos = grid.CellToWorld(req.anchorCell);
+            if (territory != null && !territory.IsCellPurchased(cell))
+                return false;
+
+            if (!SpawnPlaced(req)) return false;
+            OnPlacedSuccessfully?.Invoke(req.item);
+            return true;
+        }
+
+        private bool SpawnPlaced(PlacementRequest req)
+        {
+            if (req.item == null || req.item.prefab == null || inventory == null) return false;
+
+            var worldPos = BuildPlacementPose.Position(grid, req.item, req.anchorCell, req.rotated, req.facing);
             var rot = Quaternion.Euler(0f, req.facing * 90f, 0f);
 
             var go = Instantiate(req.item.prefab, worldPos, rot);
+            if (!inventory.TryConsume(req.item, 1))
+            {
+                go.SetActive(false);
+                Destroy(go);
+                return false;
+            }
             var placed = go.GetComponent<PlacedObject>() ?? go.AddComponent<PlacedObject>();
 
             placed.item = req.item;
@@ -208,12 +259,11 @@ namespace RetailEmpireTycoon.BuildSystem
 
             grid.Occupy(cells);
 
-            inventory?.TryConsume(req.item, 1);
-
             if (inventory == null || inventory.GetCount(req.item) <= 0)
             {
                 ExitBuildMode();
             }
+            return true;
         }
 
         private bool TryGetMouseCell(out Vector3Int cell, out Vector3 hitPos)
@@ -225,16 +275,18 @@ namespace RetailEmpireTycoon.BuildSystem
             if (grid == null) return false;
 
             var ray = worldCamera.ScreenPointToRay(Input.mousePosition);
-            if (!Physics.Raycast(ray, out var hit, 2000f))
+            var plane = new Plane(Vector3.up, grid.origin);
+            if (!plane.Raycast(ray, out float distance) || distance > 2000f)
                 return false;
 
-            hitPos = hit.point;
-            cell = grid.WorldToCell(hit.point);
+            hitPos = ray.GetPoint(distance);
+            cell = grid.WorldToCell(hitPos);
             return true;
         }
 
         private void HandleFloorPaintMode()
         {
+            if (_selected == null || floorPainter == null || inventory == null) return;
             if (!_isPaintingFloor)
             {
                 if (TryGetMouseCell(out var hoverCell, out _))
@@ -251,7 +303,7 @@ namespace RetailEmpireTycoon.BuildSystem
             if (_selected == null || floorPainter == null || inventory == null)
                 return;
 
-            if (Input.GetMouseButtonDown(1))
+            if (Input.GetMouseButtonDown(0))
             {
                 if (!TryGetMouseCell(out _floorStartCell, out _))
                     return;
@@ -259,7 +311,7 @@ namespace RetailEmpireTycoon.BuildSystem
                 _isPaintingFloor = true;
             }
 
-            if (_isPaintingFloor && Input.GetMouseButton(1))
+            if (_isPaintingFloor && Input.GetMouseButton(0))
             {
                 if (!TryGetMouseCell(out var currentCell, out _))
                     return;
@@ -272,7 +324,7 @@ namespace RetailEmpireTycoon.BuildSystem
                 floorPainter.ShowPreview(_floorPreviewCells, validArea && enoughItems);
             }
 
-            if (_isPaintingFloor && Input.GetMouseButtonUp(1))
+            if (_isPaintingFloor && Input.GetMouseButtonUp(0))
             {
                 _isPaintingFloor = false;
 
@@ -306,7 +358,7 @@ namespace RetailEmpireTycoon.BuildSystem
 
             foreach (var placed in placedObjects)
             {
-                if (placed == null || placed.item == null)
+                if (placed == null || placed.item == null || placed.GetComponentInParent<BuildPreview>() != null)
                     continue;
 
                 result.Add(new PlacedBuildSaveData
@@ -351,7 +403,7 @@ namespace RetailEmpireTycoon.BuildSystem
 
             foreach (var placed in placedObjects)
             {
-                if (placed != null)
+                if (placed != null && placed.GetComponentInParent<BuildPreview>() == null)
                     Destroy(placed.gameObject);
             }
         }
@@ -362,7 +414,7 @@ namespace RetailEmpireTycoon.BuildSystem
             if (req.item.prefab == null) return;
             if (grid == null) return;
 
-            var worldPos = grid.CellToWorld(req.anchorCell);
+            var worldPos = BuildPlacementPose.Position(grid, req.item, req.anchorCell, req.rotated, req.facing);
             var rot = Quaternion.Euler(0f, req.facing * 90f, 0f);
 
             var go = Instantiate(req.item.prefab, worldPos, rot);

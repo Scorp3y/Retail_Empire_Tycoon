@@ -34,6 +34,29 @@ namespace RetailEmpireTycoon.Shelves
 
         private readonly List<GameObject> _spawnedObjects = new List<GameObject>();
 
+        public float ProductScale => productScale;
+        public Bounds WorkAreaBounds
+        {
+            get
+            {
+                CollectSlotsIfNeeded();
+                var bounds = new Bounds(slots.Count > 0 ? slots[0].position : transform.position, Vector3.zero);
+                foreach (var slot in slots) if (slot != null) bounds.Encapsulate(slot.position);
+                return bounds;
+            }
+        }
+        public List<Transform> GetWorkSlots(int count)
+        {
+            CollectSlotsIfNeeded();
+            var result = new List<Transform>();
+            if (slots.Count == 0) return result;
+            int start = shelfStock != null ? CalculateVisibleCount(shelfStock.CurrentAmount, shelfStock.MaxAmount, slots.Count) : 0;
+            int remaining = Mathf.Max(1, slots.Count - start);
+            for (int i = 0; i < count; i++)
+                result.Add(slots[Mathf.Min(slots.Count - 1, start + i % remaining)]);
+            return result;
+        }
+
         private void Awake()
         {
             FindMissingRefs();
@@ -128,6 +151,15 @@ namespace RetailEmpireTycoon.Shelves
             if (clearSlotBeforeSpawn)
                 ClearChildren(slot);
 
+            GameObject instance = CreateWorkProduct(product, slot);
+
+            _spawnedObjects.Add(instance);
+        }
+
+        /// <summary>Creates a preview with the real slot's local pose and inherited scale. The caller owns its lifetime.</summary>
+        public GameObject CreateWorkProduct(ProductItemData product, Transform slot)
+        {
+            if (product == null || product.ShelfDisplayPrefab == null || slot == null) return null;
             GameObject instance = Instantiate(product.ShelfDisplayPrefab, slot);
 
             instance.transform.localPosition = Vector3.zero;
@@ -139,7 +171,7 @@ namespace RetailEmpireTycoon.Shelves
             if (disableSpawnedColliders)
                 DisableColliders(instance);
 
-            _spawnedObjects.Add(instance);
+            return instance;
         }
 
         private void CollectSlotsIfNeeded()

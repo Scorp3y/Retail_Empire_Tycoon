@@ -43,6 +43,16 @@ namespace RetailEmpireTycoon.Core
 
         public Vector2Int pivotOffset;
 
+        [Header("Model alignment (measured in scaled prefab space)")]
+        public bool alignModelToFootprint;
+        public Bounds placementBounds;
+        [Range(0, 3)] public int frontFacing;
+        public bool twoSidedAccess;
+        [Tooltip("Allows shop characters to cross the central opening; placement occupancy remains unchanged.")]
+        public bool isDoorway;
+        [Tooltip("Customers use the accessible front of this placed object for checkout.")]
+        public bool isCheckout;
+
         [Header("Prefab")]
         public GameObject prefab;
         public Material previewValidMaterial;

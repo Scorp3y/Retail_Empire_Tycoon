@@ -12,6 +12,7 @@ namespace RetailEmpireTycoon.Shelves
         [Header("Refs")]
         [SerializeField] private Camera worldCamera;
         [SerializeField] private ProductInventory inventory;
+        [SerializeField] private RetailEmpireTycoon.StoreOperations.WorkMinigame workMinigame;
 
         [Header("Raycast")]
         [SerializeField] private LayerMask shelfMask;
@@ -34,6 +35,7 @@ namespace RetailEmpireTycoon.Shelves
 
         private void Update()
         {
+            if (workMinigame != null && workMinigame.IsActive) return;
             if (!IsActive)
                 return;
 
@@ -43,7 +45,8 @@ namespace RetailEmpireTycoon.Shelves
                 return;
             }
 
-            if (!Input.GetMouseButtonDown(0) && !Input.GetMouseButtonDown(1))
+            // Right drag belongs to camera navigation and must not refill a shelf.
+            if (!Input.GetMouseButtonDown(0))
                 return;
 
             TryAssignByMouse();
@@ -97,7 +100,7 @@ namespace RetailEmpireTycoon.Shelves
                 return;
             }
 
-            if (!shelf.RefillFromInventory(inventory, _selectedProduct))
+            if (workMinigame == null || !workMinigame.BeginRestock(shelf, _selectedProduct))
             {
                 Log("Refill failed. Inventory count: " + inventory.GetCount(_selectedProduct));
                 return;

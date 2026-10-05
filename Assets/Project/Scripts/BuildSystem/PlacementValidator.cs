@@ -11,7 +11,8 @@ namespace RetailEmpireTycoon.BuildSystem
         NotPurchased,
         Overlap,
         NoAccess,
-        RuleFailed
+        RuleFailed,
+        InsufficientInventory
     }
 
     public readonly struct PlacementRequest

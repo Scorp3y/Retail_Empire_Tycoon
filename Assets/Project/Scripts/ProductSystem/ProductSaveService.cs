@@ -53,14 +53,17 @@ namespace RetailEmpireTycoon.SaveSystem
 
             foreach (PlacedShelfStock shelf in shelves)
             {
-                if (shelf == null || shelf.CurrentProduct == null || shelf.CurrentAmount <= 0)
+                if (shelf == null || shelf.AssignedProduct == null)
                     continue;
 
                 PlacedObject placedObject = shelf.GetComponent<PlacedObject>();
 
                 if (placedObject == null || placedObject.item == null)
                 {
-                    LogWarning("Shelf has no PlacedObject or BuildItemData: " + shelf.name);
+                    data.Add(new ShelfStockSaveEntry
+                    {
+                        sceneShelfId = SceneShelfKey(shelf), productId = shelf.AssignedProduct.Id, amount = shelf.CurrentAmount
+                    });
                     continue;
                 }
 
@@ -70,9 +73,9 @@ namespace RetailEmpireTycoon.SaveSystem
                     continue;
                 }
 
-                if (string.IsNullOrWhiteSpace(shelf.CurrentProduct.Id))
+                if (string.IsNullOrWhiteSpace(shelf.AssignedProduct.Id))
                 {
-                    LogWarning("Shelf product has empty id: " + shelf.CurrentProduct.name);
+                    LogWarning("Shelf product has empty id: " + shelf.AssignedProduct.name);
                     continue;
                 }
 
@@ -87,7 +90,7 @@ namespace RetailEmpireTycoon.SaveSystem
                     rotated = placedObject.rotated,
                     facing = placedObject.facing,
 
-                    productId = shelf.CurrentProduct.Id,
+                    productId = shelf.AssignedProduct.Id,
                     amount = shelf.CurrentAmount
                 });
             }
@@ -123,7 +126,7 @@ namespace RetailEmpireTycoon.SaveSystem
                 if (entry == null)
                     continue;
 
-                if (entry.amount <= 0)
+                if (entry.amount < 0)
                     continue;
 
                 string key = BuildKey(entry);
@@ -158,7 +161,11 @@ namespace RetailEmpireTycoon.SaveSystem
                 PlacedObject placedObject = shelf.GetComponent<PlacedObject>();
 
                 if (placedObject == null || placedObject.item == null)
+                {
+                    string sceneKey = SceneShelfKey(shelf);
+                    if (!lookup.ContainsKey(sceneKey)) lookup.Add(sceneKey, shelf);
                     continue;
+                }
 
                 string key = BuildKey(placedObject);
 
@@ -186,8 +193,18 @@ namespace RetailEmpireTycoon.SaveSystem
                 + placedObject.facing;
         }
 
+        private static string SceneShelfKey(PlacedShelfStock shelf)
+        {
+            // Prebuilt store furniture has no build-inventory identity. Its type and stable world pose identify it.
+            Vector3 position = shelf.transform.position;
+            return "scene|" + shelf.ShelfType + "|" + Mathf.RoundToInt(position.x * 1000)
+                + "|" + Mathf.RoundToInt(position.y * 1000) + "|" + Mathf.RoundToInt(position.z * 1000)
+                + "|" + Mathf.RoundToInt(shelf.transform.eulerAngles.y);
+        }
+
         private static string BuildKey(ShelfStockSaveEntry entry)
         {
+            if (!string.IsNullOrEmpty(entry.sceneShelfId)) return entry.sceneShelfId;
             return entry.buildItemId
                 + "|"
                 + entry.anchorX
