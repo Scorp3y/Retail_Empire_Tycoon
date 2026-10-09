@@ -14,19 +14,19 @@ OcclusionCullingSettings:
 RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 9
-  m_Fog: 0
-  m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-  m_FogMode: 3
+  m_Fog: 1
+  m_FogColor: {r: 0.7, g: 0.82, b: 0.9, a: 1}
+  m_FogMode: 1
   m_FogDensity: 0.01
-  m_LinearFogStart: 0
-  m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
-  m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
-  m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
+  m_LinearFogStart: 93.333336
+  m_LinearFogEnd: 240
+  m_AmbientSkyColor: {r: 0.53, g: 0.69, b: 0.86, a: 1}
+  m_AmbientEquatorColor: {r: 0.59, g: 0.64, b: 0.58, a: 1}
+  m_AmbientGroundColor: {r: 0.29, g: 0.33, b: 0.24, a: 1}
   m_AmbientIntensity: 1
-  m_AmbientMode: 0
+  m_AmbientMode: 1
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 2100000, guid: d4454f71d85928744be7771e2143dab7, type: 2}
+  m_SkyboxMaterial: {fileID: 2100000, guid: 923c0b68d059f4145a9b443f11c85145, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -2093,6 +2093,37 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: d372dbc1acdf2b14fb741024354ef278, type: 3}
   m_PrefabInstance: {fileID: 7012263}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &66226468
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 66226469}
+  m_Layer: 0
+  m_Name: Sidewalk stop 2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &66226469
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 66226468}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.49983335, y: 0, z: -12.5005665}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 706950722}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &71558336
 GameObject:
   m_ObjectHideFlags: 0
@@ -3213,7 +3244,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 2147483647
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &108715166
 Transform:
   m_ObjectHideFlags: 0
@@ -5611,6 +5642,55 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 182155175}
   m_CullTransparentMesh: 1
+--- !u!1 &185612019
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 185612021}
+  - component: {fileID: 185612020}
+  m_Layer: 0
+  m_Name: Town atmosphere
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &185612020
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 185612019}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_IsGlobal: 1
+  priority: 20
+  blendDistance: 0
+  weight: 1
+  sharedProfile: {fileID: 11400000, guid: f16cdbd7280555646826fe63ef0d85ff, type: 2}
+--- !u!4 &185612021
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 185612019}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &185778194
 GameObject:
   m_ObjectHideFlags: 0
@@ -15592,9 +15672,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   npcPrefab: {fileID: 6760340952312498386, guid: 93c1e771a59130449b5ec8631a56d388, type: 3}
   waypoints:
-  - {fileID: 1662552452}
-  - {fileID: 278709937}
-  spawnPoint: {fileID: 361158960}
+  - {fileID: 1323654264}
+  - {fileID: 66226469}
+  - {fileID: 1660066414}
+  spawnPoint: {fileID: 2110253781}
   spawnInterval: 50
   shop: {fileID: 1669881618}
 --- !u!4 &361158960
@@ -18781,7 +18862,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &536644077
 Transform:
   m_ObjectHideFlags: 0
@@ -20396,7 +20477,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &621111220
 Transform:
   m_ObjectHideFlags: 0
@@ -22159,8 +22240,8 @@ Light:
   serializedVersion: 10
   m_Type: 1
   m_Shape: 0
-  m_Color: {r: 0.9828695, g: 1, b: 0.7905661, a: 1}
-  m_Intensity: 0.9
+  m_Color: {r: 1, g: 0.92, b: 0.79, a: 1}
+  m_Intensity: 1.35
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -22169,7 +22250,7 @@ Light:
     m_Type: 2
     m_Resolution: -1
     m_CustomResolution: -1
-    m_Strength: 1
+    m_Strength: 0.8
     m_Bias: 0.05
     m_NormalBias: 0
     m_NearPlane: 0.1
@@ -22218,7 +22299,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 705507993}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.4768585, y: 0.26041883, z: -0.15035288, w: 0.8259431}
+  m_LocalRotation: {x: 0.31295618, y: -0.26062024, z: 0.08973874, w: 0.9088908}
   m_LocalPosition: {x: -954.51, y: -530.65, z: 4.73}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -22248,6 +22329,41 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 0
+--- !u!1 &706950721
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 706950722}
+  m_Layer: 0
+  m_Name: Town pedestrian promenade
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &706950722
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 706950721}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2110253781}
+  - {fileID: 1323654264}
+  - {fileID: 66226469}
+  - {fileID: 1660066414}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &710407023 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: d372dbc1acdf2b14fb741024354ef278, type: 3}
@@ -26054,7 +26170,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &853960574
 Transform:
   m_ObjectHideFlags: 0
@@ -28255,8 +28371,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   npcPrefab: {fileID: 856051513290632061, guid: 3c0e0598fb02a214996f170152ed318d, type: 3}
   waypoints:
-  - {fileID: 278709937}
-  spawnPoint: {fileID: 916008670}
+  - {fileID: 1323654264}
+  - {fileID: 66226469}
+  - {fileID: 1660066414}
+  spawnPoint: {fileID: 2110253781}
   spawnInterval: 30
   shop: {fileID: 1669881618}
 --- !u!4 &916008670
@@ -28288,8 +28406,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   npcPrefab: {fileID: 2339764421793266146, guid: 8ce8874e0abbd254da68cb63a34a146e, type: 3}
   waypoints:
-  - {fileID: 278709937}
-  spawnPoint: {fileID: 916008670}
+  - {fileID: 1323654264}
+  - {fileID: 66226469}
+  - {fileID: 1660066414}
+  spawnPoint: {fileID: 2110253781}
   spawnInterval: 25
   shop: {fileID: 1669881618}
 --- !u!114 &916008672
@@ -28306,9 +28426,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   npcPrefab: {fileID: 7506905260343642280, guid: c5d15517cc3a18443a1ebc47e555c3cc, type: 3}
   waypoints:
-  - {fileID: 1662552452}
-  - {fileID: 827947107}
-  spawnPoint: {fileID: 916008670}
+  - {fileID: 1323654264}
+  - {fileID: 66226469}
+  - {fileID: 1660066414}
+  spawnPoint: {fileID: 2110253781}
   spawnInterval: 35
   shop: {fileID: 1669881618}
 --- !u!4 &917379295 stripped
@@ -29206,7 +29327,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &944443386
 Transform:
   m_ObjectHideFlags: 0
@@ -29509,7 +29630,7 @@ Camera:
     width: 1
     height: 1
   near clip plane: 0.3
-  far clip plane: 1000
+  far clip plane: 650
   field of view: 52.94856
   orthographic: 0
   orthographic size: 5
@@ -29556,14 +29677,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d63a55196f5272640a8989132811cf1d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minX: -5.8335
-  maxX: 78.1813
-  minZ: -7.8339
-  maxZ: 47.175102
+  minX: -73.16684
+  maxX: 112.83316
+  minZ: -35.8339
+  maxZ: 110.1661
   minY: 1.5
-  maxY: 120
+  maxY: 90
   minZoomDistance: 4
-  maxZoomDistance: 140
+  maxZoomDistance: 130
   pivot: {x: 0, y: 0, z: -5}
   moveSpeed: 0.5
   zoomSpeed: 10
@@ -29597,7 +29718,7 @@ MonoBehaviour:
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
   m_RenderPostProcessing: 1
-  m_Antialiasing: 0
+  m_Antialiasing: 2
   m_AntialiasingQuality: 2
   m_StopNaN: 0
   m_Dithering: 1
@@ -37560,8 +37681,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   npcPrefab: {fileID: 6286442990521418770, guid: d46bfc54eb714954698dadd5229fa079, type: 3}
   waypoints:
-  - {fileID: 846531187}
-  spawnPoint: {fileID: 1112873418}
+  - {fileID: 1323654264}
+  - {fileID: 66226469}
+  - {fileID: 1660066414}
+  spawnPoint: {fileID: 2110253781}
   spawnInterval: 30
   shop: {fileID: 1669881618}
 --- !u!4 &1112873418
@@ -37593,8 +37716,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   npcPrefab: {fileID: 1810706902025745236, guid: 4ec98aa4aa32420458c8cf649b79e401, type: 3}
   waypoints:
-  - {fileID: 846531187}
-  spawnPoint: {fileID: 1112873418}
+  - {fileID: 1323654264}
+  - {fileID: 66226469}
+  - {fileID: 1660066414}
+  spawnPoint: {fileID: 2110253781}
   spawnInterval: 20
   shop: {fileID: 1669881618}
 --- !u!4 &1113471426 stripped
@@ -40092,7 +40217,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1200084572
 Transform:
   m_ObjectHideFlags: 0
@@ -43493,6 +43618,37 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: d372dbc1acdf2b14fb741024354ef278, type: 3}
   m_PrefabInstance: {fileID: 1322867620}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1323654263
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1323654264}
+  m_Layer: 0
+  m_Name: Sidewalk stop 1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1323654264
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1323654263}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -7.8335, y: 0, z: -12.5005665}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 706950722}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1324029685
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -53832,7 +53988,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1548008489
 Transform:
   m_ObjectHideFlags: 0
@@ -54343,7 +54499,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1577044408
 Transform:
   m_ObjectHideFlags: 0
@@ -56524,6 +56680,37 @@ MonoBehaviour:
   _model: {fileID: 14815937}
   _fenceRenderer: {fileID: 14815939}
   _priceLabel: {fileID: 1364298999}
+--- !u!1 &1660066413
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1660066414}
+  m_Layer: 0
+  m_Name: Sidewalk stop 3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1660066414
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1660066413}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 15.1665, y: 0, z: -12.5005665}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 706950722}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1660154735
 GameObject:
   m_ObjectHideFlags: 0
@@ -58372,7 +58559,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1724016021
 Transform:
   m_ObjectHideFlags: 0
@@ -64717,6 +64904,79 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d372dbc1acdf2b14fb741024354ef278, type: 3}
+--- !u!1001 &1965494194
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 6743983324878744033, guid: 03d7041345f08de4dbbe6cbc20c438d7, type: 3}
+      propertyPath: progression
+      value: 
+      objectReference: {fileID: 33217803}
+    - target: {fileID: 7042657017902644210, guid: 03d7041345f08de4dbbe6cbc20c438d7, type: 3}
+      propertyPath: m_Name
+      value: Shared town environment
+      objectReference: {fileID: 0}
+    - target: {fileID: 8119444673322256127, guid: 03d7041345f08de4dbbe6cbc20c438d7, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.33333334
+      objectReference: {fileID: 0}
+    - target: {fileID: 8119444673322256127, guid: 03d7041345f08de4dbbe6cbc20c438d7, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.33333334
+      objectReference: {fileID: 0}
+    - target: {fileID: 8119444673322256127, guid: 03d7041345f08de4dbbe6cbc20c438d7, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.33333334
+      objectReference: {fileID: 0}
+    - target: {fileID: 8119444673322256127, guid: 03d7041345f08de4dbbe6cbc20c438d7, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 19.833166
+      objectReference: {fileID: 0}
+    - target: {fileID: 8119444673322256127, guid: 03d7041345f08de4dbbe6cbc20c438d7, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8119444673322256127, guid: 03d7041345f08de4dbbe6cbc20c438d7, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 33.1661
+      objectReference: {fileID: 0}
+    - target: {fileID: 8119444673322256127, guid: 03d7041345f08de4dbbe6cbc20c438d7, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8119444673322256127, guid: 03d7041345f08de4dbbe6cbc20c438d7, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8119444673322256127, guid: 03d7041345f08de4dbbe6cbc20c438d7, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8119444673322256127, guid: 03d7041345f08de4dbbe6cbc20c438d7, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8119444673322256127, guid: 03d7041345f08de4dbbe6cbc20c438d7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8119444673322256127, guid: 03d7041345f08de4dbbe6cbc20c438d7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8119444673322256127, guid: 03d7041345f08de4dbbe6cbc20c438d7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 03d7041345f08de4dbbe6cbc20c438d7, type: 3}
 --- !u!1001 &1966160580
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -68169,6 +68429,37 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d372dbc1acdf2b14fb741024354ef278, type: 3}
+--- !u!1 &2110253780
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2110253781}
+  m_Layer: 0
+  m_Name: Sidewalk stop 0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2110253781
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2110253780}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -17.166834, y: 0, z: -12.5005665}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 706950722}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2114727162 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2704243289049347574, guid: 6d932e4d968f93040ac48bfa893ed389, type: 3}
@@ -72149,3 +72440,6 @@ SceneRoots:
   - {fileID: 1114799947}
   - {fileID: 1431869055}
   - {fileID: 1962231988}
+  - {fileID: 1965494194}
+  - {fileID: 185612021}
+  - {fileID: 706950722}

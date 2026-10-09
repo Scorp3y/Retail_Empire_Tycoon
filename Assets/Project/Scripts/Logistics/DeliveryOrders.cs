@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace RetailEmpireTycoon.Logistics
 {
-    /// <summary>Purchases reserve paid stock at the depot. Only unloading grants stock to the shop.</summary>
+    /// <summary>Purchases reserve paid stock at individual suppliers. Only unloading grants stock to the shop.</summary>
     public sealed class DeliveryOrders : MonoBehaviour
     {
         public MoneyController money;
@@ -30,6 +30,8 @@ namespace RetailEmpireTycoon.Logistics
         private void OnDestroy() { Ledger.Changed -= Notify; }
         private void Notify() { Changed?.Invoke(); }
         public float DepotWeightKg => Weight(DeliveryLocation.Depot);
+        public float WaitingWeightAt(SupplierKind supplier) => Ledger.Entries
+            .Where(e=>e.location==DeliveryLocation.Depot&&SupplierFor(e)==supplier).Sum(e=>UnitWeight(e)*e.quantity);
         public float PickupWeightKg => Weight(DeliveryLocation.Pickup);
         public float PickupVolumeM3 => Ledger.Entries.Where(e => e.location == DeliveryLocation.Pickup).Sum(e => UnitVolume(e) * e.quantity);
         public float ShopWeightKg => products.BuildSaveData().Sum(e => (productCatalog.GetById(e.productId)?.UnitWeightKg ?? 0) * e.count)
@@ -38,6 +40,27 @@ namespace RetailEmpireTycoon.Logistics
             ? UI.Shop.ShopText.Item(productCatalog.GetById(entry.itemId)) : UI.Shop.ShopText.Item(buildCatalog.GetById(entry.itemId));
         public int PackageQuantity(DeliveryEntry entry) => entry.kind == DeliveryItemKind.Product
             ? productCatalog.GetById(entry.itemId).BoxAmount : 1;
+
+        public SupplierKind SupplierFor(DeliveryEntry entry)
+        {
+            if(entry==null)throw new ArgumentNullException(nameof(entry));
+            if(entry.kind==DeliveryItemKind.Product)
+            {
+                var item=productCatalog.GetById(entry.itemId);
+                if(item==null)throw new InvalidOperationException("Unknown paid product: "+entry.itemId);
+                return SupplierRouting.ForProduct(item.StorageType);
+            }
+            var building=buildCatalog.GetById(entry.itemId);
+            if(building==null)throw new InvalidOperationException("Unknown paid building: "+entry.itemId);
+            return SupplierRouting.ForBuilding(building);
+        }
+
+        public bool LoadFrom(DeliveryEntry entry,SupplierKind supplier)
+        {
+            if(entry==null)return false;
+            if(SupplierFor(entry)!=supplier)return Reject("Этот заказ находится у поставщика «"+SupplierRouting.Name(SupplierFor(entry))+"».");
+            return Load(entry);
+        }
 
         public bool Order(ProductItemData item) => item != null && Purchase(item.Id, DeliveryItemKind.Product, item.BoxAmount, item.BuyPrice, item.UnitWeightKg);
         public bool Order(BuildItemData item)
@@ -48,14 +71,16 @@ namespace RetailEmpireTycoon.Logistics
         }
         private bool Purchase(string id, DeliveryItemKind kind, int quantity, int price, float unitWeight)
         {
-            if (DepotWeightKg + unitWeight * quantity > depotCapacityKg) return Reject("Городской склад заполнен — заберите предыдущие заказы.");
+            var supplier=SupplierFor(new DeliveryEntry{itemId=id,kind=kind});
+            if (WaitingWeightAt(supplier) + unitWeight * quantity > depotCapacityKg) return Reject("Склад этого поставщика заполнен — заберите предыдущие заказы.");
             if (!money.CanSpend(price)) return Reject("Недостаточно денег.");
             var before = Ledger.Capture(); int oldMoney = money.Money;
             try
             {
                 if (!money.TrySpend(price)) return false;
                 Ledger.Order(id, kind, quantity); Persist();
-                Notice = "Заказ оплачен. Заберите его на городском складе."; NoticeIsError=false; Notify(); return true;
+                var ordered=new DeliveryEntry {itemId=id,kind=kind};
+                Notice = "Заказ оплачен. Выдача: «"+SupplierRouting.Name(SupplierFor(ordered))+"»."; NoticeIsError=false; Notify(); return true;
             }
             catch (Exception error)
             {

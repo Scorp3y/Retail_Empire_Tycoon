@@ -1,0 +1,1327 @@
+{
+    "generator": "RetailEmpireTycoon.TownKit.v1",
+    "units": "1 Unity unit = 1 metre; Y up; front +Z; grounded pivot",
+    "scope": "Visual assets only; no scenes, runtime logic, vehicle controllers or purchase catalogues changed.",
+    "assets": [
+        {
+            "id": "HouseCream",
+            "category": "Buildings",
+            "name": "Частный дом",
+            "prefab": "Prefabs/Buildings/HouseCream.prefab",
+            "obj": "Models/Buildings/HouseCream.obj",
+            "preview": "Previews/HouseCream.png",
+            "triangles": 404,
+            "vertices": 1212,
+            "size": {
+                "x": 7.550000190734863,
+                "y": 5.40000057220459,
+                "z": 7.719999313354492
+            }
+        },
+        {
+            "id": "HouseBrick",
+            "category": "Buildings",
+            "name": "Кирпичный дом",
+            "prefab": "Prefabs/Buildings/HouseBrick.prefab",
+            "obj": "Models/Buildings/HouseBrick.obj",
+            "preview": "Previews/HouseBrick.png",
+            "triangles": 404,
+            "vertices": 1212,
+            "size": {
+                "x": 7.550000190734863,
+                "y": 5.40000057220459,
+                "z": 7.719999313354492
+            }
+        },
+        {
+            "id": "Townhouse",
+            "category": "Buildings",
+            "name": "Таунхаус",
+            "prefab": "Prefabs/Buildings/Townhouse.prefab",
+            "obj": "Models/Buildings/Townhouse.obj",
+            "preview": "Previews/Townhouse.png",
+            "triangles": 704,
+            "vertices": 2112,
+            "size": {
+                "x": 5.950000286102295,
+                "y": 8.300000190734864,
+                "z": 7.719999313354492
+            }
+        },
+        {
+            "id": "ApartmentSmall",
+            "category": "Buildings",
+            "name": "Малый многоквартирный дом",
+            "prefab": "Prefabs/Buildings/ApartmentSmall.prefab",
+            "obj": "Models/Buildings/ApartmentSmall.obj",
+            "preview": "Previews/ApartmentSmall.png",
+            "triangles": 1740,
+            "vertices": 5220,
+            "size": {
+                "x": 10.430000305175782,
+                "y": 12.557499885559082,
+                "z": 9.350000381469727
+            }
+        },
+        {
+            "id": "Garage",
+            "category": "Buildings",
+            "name": "Гараж",
+            "prefab": "Prefabs/Buildings/Garage.prefab",
+            "obj": "Models/Buildings/Garage.obj",
+            "preview": "Previews/Garage.png",
+            "triangles": 292,
+            "vertices": 876,
+            "size": {
+                "x": 5.900000095367432,
+                "y": 4.5,
+                "z": 7.59499979019165
+            }
+        },
+        {
+            "id": "WholesaleBase",
+            "category": "Buildings",
+            "name": "Продуктовая оптовая база",
+            "prefab": "Prefabs/Buildings/WholesaleBase.prefab",
+            "obj": "Models/Buildings/WholesaleBase.obj",
+            "preview": "Previews/WholesaleBase.png",
+            "triangles": 1452,
+            "vertices": 4356,
+            "size": {
+                "x": 20.439998626708986,
+                "y": 6.257500171661377,
+                "z": 14.015000343322754
+            }
+        },
+        {
+            "id": "FarmersMarket",
+            "category": "Buildings",
+            "name": "Фермерский рынок",
+            "prefab": "Prefabs/Buildings/FarmersMarket.prefab",
+            "obj": "Models/Buildings/FarmersMarket.obj",
+            "preview": "Previews/FarmersMarket.png",
+            "triangles": 4208,
+            "vertices": 12624,
+            "size": {
+                "x": 12.180000305175782,
+                "y": 4.0,
+                "z": 6.599999904632568
+            }
+        },
+        {
+            "id": "EquipmentSupplier",
+            "category": "Buildings",
+            "name": "Магазин торгового оборудования",
+            "prefab": "Prefabs/Buildings/EquipmentSupplier.prefab",
+            "obj": "Models/Buildings/EquipmentSupplier.obj",
+            "preview": "Previews/EquipmentSupplier.png",
+            "triangles": 1680,
+            "vertices": 5040,
+            "size": {
+                "x": 17.530000686645509,
+                "y": 5.057499408721924,
+                "z": 10.774999618530274
+            }
+        },
+        {
+            "id": "ConstructionSupplier",
+            "category": "Buildings",
+            "name": "Строительство и декор",
+            "prefab": "Prefabs/Buildings/ConstructionSupplier.prefab",
+            "obj": "Models/Buildings/ConstructionSupplier.obj",
+            "preview": "Previews/ConstructionSupplier.png",
+            "triangles": 1190,
+            "vertices": 3570,
+            "size": {
+                "x": 18.53999900817871,
+                "y": 5.057499408721924,
+                "z": 11.774999618530274
+            }
+        },
+        {
+            "id": "CarDealership",
+            "category": "Buildings",
+            "name": "Автосалон",
+            "prefab": "Prefabs/Buildings/CarDealership.prefab",
+            "obj": "Models/Buildings/CarDealership.obj",
+            "preview": "Previews/CarDealership.png",
+            "triangles": 598,
+            "vertices": 1794,
+            "size": {
+                "x": 16.459999084472658,
+                "y": 4.967499732971191,
+                "z": 11.100000381469727
+            }
+        },
+        {
+            "id": "Cafe",
+            "category": "Buildings",
+            "name": "Кафе",
+            "prefab": "Prefabs/Buildings/Cafe.prefab",
+            "obj": "Models/Buildings/Cafe.obj",
+            "preview": "Previews/Cafe.png",
+            "triangles": 1310,
+            "vertices": 3930,
+            "size": {
+                "x": 8.495000839233399,
+                "y": 5.057499408721924,
+                "z": 9.614999771118164
+            }
+        },
+        {
+            "id": "Bakery",
+            "category": "Buildings",
+            "name": "Пекарня",
+            "prefab": "Prefabs/Buildings/Bakery.prefab",
+            "obj": "Models/Buildings/Bakery.obj",
+            "preview": "Previews/Bakery.png",
+            "triangles": 1414,
+            "vertices": 4242,
+            "size": {
+                "x": 8.495000839233399,
+                "y": 5.057499408721924,
+                "z": 9.614999771118164
+            }
+        },
+        {
+            "id": "Pharmacy",
+            "category": "Buildings",
+            "name": "Аптека",
+            "prefab": "Prefabs/Buildings/Pharmacy.prefab",
+            "obj": "Models/Buildings/Pharmacy.obj",
+            "preview": "Previews/Pharmacy.png",
+            "triangles": 1136,
+            "vertices": 3408,
+            "size": {
+                "x": 8.52500057220459,
+                "y": 5.057499408721924,
+                "z": 8.164999961853028
+            }
+        },
+        {
+            "id": "FlowerShop",
+            "category": "Buildings",
+            "name": "Цветочный магазин",
+            "prefab": "Prefabs/Buildings/FlowerShop.prefab",
+            "obj": "Models/Buildings/FlowerShop.obj",
+            "preview": "Previews/FlowerShop.png",
+            "triangles": 3466,
+            "vertices": 10398,
+            "size": {
+                "x": 8.495000839233399,
+                "y": 5.057499408721924,
+                "z": 8.71500015258789
+            }
+        },
+        {
+            "id": "RoadStraight",
+            "category": "Roads",
+            "name": "Прямая дорога 12 м",
+            "prefab": "Prefabs/Roads/RoadStraight.prefab",
+            "obj": "Models/Roads/RoadStraight.obj",
+            "preview": "Previews/RoadStraight.png",
+            "triangles": 48,
+            "vertices": 144,
+            "size": {
+                "x": 12.0,
+                "y": 0.12999999523162843,
+                "z": 12.0
+            }
+        },
+        {
+            "id": "RoadCorner",
+            "category": "Roads",
+            "name": "Поворот дороги 90 градусов",
+            "prefab": "Prefabs/Roads/RoadCorner.prefab",
+            "obj": "Models/Roads/RoadCorner.obj",
+            "preview": "Previews/RoadCorner.png",
+            "triangles": 174,
+            "vertices": 522,
+            "size": {
+                "x": 12.0,
+                "y": 0.12999999523162843,
+                "z": 12.0
+            }
+        },
+        {
+            "id": "RoadTee",
+            "category": "Roads",
+            "name": "Т-образный перекрёсток",
+            "prefab": "Prefabs/Roads/RoadTee.prefab",
+            "obj": "Models/Roads/RoadTee.obj",
+            "preview": "Previews/RoadTee.png",
+            "triangles": 30,
+            "vertices": 90,
+            "size": {
+                "x": 12.0,
+                "y": 0.12999999523162843,
+                "z": 12.0
+            }
+        },
+        {
+            "id": "RoadCross",
+            "category": "Roads",
+            "name": "Крестовой перекрёсток",
+            "prefab": "Prefabs/Roads/RoadCross.prefab",
+            "obj": "Models/Roads/RoadCross.obj",
+            "preview": "Previews/RoadCross.png",
+            "triangles": 32,
+            "vertices": 96,
+            "size": {
+                "x": 12.0,
+                "y": 0.12999999523162843,
+                "z": 12.0
+            }
+        },
+        {
+            "id": "RoadDeadEnd",
+            "category": "Roads",
+            "name": "Тупик с разворотом",
+            "prefab": "Prefabs/Roads/RoadDeadEnd.prefab",
+            "obj": "Models/Roads/RoadDeadEnd.obj",
+            "preview": "Previews/RoadDeadEnd.png",
+            "triangles": 118,
+            "vertices": 354,
+            "size": {
+                "x": 12.0,
+                "y": 0.12999999523162843,
+                "z": 12.800000190734864
+            }
+        },
+        {
+            "id": "SidewalkStraight",
+            "category": "Roads",
+            "name": "Прямой тротуар",
+            "prefab": "Prefabs/Roads/SidewalkStraight.prefab",
+            "obj": "Models/Roads/SidewalkStraight.obj",
+            "preview": "Previews/SidewalkStraight.png",
+            "triangles": 34,
+            "vertices": 102,
+            "size": {
+                "x": 2.0,
+                "y": 0.13300000131130219,
+                "z": 12.0
+            }
+        },
+        {
+            "id": "SidewalkCorner",
+            "category": "Roads",
+            "name": "Угловой тротуар",
+            "prefab": "Prefabs/Roads/SidewalkCorner.prefab",
+            "obj": "Models/Roads/SidewalkCorner.obj",
+            "preview": "Previews/SidewalkCorner.png",
+            "triangles": 20,
+            "vertices": 60,
+            "size": {
+                "x": 4.0,
+                "y": 0.13300000131130219,
+                "z": 4.0
+            }
+        },
+        {
+            "id": "Curb",
+            "category": "Roads",
+            "name": "Бордюр",
+            "prefab": "Prefabs/Roads/Curb.prefab",
+            "obj": "Models/Roads/Curb.obj",
+            "preview": "Previews/Curb.png",
+            "triangles": 12,
+            "vertices": 36,
+            "size": {
+                "x": 0.25,
+                "y": 0.18000000715255738,
+                "z": 12.0
+            }
+        },
+        {
+            "id": "DrivewayCurb",
+            "category": "Roads",
+            "name": "Пониженный въезд",
+            "prefab": "Prefabs/Roads/DrivewayCurb.prefab",
+            "obj": "Models/Roads/DrivewayCurb.obj",
+            "preview": "Previews/DrivewayCurb.png",
+            "triangles": 12,
+            "vertices": 36,
+            "size": {
+                "x": 4.0,
+                "y": 0.14000000059604646,
+                "z": 2.0
+            }
+        },
+        {
+            "id": "Crosswalk",
+            "category": "Roads",
+            "name": "Пешеходный переход",
+            "prefab": "Prefabs/Roads/Crosswalk.prefab",
+            "obj": "Models/Roads/Crosswalk.obj",
+            "preview": "Previews/Crosswalk.png",
+            "triangles": 20,
+            "vertices": 60,
+            "size": {
+                "x": 7.630000114440918,
+                "y": 0.0,
+                "z": 3.0
+            }
+        },
+        {
+            "id": "LaneMarkings",
+            "category": "Roads",
+            "name": "Разметка полос",
+            "prefab": "Prefabs/Roads/LaneMarkings.prefab",
+            "obj": "Models/Roads/LaneMarkings.obj",
+            "preview": "Previews/LaneMarkings.png",
+            "triangles": 16,
+            "vertices": 48,
+            "size": {
+                "x": 0.11999999731779099,
+                "y": 0.0,
+                "z": 11.300000190734864
+            }
+        },
+        {
+            "id": "AsphaltPad",
+            "category": "Roads",
+            "name": "Асфальтовая площадка 12 на 12 м",
+            "prefab": "Prefabs/Roads/AsphaltPad.prefab",
+            "obj": "Models/Roads/AsphaltPad.obj",
+            "preview": "Previews/AsphaltPad.png",
+            "triangles": 12,
+            "vertices": 36,
+            "size": {
+                "x": 12.0,
+                "y": 0.05000000074505806,
+                "z": 12.0
+            }
+        },
+        {
+            "id": "ParkingBay",
+            "category": "Roads",
+            "name": "Парковочное место",
+            "prefab": "Prefabs/Roads/ParkingBay.prefab",
+            "obj": "Models/Roads/ParkingBay.obj",
+            "preview": "Previews/ParkingBay.png",
+            "triangles": 42,
+            "vertices": 126,
+            "size": {
+                "x": 2.875,
+                "y": 0.20499999821186067,
+                "z": 5.637499809265137
+            }
+        },
+        {
+            "id": "CustomerParking",
+            "category": "Roads",
+            "name": "Парковка на три машины",
+            "prefab": "Prefabs/Roads/CustomerParking.prefab",
+            "obj": "Models/Roads/CustomerParking.obj",
+            "preview": "Previews/CustomerParking.png",
+            "triangles": 46,
+            "vertices": 138,
+            "size": {
+                "x": 8.47499942779541,
+                "y": 0.20499999821186067,
+                "z": 5.637499809265137
+            }
+        },
+        {
+            "id": "PlazaTile",
+            "category": "Roads",
+            "name": "Плитка площади",
+            "prefab": "Prefabs/Roads/PlazaTile.prefab",
+            "obj": "Models/Roads/PlazaTile.obj",
+            "preview": "Previews/PlazaTile.png",
+            "triangles": 24,
+            "vertices": 72,
+            "size": {
+                "x": 4.0,
+                "y": 0.05299999937415123,
+                "z": 4.0
+            }
+        },
+        {
+            "id": "GravelTile",
+            "category": "Roads",
+            "name": "Гравийное покрытие",
+            "prefab": "Prefabs/Roads/GravelTile.prefab",
+            "obj": "Models/Roads/GravelTile.obj",
+            "preview": "Previews/GravelTile.png",
+            "triangles": 194,
+            "vertices": 582,
+            "size": {
+                "x": 4.0,
+                "y": 0.035999998450279239,
+                "z": 4.0
+            }
+        },
+        {
+            "id": "ParkPath",
+            "category": "Roads",
+            "name": "Парковая дорожка",
+            "prefab": "Prefabs/Roads/ParkPath.prefab",
+            "obj": "Models/Roads/ParkPath.obj",
+            "preview": "Previews/ParkPath.png",
+            "triangles": 20,
+            "vertices": 60,
+            "size": {
+                "x": 2.0,
+                "y": 0.0430000014603138,
+                "z": 4.0
+            }
+        },
+        {
+            "id": "LoadingGate",
+            "category": "Logistics",
+            "name": "Погрузочные ворота",
+            "prefab": "Prefabs/Logistics/LoadingGate.prefab",
+            "obj": "Models/Logistics/LoadingGate.obj",
+            "preview": "Previews/LoadingGate.png",
+            "triangles": 296,
+            "vertices": 888,
+            "size": {
+                "x": 4.349999904632568,
+                "y": 3.799999713897705,
+                "z": 0.8999999761581421
+            }
+        },
+        {
+            "id": "LoadingCanopy",
+            "category": "Logistics",
+            "name": "Погрузочный навес",
+            "prefab": "Prefabs/Logistics/LoadingCanopy.prefab",
+            "obj": "Models/Logistics/LoadingCanopy.obj",
+            "preview": "Previews/LoadingCanopy.png",
+            "triangles": 56,
+            "vertices": 168,
+            "size": {
+                "x": 8.699999809265137,
+                "y": 4.25,
+                "z": 6.699999809265137
+            }
+        },
+        {
+            "id": "PickupStopZone",
+            "category": "Logistics",
+            "name": "Зона остановки для погрузки",
+            "prefab": "Prefabs/Logistics/PickupStopZone.prefab",
+            "obj": "Models/Logistics/PickupStopZone.obj",
+            "preview": "Previews/PickupStopZone.png",
+            "triangles": 82,
+            "vertices": 246,
+            "size": {
+                "x": 4.0,
+                "y": 0.007000000216066837,
+                "z": 7.0
+            }
+        },
+        {
+            "id": "IndustrialFence",
+            "category": "Logistics",
+            "name": "Промышленное ограждение",
+            "prefab": "Prefabs/Logistics/IndustrialFence.prefab",
+            "obj": "Models/Logistics/IndustrialFence.obj",
+            "preview": "Previews/IndustrialFence.png",
+            "triangles": 252,
+            "vertices": 756,
+            "size": {
+                "x": 4.119999885559082,
+                "y": 2.200000047683716,
+                "z": 0.13249999284744264
+            }
+        },
+        {
+            "id": "WarehouseRack",
+            "category": "Logistics",
+            "name": "Складской стеллаж с коробками",
+            "prefab": "Prefabs/Logistics/WarehouseRack.prefab",
+            "obj": "Models/Logistics/WarehouseRack.obj",
+            "preview": "Previews/WarehouseRack.png",
+            "triangles": 588,
+            "vertices": 1764,
+            "size": {
+                "x": 3.299999952316284,
+                "y": 3.0,
+                "z": 1.2000000476837159
+            }
+        },
+        {
+            "id": "Pallet",
+            "category": "Logistics",
+            "name": "Деревянный поддон",
+            "prefab": "Prefabs/Logistics/Pallet.prefab",
+            "obj": "Models/Logistics/Pallet.obj",
+            "preview": "Previews/Pallet.png",
+            "triangles": 96,
+            "vertices": 288,
+            "size": {
+                "x": 1.159999966621399,
+                "y": 0.24500000476837159,
+                "z": 0.8500000238418579
+            }
+        },
+        {
+            "id": "BoxSmall",
+            "category": "Logistics",
+            "name": "Малая коробка",
+            "prefab": "Prefabs/Logistics/BoxSmall.prefab",
+            "obj": "Models/Logistics/BoxSmall.obj",
+            "preview": "Previews/BoxSmall.png",
+            "triangles": 36,
+            "vertices": 108,
+            "size": {
+                "x": 0.4000000059604645,
+                "y": 0.35600000619888308,
+                "z": 0.4569999873638153
+            }
+        },
+        {
+            "id": "BoxMedium",
+            "category": "Logistics",
+            "name": "Средняя коробка",
+            "prefab": "Prefabs/Logistics/BoxMedium.prefab",
+            "obj": "Models/Logistics/BoxMedium.obj",
+            "preview": "Previews/BoxMedium.png",
+            "triangles": 36,
+            "vertices": 108,
+            "size": {
+                "x": 0.6499999761581421,
+                "y": 0.5559999942779541,
+                "z": 0.7070000171661377
+            }
+        },
+        {
+            "id": "BoxLarge",
+            "category": "Logistics",
+            "name": "Большая коробка",
+            "prefab": "Prefabs/Logistics/BoxLarge.prefab",
+            "obj": "Models/Logistics/BoxLarge.obj",
+            "preview": "Previews/BoxLarge.png",
+            "triangles": 36,
+            "vertices": 108,
+            "size": {
+                "x": 1.0,
+                "y": 0.8560000061988831,
+                "z": 0.906999945640564
+            }
+        },
+        {
+            "id": "FruitCrate",
+            "category": "Logistics",
+            "name": "Ящик фруктов",
+            "prefab": "Prefabs/Logistics/FruitCrate.prefab",
+            "obj": "Models/Logistics/FruitCrate.obj",
+            "preview": "Previews/FruitCrate.png",
+            "triangles": 476,
+            "vertices": 1428,
+            "size": {
+                "x": 1.1800000667572022,
+                "y": 0.550000011920929,
+                "z": 0.8299999833106995
+            }
+        },
+        {
+            "id": "VegetableCrate",
+            "category": "Logistics",
+            "name": "Ящик овощей",
+            "prefab": "Prefabs/Logistics/VegetableCrate.prefab",
+            "obj": "Models/Logistics/VegetableCrate.obj",
+            "preview": "Previews/VegetableCrate.png",
+            "triangles": 348,
+            "vertices": 1044,
+            "size": {
+                "x": 1.1800000667572022,
+                "y": 0.550000011920929,
+                "z": 0.8299999833106995
+            }
+        },
+        {
+            "id": "CargoContainer",
+            "category": "Logistics",
+            "name": "Грузовой контейнер",
+            "prefab": "Prefabs/Logistics/CargoContainer.prefab",
+            "obj": "Models/Logistics/CargoContainer.obj",
+            "preview": "Previews/CargoContainer.png",
+            "triangles": 516,
+            "vertices": 1548,
+            "size": {
+                "x": 2.5850000381469728,
+                "y": 2.5999999046325685,
+                "z": 6.092499732971191
+            }
+        },
+        {
+            "id": "RetailShelf",
+            "category": "Logistics",
+            "name": "Выставочный торговый стеллаж",
+            "prefab": "Prefabs/Logistics/RetailShelf.prefab",
+            "obj": "Models/Logistics/RetailShelf.obj",
+            "preview": "Previews/RetailShelf.png",
+            "triangles": 384,
+            "vertices": 1152,
+            "size": {
+                "x": 2.4800000190734865,
+                "y": 2.0999999046325685,
+                "z": 0.8575000166893005
+            }
+        },
+        {
+            "id": "Refrigerator",
+            "category": "Logistics",
+            "name": "Выставочный холодильник",
+            "prefab": "Prefabs/Logistics/Refrigerator.prefab",
+            "obj": "Models/Logistics/Refrigerator.obj",
+            "preview": "Previews/Refrigerator.png",
+            "triangles": 156,
+            "vertices": 468,
+            "size": {
+                "x": 1.600000023841858,
+                "y": 2.299999952316284,
+                "z": 1.0149999856948853
+            }
+        },
+        {
+            "id": "CheckoutCounter",
+            "category": "Logistics",
+            "name": "Кассовый прилавок",
+            "prefab": "Prefabs/Logistics/CheckoutCounter.prefab",
+            "obj": "Models/Logistics/CheckoutCounter.obj",
+            "preview": "Previews/CheckoutCounter.png",
+            "triangles": 60,
+            "vertices": 180,
+            "size": {
+                "x": 2.450000047683716,
+                "y": 1.734900951385498,
+                "z": 1.0
+            }
+        },
+        {
+            "id": "PickupSign",
+            "category": "Logistics",
+            "name": "Знак выдачи заказов без стрелки",
+            "prefab": "Prefabs/Logistics/PickupSign.prefab",
+            "obj": "Models/Logistics/PickupSign.obj",
+            "preview": "Previews/PickupSign.png",
+            "triangles": 236,
+            "vertices": 708,
+            "size": {
+                "x": 1.899999976158142,
+                "y": 2.424999952316284,
+                "z": 0.14399999380111695
+            }
+        },
+        {
+            "id": "StreetLamp",
+            "category": "Street",
+            "name": "Фонарный столб",
+            "prefab": "Prefabs/Street/StreetLamp.prefab",
+            "obj": "Models/Street/StreetLamp.obj",
+            "preview": "Previews/StreetLamp.png",
+            "triangles": 100,
+            "vertices": 300,
+            "size": {
+                "x": 0.5,
+                "y": 5.450000286102295,
+                "z": 1.5550000667572022
+            }
+        },
+        {
+            "id": "StopSign",
+            "category": "Street",
+            "name": "Знак STOP",
+            "prefab": "Prefabs/Street/StopSign.prefab",
+            "obj": "Models/Street/StopSign.obj",
+            "preview": "Previews/StopSign.png",
+            "triangles": 202,
+            "vertices": 606,
+            "size": {
+                "x": 0.9599999785423279,
+                "y": 3.0799999237060549,
+                "z": 0.10897114872932434
+            }
+        },
+        {
+            "id": "YieldSign",
+            "category": "Street",
+            "name": "Знак уступить дорогу",
+            "prefab": "Prefabs/Street/YieldSign.prefab",
+            "obj": "Models/Street/YieldSign.obj",
+            "preview": "Previews/YieldSign.png",
+            "triangles": 33,
+            "vertices": 99,
+            "size": {
+                "x": 0.9599999785423279,
+                "y": 2.950000047683716,
+                "z": 0.08397115021944046
+            }
+        },
+        {
+            "id": "ParkingSign",
+            "category": "Street",
+            "name": "Знак парковки",
+            "prefab": "Prefabs/Street/ParkingSign.prefab",
+            "obj": "Models/Street/ParkingSign.obj",
+            "preview": "Previews/ParkingSign.png",
+            "triangles": 66,
+            "vertices": 198,
+            "size": {
+                "x": 0.800000011920929,
+                "y": 3.049999952316284,
+                "z": 0.07794229686260224
+            }
+        },
+        {
+            "id": "OneWaySign",
+            "category": "Street",
+            "name": "Знак одностороннего движения",
+            "prefab": "Prefabs/Street/OneWaySign.prefab",
+            "obj": "Models/Street/OneWaySign.obj",
+            "preview": "Previews/OneWaySign.png",
+            "triangles": 49,
+            "vertices": 147,
+            "size": {
+                "x": 0.800000011920929,
+                "y": 3.049999952316284,
+                "z": 0.08897115290164948
+            }
+        },
+        {
+            "id": "Bench",
+            "category": "Street",
+            "name": "Скамья",
+            "prefab": "Prefabs/Street/Bench.prefab",
+            "obj": "Models/Street/Bench.obj",
+            "preview": "Previews/Bench.png",
+            "triangles": 132,
+            "vertices": 396,
+            "size": {
+                "x": 1.899999976158142,
+                "y": 1.0899999141693116,
+                "z": 0.6649999618530273
+            }
+        },
+        {
+            "id": "LitterBin",
+            "category": "Street",
+            "name": "Урна",
+            "prefab": "Prefabs/Street/LitterBin.prefab",
+            "obj": "Models/Street/LitterBin.obj",
+            "preview": "Previews/LitterBin.png",
+            "triangles": 96,
+            "vertices": 288,
+            "size": {
+                "x": 0.6000000238418579,
+                "y": 0.9109999537467957,
+                "z": 0.6000000238418579
+            }
+        },
+        {
+            "id": "BusStop",
+            "category": "Street",
+            "name": "Остановка",
+            "prefab": "Prefabs/Street/BusStop.prefab",
+            "obj": "Models/Street/BusStop.obj",
+            "preview": "Previews/BusStop.png",
+            "triangles": 228,
+            "vertices": 684,
+            "size": {
+                "x": 4.900000095367432,
+                "y": 2.924999952316284,
+                "z": 2.200000047683716
+            }
+        },
+        {
+            "id": "DomesticFence",
+            "category": "Street",
+            "name": "Забор двора",
+            "prefab": "Prefabs/Street/DomesticFence.prefab",
+            "obj": "Models/Street/DomesticFence.obj",
+            "preview": "Previews/DomesticFence.png",
+            "triangles": 368,
+            "vertices": 1104,
+            "size": {
+                "x": 3.119999885559082,
+                "y": 1.2039999961853028,
+                "z": 0.13249999284744264
+            }
+        },
+        {
+            "id": "DomesticGate",
+            "category": "Street",
+            "name": "Калитка",
+            "prefab": "Prefabs/Street/DomesticGate.prefab",
+            "obj": "Models/Street/DomesticGate.obj",
+            "preview": "Previews/DomesticGate.png",
+            "triangles": 168,
+            "vertices": 504,
+            "size": {
+                "x": 1.3200000524520875,
+                "y": 1.2039999961853028,
+                "z": 0.13249999284744264
+            }
+        },
+        {
+            "id": "FlowerPlanter",
+            "category": "Street",
+            "name": "Цветочная кадка",
+            "prefab": "Prefabs/Street/FlowerPlanter.prefab",
+            "obj": "Models/Street/FlowerPlanter.obj",
+            "preview": "Previews/FlowerPlanter.png",
+            "triangles": 1194,
+            "vertices": 3582,
+            "size": {
+                "x": 1.001190185546875,
+                "y": 1.0867999792099,
+                "z": 0.699999988079071
+            }
+        },
+        {
+            "id": "FlowerBed",
+            "category": "Street",
+            "name": "Клумба",
+            "prefab": "Prefabs/Street/FlowerBed.prefab",
+            "obj": "Models/Street/FlowerBed.obj",
+            "preview": "Previews/FlowerBed.png",
+            "triangles": 1688,
+            "vertices": 5064,
+            "size": {
+                "x": 2.200000047683716,
+                "y": 0.7538000345230103,
+                "z": 1.399999976158142
+            }
+        },
+        {
+            "id": "Mailbox",
+            "category": "Street",
+            "name": "Почтовый ящик",
+            "prefab": "Prefabs/Street/Mailbox.prefab",
+            "obj": "Models/Street/Mailbox.obj",
+            "preview": "Previews/Mailbox.png",
+            "triangles": 36,
+            "vertices": 108,
+            "size": {
+                "x": 0.47999998927116396,
+                "y": 1.5600000619888306,
+                "z": 0.5449999570846558
+            }
+        },
+        {
+            "id": "WasteContainer",
+            "category": "Street",
+            "name": "Хозяйственный контейнер",
+            "prefab": "Prefabs/Street/WasteContainer.prefab",
+            "obj": "Models/Street/WasteContainer.obj",
+            "preview": "Previews/WasteContainer.png",
+            "triangles": 260,
+            "vertices": 780,
+            "size": {
+                "x": 1.6399999856948853,
+                "y": 1.375,
+                "z": 1.3199999332427979
+            }
+        },
+        {
+            "id": "Bollard",
+            "category": "Street",
+            "name": "Ограничительный столбик",
+            "prefab": "Prefabs/Street/Bollard.prefab",
+            "obj": "Models/Street/Bollard.obj",
+            "preview": "Previews/Bollard.png",
+            "triangles": 64,
+            "vertices": 192,
+            "size": {
+                "x": 0.18400000035762788,
+                "y": 1.0,
+                "z": 0.18400000035762788
+            }
+        },
+        {
+            "id": "TreeRound",
+            "category": "Nature",
+            "name": "Круглая крона",
+            "prefab": "Prefabs/Nature/TreeRound.prefab",
+            "obj": "Models/Nature/TreeRound.obj",
+            "preview": "Previews/TreeRound.png",
+            "triangles": 216,
+            "vertices": 648,
+            "size": {
+                "x": 3.6579647064208986,
+                "y": 4.866000175476074,
+                "z": 3.299999952316284
+            }
+        },
+        {
+            "id": "TreeTall",
+            "category": "Nature",
+            "name": "Высокое лиственное дерево",
+            "prefab": "Prefabs/Nature/TreeTall.prefab",
+            "obj": "Models/Nature/TreeTall.obj",
+            "preview": "Previews/TreeTall.png",
+            "triangles": 216,
+            "vertices": 648,
+            "size": {
+                "x": 3.103727340698242,
+                "y": 6.159999847412109,
+                "z": 2.799999952316284
+            }
+        },
+        {
+            "id": "TreeWide",
+            "category": "Nature",
+            "name": "Широкая крона",
+            "prefab": "Prefabs/Nature/TreeWide.prefab",
+            "obj": "Models/Nature/TreeWide.obj",
+            "preview": "Previews/TreeWide.png",
+            "triangles": 216,
+            "vertices": 648,
+            "size": {
+                "x": 4.655591011047363,
+                "y": 4.170000076293945,
+                "z": 3.4000000953674318
+            }
+        },
+        {
+            "id": "Pine",
+            "category": "Nature",
+            "name": "Ель",
+            "prefab": "Prefabs/Nature/Pine.prefab",
+            "obj": "Models/Nature/Pine.obj",
+            "preview": "Previews/Pine.png",
+            "triangles": 80,
+            "vertices": 240,
+            "size": {
+                "x": 3.136598587036133,
+                "y": 5.600000381469727,
+                "z": 3.217262029647827
+            }
+        },
+        {
+            "id": "BushRound",
+            "category": "Nature",
+            "name": "Круглый куст",
+            "prefab": "Prefabs/Nature/BushRound.prefab",
+            "obj": "Models/Nature/BushRound.obj",
+            "preview": "Previews/BushRound.png",
+            "triangles": 120,
+            "vertices": 360,
+            "size": {
+                "x": 1.6814792156219483,
+                "y": 1.5499999523162842,
+                "z": 1.4265848398208619
+            }
+        },
+        {
+            "id": "BushWide",
+            "category": "Nature",
+            "name": "Широкий куст",
+            "prefab": "Prefabs/Nature/BushWide.prefab",
+            "obj": "Models/Nature/BushWide.obj",
+            "preview": "Previews/BushWide.png",
+            "triangles": 120,
+            "vertices": 360,
+            "size": {
+                "x": 2.4727468490600588,
+                "y": 1.5499999523162842,
+                "z": 1.4265848398208619
+            }
+        },
+        {
+            "id": "Hedge",
+            "category": "Nature",
+            "name": "Живая изгородь",
+            "prefab": "Prefabs/Nature/Hedge.prefab",
+            "obj": "Models/Nature/Hedge.obj",
+            "preview": "Previews/Hedge.png",
+            "triangles": 280,
+            "vertices": 840,
+            "size": {
+                "x": 2.5135679244995119,
+                "y": 1.5,
+                "z": 0.927211582660675
+            }
+        },
+        {
+            "id": "GrassClump",
+            "category": "Nature",
+            "name": "Пучок травы",
+            "prefab": "Prefabs/Nature/GrassClump.prefab",
+            "obj": "Models/Nature/GrassClump.obj",
+            "preview": "Previews/GrassClump.png",
+            "triangles": 20,
+            "vertices": 60,
+            "size": {
+                "x": 0.8308778405189514,
+                "y": 0.4699999988079071,
+                "z": 0.6527501344680786
+            }
+        },
+        {
+            "id": "FlowerPatch",
+            "category": "Nature",
+            "name": "Трава с цветами",
+            "prefab": "Prefabs/Nature/FlowerPatch.prefab",
+            "obj": "Models/Nature/FlowerPatch.obj",
+            "preview": "Previews/FlowerPatch.png",
+            "triangles": 740,
+            "vertices": 2220,
+            "size": {
+                "x": 0.8308778405189514,
+                "y": 0.5038000345230103,
+                "z": 0.7609328031539917
+            }
+        },
+        {
+            "id": "RockGroup",
+            "category": "Nature",
+            "name": "Группа камней",
+            "prefab": "Prefabs/Nature/RockGroup.prefab",
+            "obj": "Models/Nature/RockGroup.obj",
+            "preview": "Previews/RockGroup.png",
+            "triangles": 108,
+            "vertices": 324,
+            "size": {
+                "x": 2.570775032043457,
+                "y": 1.2000000476837159,
+                "z": 1.6961147785186768
+            }
+        },
+        {
+            "id": "GrassyHill",
+            "category": "Nature",
+            "name": "Невысокий холм",
+            "prefab": "Prefabs/Nature/GrassyHill.prefab",
+            "obj": "Models/Nature/GrassyHill.obj",
+            "preview": "Previews/GrassyHill.png",
+            "triangles": 10,
+            "vertices": 30,
+            "size": {
+                "x": 10.0,
+                "y": 2.4000000953674318,
+                "z": 7.608451843261719
+            }
+        },
+        {
+            "id": "TreeBelt",
+            "category": "Nature",
+            "name": "Лесополоса",
+            "prefab": "Prefabs/Nature/TreeBelt.prefab",
+            "obj": "Models/Nature/TreeBelt.obj",
+            "preview": "Previews/TreeBelt.png",
+            "triangles": 888,
+            "vertices": 2664,
+            "size": {
+                "x": 13.586599349975586,
+                "y": 6.159999847412109,
+                "z": 4.7086310386657719
+            }
+        },
+        {
+            "id": "MeadowPatch",
+            "category": "Nature",
+            "name": "Участок луга",
+            "prefab": "Prefabs/Nature/MeadowPatch.prefab",
+            "obj": "Models/Nature/MeadowPatch.obj",
+            "preview": "Previews/MeadowPatch.png",
+            "triangles": 3350,
+            "vertices": 10050,
+            "size": {
+                "x": 4.0,
+                "y": 0.5038000345230103,
+                "z": 4.0
+            }
+        },
+        {
+            "id": "ExitBarrier",
+            "category": "Nature",
+            "name": "Шлагбаум выезда",
+            "prefab": "Prefabs/Nature/ExitBarrier.prefab",
+            "obj": "Models/Nature/ExitBarrier.obj",
+            "preview": "Previews/ExitBarrier.png",
+            "triangles": 132,
+            "vertices": 396,
+            "size": {
+                "x": 5.775000095367432,
+                "y": 1.5,
+                "z": 0.6499999761581421
+            }
+        },
+        {
+            "id": "DeliveryPickup",
+            "category": "Vehicles",
+            "name": "Пикап доставки",
+            "prefab": "Prefabs/Vehicles/DeliveryPickup.prefab",
+            "obj": "Models/Vehicles/DeliveryPickup.obj",
+            "preview": "Previews/DeliveryPickup.png",
+            "triangles": 580,
+            "vertices": 1740,
+            "size": {
+                "x": 2.200000047683716,
+                "y": 1.8299999237060547,
+                "z": 4.744999885559082
+            }
+        },
+        {
+            "id": "VisitorSedan",
+            "category": "Vehicles",
+            "name": "Легковой автомобиль",
+            "prefab": "Prefabs/Vehicles/VisitorSedan.prefab",
+            "obj": "Models/Vehicles/VisitorSedan.obj",
+            "preview": "Previews/VisitorSedan.png",
+            "triangles": 592,
+            "vertices": 1776,
+            "size": {
+                "x": 2.153599977493286,
+                "y": 1.5899999141693116,
+                "z": 4.657500267028809
+            }
+        },
+        {
+            "id": "VisitorHatchback",
+            "category": "Vehicles",
+            "name": "Хэтчбек",
+            "prefab": "Prefabs/Vehicles/VisitorHatchback.prefab",
+            "obj": "Models/Vehicles/VisitorHatchback.obj",
+            "preview": "Previews/VisitorHatchback.png",
+            "triangles": 592,
+            "vertices": 1776,
+            "size": {
+                "x": 2.153599977493286,
+                "y": 1.5899999141693116,
+                "z": 4.057499885559082
+            }
+        },
+        {
+            "id": "DisplayCar",
+            "category": "Vehicles",
+            "name": "Автомобиль автосалона",
+            "prefab": "Prefabs/Vehicles/DisplayCar.prefab",
+            "obj": "Models/Vehicles/DisplayCar.obj",
+            "preview": "Previews/DisplayCar.png",
+            "triangles": 592,
+            "vertices": 1776,
+            "size": {
+                "x": 2.153599977493286,
+                "y": 1.5899999141693116,
+                "z": 4.657500267028809
+            }
+        },
+        {
+            "id": "BoxTruck",
+            "category": "Vehicles",
+            "name": "Грузовой фургон",
+            "prefab": "Prefabs/Vehicles/BoxTruck.prefab",
+            "obj": "Models/Vehicles/BoxTruck.obj",
+            "preview": "Previews/BoxTruck.png",
+            "triangles": 648,
+            "vertices": 1944,
+            "size": {
+                "x": 2.6000001430511476,
+                "y": 3.3550000190734865,
+                "z": 7.072499752044678
+            }
+        },
+        {
+            "id": "ForkliftStatic",
+            "category": "Vehicles",
+            "name": "Декоративный погрузчик",
+            "prefab": "Prefabs/Vehicles/ForkliftStatic.prefab",
+            "obj": "Models/Vehicles/ForkliftStatic.obj",
+            "preview": "Previews/ForkliftStatic.png",
+            "triangles": 540,
+            "vertices": 1620,
+            "size": {
+                "x": 1.4500000476837159,
+                "y": 2.8499999046325685,
+                "z": 3.4499998092651369
+            }
+        },
+        {
+            "id": "PickupCargoBoxes",
+            "category": "Vehicles",
+            "name": "Коробки для кузова",
+            "prefab": "Prefabs/Vehicles/PickupCargoBoxes.prefab",
+            "obj": "Models/Vehicles/PickupCargoBoxes.obj",
+            "preview": "Previews/PickupCargoBoxes.png",
+            "triangles": 180,
+            "vertices": 540,
+            "size": {
+                "x": 1.3199999332427979,
+                "y": 0.8859999775886536,
+                "z": 1.5869998931884766
+            }
+        },
+        {
+            "id": "PlayerShopShell",
+            "category": "PlayerShop",
+            "name": "Открытая модель магазина и склада",
+            "prefab": "Prefabs/PlayerShop/PlayerShopShell.prefab",
+            "obj": "Models/PlayerShop/PlayerShopShell.obj",
+            "preview": "Previews/PlayerShopShell.png",
+            "triangles": 3498,
+            "vertices": 10494,
+            "size": {
+                "x": 15.210000038146973,
+                "y": 3.3350000381469728,
+                "z": 13.005000114440918
+            }
+        },
+        {
+            "id": "PersonalPickupBay",
+            "category": "PlayerShop",
+            "name": "Личная парковка пикапа",
+            "prefab": "Prefabs/PlayerShop/PersonalPickupBay.prefab",
+            "obj": "Models/PlayerShop/PersonalPickupBay.obj",
+            "preview": "Previews/PersonalPickupBay.png",
+            "triangles": 44,
+            "vertices": 132,
+            "size": {
+                "x": 2.875,
+                "y": 0.20499999821186067,
+                "z": 5.637499809265137
+            }
+        },
+        {
+            "id": "StoreReceivingGate",
+            "category": "PlayerShop",
+            "name": "Ворота приёмки магазина",
+            "prefab": "Prefabs/PlayerShop/StoreReceivingGate.prefab",
+            "obj": "Models/PlayerShop/StoreReceivingGate.obj",
+            "preview": "Previews/StoreReceivingGate.png",
+            "triangles": 450,
+            "vertices": 1350,
+            "size": {
+                "x": 3.6500000953674318,
+                "y": 3.7950000762939455,
+                "z": 0.8999999761581421
+            }
+        },
+        {
+            "id": "StoreSign",
+            "category": "PlayerShop",
+            "name": "Вывеска магазина",
+            "prefab": "Prefabs/PlayerShop/StoreSign.prefab",
+            "obj": "Models/PlayerShop/StoreSign.obj",
+            "preview": "Previews/StoreSign.png",
+            "triangles": 266,
+            "vertices": 798,
+            "size": {
+                "x": 3.4000000953674318,
+                "y": 3.200000047683716,
+                "z": 0.14399999380111695
+            }
+        },
+        {
+            "id": "ReservedPlotMarkers",
+            "category": "PlayerShop",
+            "name": "Обозначение участка расширения",
+            "prefab": "Prefabs/PlayerShop/ReservedPlotMarkers.prefab",
+            "obj": "Models/PlayerShop/ReservedPlotMarkers.obj",
+            "preview": "Previews/ReservedPlotMarkers.png",
+            "triangles": 112,
+            "vertices": 336,
+            "size": {
+                "x": 8.119999885559082,
+                "y": 0.4399999976158142,
+                "z": 8.119999885559082
+            }
+        }
+    ]
+}

@@ -7,6 +7,7 @@ namespace RetailEmpireTycoon.BuildSystem
     public sealed class BuildItemCatalog : MonoBehaviour
     {
         [SerializeField] private List<BuildItemData> items = new();
+        public IReadOnlyList<BuildItemData> Items => items;
 
         public BuildItemData GetById(string id)
         {

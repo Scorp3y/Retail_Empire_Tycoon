@@ -24,6 +24,10 @@ namespace RetailEmpireTycoon.City
         public Transform facadeRoot;
         public Vector3 shopCenter = new Vector3(-55,0,-50);
         public float shopScale = 6;
+        public TownWorldPlaces town;
+        public bool useFixedShopOrigin;
+        public Vector3 sourceShopOrigin;
+        public Material shopRoofMaterial;
         private CityTrip trip;
         private DeliveryOrders orders;
         private ShopUi ui;
@@ -32,10 +36,15 @@ namespace RetailEmpireTycoon.City
         private Button interact;
         private DeliveryCheckpoint nearest;
         private int page;
+        private bool buying;
+        private DeliveryCheckpoint activeSupplier;
+        private DeliveryCheckpoint[] checkpoints;
+        private CityMapHud map;
 
         public void Enter(CityTrip trip, DeliveryOrders orders, Scene shopScene)
         {
             this.trip = trip; this.orders = orders;
+            checkpoints=(town!=null?town.suppliers:Array.Empty<DeliveryCheckpoint>()).Concat(new[]{depot,unload,home}).Where(c=>c!=null).Distinct().ToArray();
             orders.Changed += RefreshCargo;
             ui = new ShopUi(Resources.Load<ShopUiTheme>("ShopUi/Theme"));
             var canvas = new GameObject("City HUD",typeof(RectTransform),typeof(Canvas),typeof(CanvasScaler),typeof(GraphicRaycaster));
@@ -56,6 +65,7 @@ namespace RetailEmpireTycoon.City
             var buttonRect = (RectTransform)interact.transform; buttonRect.anchorMin = buttonRect.anchorMax = new Vector2(.5f,0);
             buttonRect.pivot = new Vector2(.5f,0); buttonRect.anchoredPosition = new Vector2(0,24);
             SyncFacade(shopScene); RefreshCargo();
+            if(town!=null)map=new CityMapHud(ui,canvasRoot,town,pickup,home,chaseCamera,()=>panel==null&&!trip.Transitioning);
         }
         private IEnumerator EnableCityInput(EventSystem events)
         {
@@ -65,13 +75,16 @@ namespace RetailEmpireTycoon.City
         private void Update()
         {
             if (trip == null || trip.Transitioning || orders == null) return;
-            nearest = new[] { depot,unload,home }.Where(c=>c!=null && c.CanUse(pickup)).OrderBy(c=>Vector3.Distance(c.transform.position,pickup.transform.position)).FirstOrDefault();
+            map?.Tick();
+            if(map!=null&&map.IsOpen){interact.gameObject.SetActive(false);return;}
+            nearest = checkpoints.Where(c=>c.CanUse(pickup)).OrderBy(c=>Vector3.Distance(c.transform.position,pickup.transform.position)).FirstOrDefault();
             interact.gameObject.SetActive(nearest != null && panel == null);
             if (nearest != null)
-                interact.GetComponentInChildren<TMP_Text>().text = nearest.kind == CheckpointKind.Depot ? "E — Городской склад"
+                interact.GetComponentInChildren<TMP_Text>().text = nearest.kind == CheckpointKind.Depot ? "E — "+SupplierRouting.Name(nearest.supplier)
+                    : nearest.kind == CheckpointKind.Showroom ? "E — Осмотреть автомобили"
                     : nearest.kind == CheckpointKind.Unload ? "E — Разгрузить пикап" : "E — Вернуться в магазин";
             status.text = $"Пикап: {orders.PickupWeightKg:0.#} / {orders.pickupCapacityKg:0} кг • {orders.PickupVolumeM3:0.##} / {orders.pickupCapacityM3:0.#} м³\n"
-                + $"Склад: {Vector3.Distance(pickup.transform.position,depot.transform.position):0} м • Магазин: {Vector3.Distance(pickup.transform.position,home.transform.position):0} м\n"
+                + $"Магазин: {Vector3.Distance(pickup.transform.position,home.transform.position):0} м • M — карта районов\n"
                 + "WASD — ехать · Пробел — тормоз · Мышь — камера · V — вид сзади · Esc — курсор\n" + (orders.NoticeIsError ? orders.Notice : "");
             if (panel == null && Input.GetKeyDown(KeyCode.E)) Interact();
             if (panel != null && Input.GetKeyDown(KeyCode.Escape)) ClosePanel();
@@ -81,7 +94,8 @@ namespace RetailEmpireTycoon.City
             if (nearest == null || !nearest.CanUse(pickup) || panel != null || trip.Transitioning) return;
             pickup.Stop(); pickup.InputEnabled = false; page = 0;
             chaseCamera.SetInteractionBlocked(true);
-            if (nearest.kind == CheckpointKind.Depot) ShowDepot();
+            if (nearest.kind == CheckpointKind.Depot) {activeSupplier=nearest;buying=false;ShowDepot();}
+            else if(nearest.kind==CheckpointKind.Showroom)ShowShowroom();
             else if (nearest.kind == CheckpointKind.Unload)
             {
                 orders.Unload(); pickup.InputEnabled = true;chaseCamera.SetInteractionBlocked(false);
@@ -98,26 +112,65 @@ namespace RetailEmpireTycoon.City
         private void ShowDepot()
         {
             if (panel != null) ui.CloseModal(panel);
-            panel = ui.Modal("Городской склад",canvasRoot,new Vector2(760,620));
-            ui.Heading(panel,"Получение заказов","Collect orders",new Vector2(24,-18),new Vector2(660,44));
+            panel = ui.Modal("Поставщик",canvasRoot,new Vector2(760,660));
+            ui.Heading(panel,SupplierRouting.Name(activeSupplier.supplier),SupplierRouting.Name(activeSupplier.supplier),new Vector2(24,-18),new Vector2(660,44));
             ui.Button(panel,"×",new Vector2(694,-14),new Vector2(42,42),ClosePanel);
-            ui.Label(panel,$"На складе: {orders.DepotWeightKg:0.#} / {orders.depotCapacityKg:0} кг\nПикап: {orders.PickupWeightKg:0.#} / {orders.pickupCapacityKg:0} кг • {orders.PickupVolumeM3:0.##} / {orders.pickupCapacityM3:0.#} м³",
-                new Vector2(24,-75),new Vector2(712,68),19);
-            var entries = orders.Ledger.Entries.Where(e=>e.location==DeliveryLocation.Depot).ToArray();
+            ui.Button(panel,"Ассортимент",new Vector2(24,-73),new Vector2(340,40),()=>{buying=true;page=0;ShowDepot();});
+            ui.Button(panel,"Мои заказы",new Vector2(386,-73),new Vector2(340,40),()=>{buying=false;page=0;ShowDepot();});
+            float awaiting=orders.Ledger.Entries.Where(e=>e.location==DeliveryLocation.Depot&&orders.SupplierFor(e)==activeSupplier.supplier).Sum(e=>orders.UnitWeight(e)*e.quantity);
+            ui.Label(panel,$"У поставщика: {awaiting:0.#} кг • Пикап: {orders.PickupWeightKg:0.#} / {orders.pickupCapacityKg:0} кг\nОбъём: {orders.PickupVolumeM3:0.##} / {orders.pickupCapacityM3:0.#} м³. Заказ нужно загрузить отдельно.",
+                new Vector2(24,-121),new Vector2(712,58),18);
+            if(buying) {ShowAssortment();return;}
+            var entries = orders.Ledger.Entries.Where(e=>e.location==DeliveryLocation.Depot&&orders.SupplierFor(e)==activeSupplier.supplier).ToArray();
             int pages = Mathf.Max(1,Mathf.CeilToInt(entries.Length / 6f)); page = Mathf.Clamp(page,0,pages-1);
-            if (entries.Length == 0) ui.Label(panel,"Нет оплаченных заказов. Оформите покупку в магазине.",new Vector2(24,-162),new Vector2(712,70));
+            if (entries.Length == 0) ui.Label(panel,"Здесь нет ваших заказов. Откройте ассортимент или выберите другого поставщика на карте.",new Vector2(24,-194),new Vector2(712,70));
             var current = entries.Skip(page*6).Take(6).ToArray();
             for (int i = 0; i < current.Length; i++)
             {
                 var entry = current[i]; int package = Mathf.Min(orders.PackageQuantity(entry),entry.quantity);
-                float y = -157 - i*54;
+                float y = -193 - i*54;
                 ui.Label(panel,$"{orders.ItemName(entry)} ×{entry.quantity}\nУпаковка: {package} шт. • {orders.UnitWeight(entry)*package:0.#} кг",new Vector2(24,y),new Vector2(510,48),17);
-                ui.Button(panel,"Загрузить","Load",new Vector2(558,y),new Vector2(176,40),()=>{ orders.Load(entry); ShowDepot(); });
+                ui.Button(panel,"Загрузить","Load",new Vector2(558,y),new Vector2(176,40),()=>{ orders.LoadFrom(entry,activeSupplier.supplier); ShowDepot(); });
             }
-            ui.Label(panel,orders.Notice ?? "Выберите упаковки для перевозки.",new Vector2(24,-484),new Vector2(712,50),17);
-            ui.Button(panel,"←",new Vector2(24,-552),new Vector2(100,42),()=>{ page--; ShowDepot(); });
-            ui.Label(panel,$"{page+1} / {pages}",new Vector2(330,-558),new Vector2(100,35),19);
-            ui.Button(panel,"→",new Vector2(634,-552),new Vector2(100,42),()=>{ page++; ShowDepot(); });
+            SupplierFooter(pages);
+        }
+        private void ShowAssortment()
+        {
+            var products=orders.productCatalog.Products.Where(p=>p!=null&&SupplierRouting.ForProduct(p.StorageType)==activeSupplier.supplier).ToArray();
+            var buildings=orders.buildCatalog.Items.Where(b=>b!=null&&!b.hiddenFromShop&&SupplierRouting.ForBuilding(b)==activeSupplier.supplier).ToArray();
+            int total=products.Length+buildings.Length,pages=Mathf.Max(1,Mathf.CeilToInt(total/6f));page=Mathf.Clamp(page,0,pages-1);
+            for(int row=0;row<6&&page*6+row<total;row++)
+            {
+                int index=page*6+row;float y=-193-row*54;
+                if(index<products.Length)
+                {
+                    var product=products[index];
+                    ui.Label(panel,$"{ShopText.Item(product)} • упаковка {product.BoxAmount} шт.\n${product.BuyPrice} • {product.UnitWeightKg*product.BoxAmount:0.#} кг",new Vector2(24,y),new Vector2(510,48),17);
+                    ui.Button(panel,"Заказать",new Vector2(558,y),new Vector2(176,40),()=>{orders.Order(product);ShowDepot();});
+                }
+                else
+                {
+                    var building=buildings[index-products.Length];
+                    ui.Label(panel,$"{ShopText.Item(building)}\n${building.price} • {building.weightKg:0.#} кг",new Vector2(24,y),new Vector2(510,48),17);
+                    var button=ui.Button(panel,"Заказать",new Vector2(558,y),new Vector2(176,40),()=>{orders.Order(building);ShowDepot();});
+                    button.interactable=orders.money.CanSpend(building.price);
+                }
+            }
+            SupplierFooter(pages);
+        }
+        private void SupplierFooter(int pages)
+        {
+            ui.Label(panel,orders.Notice??"Покупка резервирует заказ здесь; загрузка выдаёт его в кузов.",new Vector2(24,-525),new Vector2(712,52),17);
+            ui.Button(panel,"←",new Vector2(24,-599),new Vector2(100,42),()=>{page--;ShowDepot();});
+            ui.Label(panel,$"{page+1} / {pages}",new Vector2(330,-603),new Vector2(100,35),19);
+            ui.Button(panel,"→",new Vector2(634,-599),new Vector2(100,42),()=>{page++;ShowDepot();});
+        }
+        private void ShowShowroom()
+        {
+            panel=ui.Modal("Автосалон",canvasRoot,new Vector2(630,370));
+            ui.Heading(panel,"Автосалон — осмотр", "Vehicle showroom",new Vector2(24,-18),new Vector2(560,44));
+            ui.Label(panel,"Автомобили выставлены на площадке: объезжайте их и рассматривайте камерой из своей машины.\n\nВаш пикап уже куплен и выбран. Грузоподъёмность: 350 кг, кузов: 2 м³. Покупка новых машин здесь пока не предусмотрена.",new Vector2(24,-89),new Vector2(582,200),20);
+            ui.Button(panel,"Продолжить осмотр",new Vector2(24,-302),new Vector2(582,44),ClosePanel);
         }
         private void ClosePanel() { ui.CloseModal(panel); panel = null; pickup.InputEnabled = true;chaseCamera.SetInteractionBlocked(false); }
         private void RefreshCargo()
@@ -133,13 +186,18 @@ namespace RetailEmpireTycoon.City
         }
         private void SyncFacade(Scene shopScene)
         {
+            if(town!=null)
+            {
+                var progression=shopScene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<StoreProgression>(true)).FirstOrDefault();
+                if(progression!=null)town.GetComponentInChildren<TownExpansionScenery>()?.ApplyState(progression.State);
+            }
             var walls = shopScene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<StoreWallOccluder>(true)).ToArray();
             var area=shopScene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<RetailEmpireTycoon.Territory.StoreBuildArea>(true)).FirstOrDefault();
             Bounds bounds = walls.Length>0 ? walls[0].WorldBounds : area!=null && area.areaRects.Count>0
                 ? area.areaRects[0].bounds : new Bounds(Vector3.zero,new Vector3(3,.8f,3));
             foreach(var wall in walls.Skip(1)) bounds.Encapsulate(wall.WorldBounds);
-            Vector3 originalCenter = new Vector3(bounds.center.x,bounds.min.y,bounds.center.z);
-            float scale=Mathf.Min(shopScale,28f/Mathf.Max(bounds.size.x,bounds.size.z));
+            Vector3 originalCenter = useFixedShopOrigin?sourceShopOrigin:new Vector3(bounds.center.x,bounds.min.y,bounds.center.z);
+            float scale=useFixedShopOrigin?shopScale:Mathf.Min(shopScale,28f/Mathf.Max(bounds.size.x,bounds.size.z));
             Vector3 Map(Vector3 point) => shopCenter + (point-originalCenter)*scale;
             var filters = walls.SelectMany(w=>w.GetComponentsInChildren<MeshFilter>(true)).Distinct().ToArray();
             foreach(var filter in filters)
@@ -154,6 +212,13 @@ namespace RetailEmpireTycoon.City
             var core = new GameObject("Shop interior is closed",typeof(BoxCollider)); core.transform.SetParent(facadeRoot,false);
             core.transform.position=Map(bounds.center); var collider=core.GetComponent<BoxCollider>(); collider.size=bounds.size*scale;
             collider.size=new Vector3(collider.size.x,Mathf.Max(3,collider.size.y),collider.size.z);
+            if(shopRoofMaterial!=null)
+            {
+                var roof=GameObject.CreatePrimitive(PrimitiveType.Cube);roof.name="Closed store roof";roof.transform.SetParent(facadeRoot,false);
+                roof.transform.position=Map(new Vector3(bounds.center.x,bounds.max.y,bounds.center.z))+Vector3.up*.08f;
+                roof.transform.localScale=new Vector3(bounds.size.x*scale+.2f,.16f,bounds.size.z*scale+.2f);
+                roof.GetComponent<MeshRenderer>().sharedMaterial=shopRoofMaterial;
+            }
             // The return point is the very same parking spot, transformed into city scale, not an unrelated spawn.
             if(trip.parkedPickup!=null)
             {
@@ -163,6 +228,9 @@ namespace RetailEmpireTycoon.City
             }
             foreach(var floors in shopScene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<FloorPainter>(true)))
                 foreach(var filter in floors.AsphaltSurfaces) CopyExterior(filter,Map,scale);
+            foreach(var barrier in shopScene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<TerritoryConstructionBarrier>(true)))
+                foreach(var filter in barrier.GetComponentsInChildren<MeshFilter>(true))
+                    if(trip.WasShopObjectActive(filter.gameObject))CopyExterior(filter,Map,scale);
             foreach(var parking in shopScene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<PlacedObject>(true)).Where(p=>p.item!=null&&p.item.isParkingSpace&&p.GetComponentInParent<BuildPreview>()==null))
                 foreach(var filter in parking.GetComponentsInChildren<MeshFilter>(true)) CopyExterior(filter,Map,scale);
             var gates = shopScene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<PlacedObject>(true)).Where(p=>p.item!=null&&p.item.isUnloadingGate).ToArray();

@@ -29,6 +29,17 @@ namespace RetailEmpireTycoon.City
         private RectTransform confirmation;
         private ShopUi ui;
         private bool trafficEnabled;
+        public bool WasShopObjectActive(GameObject instance)
+        {
+            if(instance==null)return false;
+            var current=instance.transform;
+            while(current.parent!=null)
+            {
+                if(!current.gameObject.activeSelf)return false;
+                current=current.parent;
+            }
+            return shopRoots.TryGetValue(current.gameObject,out bool active)?active:current.gameObject.activeSelf;
+        }
         private void Awake() { shopScene = gameObject.scene; ui = new ShopUi(Resources.Load<ShopUiTheme>("ShopUi/Theme")); }
         private void Update()
         {
@@ -44,8 +55,8 @@ namespace RetailEmpireTycoon.City
             if (Transitioning || InCity || confirmation != null) return;
             confirmation = ui.Modal("Поездка в город", uiRoot, new Vector2(480,240));
             ui.Heading(confirmation,"Поехать в город?","Drive to the city?",new Vector2(22,-18),new Vector2(430,40),26);
-            ui.Copy(confirmation,"Заберите оплаченные заказы на городском складе. Магазин будет приостановлен до возвращения.",
-                "Collect paid orders at the depot. The store pauses until you return.",new Vector2(22,-68),new Vector2(430,80));
+            ui.Copy(confirmation,"Посетите поставщиков в разных районах и заберите свои заказы. Магазин будет приостановлен до возвращения.",
+                "Visit district suppliers and collect your orders. The store pauses until you return.",new Vector2(22,-68),new Vector2(430,80));
             ui.Button(confirmation,"Отмена","Cancel",new Vector2(22,-177),new Vector2(200,40),CloseConfirmation);
             ui.Button(confirmation,"Поехать","Drive",new Vector2(250,-177),new Vector2(208,40),Begin);
         }
