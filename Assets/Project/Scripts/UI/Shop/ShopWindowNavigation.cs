@@ -26,10 +26,10 @@ namespace RetailEmpireTycoon.UI.Shop
         }
         public void Refresh()
         {
-            int selected = shop != null ? shop.IsStaffView ? 2 : shop.IsProductsView ? 1 : shop.IsBuildView ? 0 : -1
+            int selected = shop != null ? shop.IsVehiclesView ? 3 : shop.IsStaffView ? 2 : shop.IsProductsView ? 1 : shop.IsBuildView ? shop.SelectedCategory == BuildCategory.Decoration ? 4 : 0 : -1
                 : inventory != null && inventory.IsProductsView ? 1 : 0;
             for (int i=0;i<tabs.Length;i++) Style(tabs[i],i==selected);
-            for (int i=0;i<categories.Length;i++) Style(categories[i],shop != null && (i==0 ? shop.SelectedCategory==BuildCategory.Shelf : shop.SelectedCategory==BuildCategory.Structures));
+            for (int i=0;i<categories.Length;i++) Style(categories[i],shop != null && shop.SelectedCategory == (i==0 ? BuildCategory.Shelf : i==1 ? BuildCategory.Structures : BuildCategory.Decoration));
         }
         private static void Style(Button button, bool selected)
         {

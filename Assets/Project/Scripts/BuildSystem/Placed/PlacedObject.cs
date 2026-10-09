@@ -15,6 +15,8 @@ namespace RetailEmpireTycoon.BuildSystem
         public Vector3Int anchorCell;
         public bool rotated;
         public int facing;
+        public int wallModuleVersion;
+        public bool playerParking;
 
         public List<Vector3Int> occupiedCells = new List<Vector3Int>();
     }

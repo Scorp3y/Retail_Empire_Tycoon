@@ -42,11 +42,7 @@ public sealed class TerritoryZone : MonoBehaviour
 
         if (_visual != null) _visual.SetState(state);
 
-        if (purchased)
-        {
-            foreach (var c in GetComponentsInChildren<Collider>(true))
-                c.enabled = false;
-        }
+        foreach (var c in GetComponentsInChildren<Collider>(true)) c.enabled = !purchased;
     }
 
     public bool CanPurchase()

@@ -16,6 +16,8 @@ namespace RetailEmpireTycoon.Core
 
         [Header("Box")]
         [SerializeField, Min(1)] private int boxAmount = 10;
+        [SerializeField, Min(.001f)] private float unitWeightKg = .5f;
+        [SerializeField, Min(.0001f)] private float unitVolumeM3 = .01f;
 
         [Header("Product Type")]
         [SerializeField] private ProductStorageType storageType = ProductStorageType.Any;
@@ -32,6 +34,8 @@ namespace RetailEmpireTycoon.Core
         public int BuyPrice => buyPrice;
         public int SellPrice => sellPrice;
         public int BoxAmount => boxAmount;
+        public float UnitWeightKg => unitWeightKg;
+        public float UnitVolumeM3 => unitVolumeM3;
         public ProductStorageType StorageType => storageType;
         public GameObject ShelfDisplayPrefab => shelfDisplayPrefab;
         public ProductCategory Category => category;

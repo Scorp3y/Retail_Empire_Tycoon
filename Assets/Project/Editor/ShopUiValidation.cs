@@ -112,6 +112,13 @@ public static class ShopUiValidation
             var card = shop.GetComponentsInChildren<ShopItemCard>().First(c => c.nameText.text == "Касса");
             beforeCount = buildInventory.GetCount(item);
             card.buyButton.onClick.Invoke();
+            var delivery=Object.FindObjectOfType<RetailEmpireTycoon.Logistics.DeliveryOrders>();
+            if(delivery!=null)
+            {
+                Require(buildInventory.GetCount(item)==beforeCount,"Equipment arrived before depot collection.");
+                var order=delivery.Ledger.Entries.First(e=>e.itemId==item.id);
+                Require(delivery.Load(order)&&delivery.Unload(),"Equipment delivery failed.");
+            }
             Require(wallet.Money == 50000 - item.price && buildInventory.GetCount(item) == beforeCount + 1, "Equipment purchase failed.");
             wallet.SetMoney(0); Require(!card.buyButton.interactable, "Equipment purchase remains enabled without money.");
             wallet.SetMoney(50000); Require(card.buyButton.interactable, "Equipment purchase failed to re-enable.");
@@ -132,6 +139,11 @@ public static class ShopUiValidation
             int beforeProduct = products.GetCount(product);
             var productCard = shop.GetComponentsInChildren<ProductShopItemCard>().First(c => c.GetComponentsInChildren<TMP_Text>().Any(t => t.text == "Молоко"));
             productCard.GetComponentInChildren<Button>().onClick.Invoke();
+            if(delivery!=null)
+            {
+                Require(products.GetCount(product)==beforeProduct,"Product arrived before delivery.");
+                Require(delivery.Load(delivery.Ledger.Entries.First(e=>e.itemId==product.Id))&&delivery.Unload(),"Product delivery failed.");
+            }
             Require(products.GetCount(product) == beforeProduct + product.BoxAmount, "Product purchase did not add a pack.");
             log.AppendLine("PASS product purchase and real warehouse pack count");
             hud.ToggleStaff(); yield return Capture("staff");

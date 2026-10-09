@@ -31,7 +31,7 @@ public static class TerritoryBarrierSetup
         if (scene.path != "Assets/Project/Scenes/Game.unity" || scene.isDirty)
             throw new InvalidOperationException("Open the saved Game scene before configuring barriers.");
         var zones = scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<TerritoryZone>(true)).ToArray();
-        if (zones.Length != 5) throw new InvalidOperationException("Expected five territory zones.");
+        if (zones.Length < 5) throw new InvalidOperationException("Expected at least the five original territory zones.");
         Directory.CreateDirectory(Folder);
         AssetDatabase.Refresh();
         Material[] materials =
@@ -45,7 +45,7 @@ public static class TerritoryBarrierSetup
         AssetDatabase.SaveAssets();
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
-        Debug.Log("Configured five construction barriers; prices, click planes and progression retained.");
+        Debug.Log($"Configured {zones.Length} construction barriers; prices, click planes and progression retained.");
     }
 
     private static Material CreateMaterial(string name, Color color)

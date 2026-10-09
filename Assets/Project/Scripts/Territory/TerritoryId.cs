@@ -4,5 +4,9 @@ public enum TerritoryId
     Red,
     Green,
     Yellow,
-    Pink
+    Pink,
+    EastSouth,
+    EastNorth,
+    NorthWest,
+    NorthEast
 }

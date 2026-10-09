@@ -46,6 +46,7 @@ namespace RetailEmpireTycoon.StoreOperations
         public bool StaffWorking { get; private set; } = true;
         public int Level => 1 + (progression != null ? progression.Purchased.Count : 0);
         public float Rating { get; private set; } = 3;
+        public int BeautyPoints {get;private set;}
         public string Notice { get; private set; } = "Магазин закрыт. Заполни полки и открой его.";
         public Vector3 CheckoutPosition => _checkout;
         public PlacedObject CheckoutObject { get; private set; }
@@ -62,19 +63,22 @@ namespace RetailEmpireTycoon.StoreOperations
             Navigation = new StoreNavigation(building.grid, building.territory);
         }
         private void Start() { _arrival = 5; }
+        private void OnEnable() { if (building != null) building.LayoutChanged += InvalidateLayout; }
+        private void InvalidateLayout() { _refreshWorld = true; }
         private void Update() { Advance(Time.deltaTime); }
         public void Advance(float seconds)
         {
             if (seconds <= 0 || Navigation == null) return;
+            // Beauty and stock presentation must update even while the shop lacks a usable checkout.
+            _refresh += seconds;
+            if (_refresh >= 2) { _refresh = 0; RefreshRating(); }
             if (!_ready || _refreshWorld || progression != null && _worldLevel != progression.State.CurrentLevel)
             {
                 if (!ConfigureWorld()) return;
             }
-            if (building.mode == BuildMode.Build) { _wasBuilding = true; return; }
+            if (building.mode != BuildMode.Normal) { _wasBuilding = true; return; }
             if (_wasBuilding) { _refreshWorld = true; _wasBuilding = false; return; }
             if (WorkActive) return;
-            _refresh += seconds;
-            if (_refresh >= 2) { _refresh = 0; RefreshRating(); }
             foreach (var visit in _visits.ToArray()) AdvanceVisit(visit, seconds);
             if (IsOpen)
             {
@@ -357,7 +361,9 @@ namespace RetailEmpireTycoon.StoreOperations
             int variety = shelves.Where(s => s.CurrentProduct != null && !s.IsEmpty).Select(s => s.CurrentProduct).Distinct().Count();
             float stockRatio = shelves.Length == 0 ? 0 : (float)shelves.Count(s => !s.IsEmpty) / shelves.Length;
             float sizeBonus = 0.12f * (Level - 1);
-            Rating = Mathf.Clamp(_reputation * 0.55f + stockRatio * 1.1f + Mathf.Min(5, variety) * 0.16f + sizeBonus - _dirt.Count * 0.12f - _visits.Count(v => v.WaitingSeconds > 35 && v.Stage == VisitStage.Waiting) * 0.08f, 1, 5);
+            BeautyPoints=FindObjectsOfType<PlacedObject>().Where(p=>p.item!=null&&p.GetComponentInParent<BuildPreview>()==null).Sum(p=>p.item.beautyPoints);
+            float beautyBonus=Mathf.Min(.6f,BeautyPoints*.02f);
+            Rating = Mathf.Clamp(_reputation * 0.55f + stockRatio * 1.1f + Mathf.Min(5, variety) * 0.16f + sizeBonus + beautyBonus - _dirt.Count * 0.12f - _visits.Count(v => v.WaitingSeconds > 35 && v.Stage == VisitStage.Waiting) * 0.08f, 1, 5);
         }
         public ShopOperationsSaveData BuildSaveData() => new ShopOperationsSaveData { isOpen = IsOpen, reputation = _reputation, staff = _staff.Snapshot(), unpaidWages = _wages, completedSales = _completedSales };
         public void ApplySaveData(ShopOperationsSaveData data)
@@ -372,6 +378,6 @@ namespace RetailEmpireTycoon.StoreOperations
             _refreshWorld = true;
             ConfigureWorld(); RefreshRating();
         }
-        private void OnDisable() { work?.Cancel(); foreach (var employee in _employees) if (employee != null) employee.CancelDuty(); }
+        private void OnDisable() { if (building != null) building.LayoutChanged -= InvalidateLayout; work?.Cancel(); foreach (var employee in _employees) if (employee != null) employee.CancelDuty(); }
     }
 }

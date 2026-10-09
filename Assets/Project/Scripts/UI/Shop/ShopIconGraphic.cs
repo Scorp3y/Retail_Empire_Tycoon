@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 namespace RetailEmpireTycoon.UI.Shop
 {
-    public enum ShopIcon { Cart, Warehouse, Settings, Territory, OpenLock, ClosedLock, Staff, Equipment, Products, Back, Close, Check, Sound, Save, Exit, Cashier, Guard, Stocker, Cleaner, Star, Coin, Pause, Play }
+    public enum ShopIcon { Cart, Warehouse, Settings, Territory, OpenLock, ClosedLock, Staff, Equipment, Products, Back, Close, Check, Sound, Save, Exit, Cashier, Guard, Stocker, Cleaner, Star, Coin, Pause, Play, Pickup, Decoration }
 
     /// <summary>Navigation symbols share a normalized silhouette and scale without blurry bitmap resizing.</summary>
     [RequireComponent(typeof(CanvasRenderer))]
@@ -24,6 +24,16 @@ namespace RetailEmpireTycoon.UI.Shop
             mesh.Clear(); _mesh = mesh; _rect = GetPixelAdjustedRect();
             switch (icon)
             {
+                case ShopIcon.Pickup:
+                    Box(.08f,.32f,.84f,.24f);
+                    Polygon(new Vector2(.48f,.56f),new Vector2(.48f,.77f),new Vector2(.7f,.77f),new Vector2(.84f,.56f));
+                    Box(.52f,.58f,.15f,.13f,ShopUiTheme.Paper);
+                    Circle(.25f,.28f,.105f);Circle(.75f,.28f,.105f);Circle(.25f,.28f,.05f,ShopUiTheme.Paper);Circle(.75f,.28f,.05f,ShopUiTheme.Paper);break;
+                case ShopIcon.Decoration:
+                    Polygon(new Vector2(.32f,.17f),new Vector2(.68f,.17f),new Vector2(.75f,.43f),new Vector2(.25f,.43f));
+                    Line(.5f,.43f,.5f,.78f,.045f);
+                    Polygon(new Vector2(.48f,.58f),new Vector2(.22f,.63f),new Vector2(.16f,.84f),new Vector2(.4f,.81f));
+                    Polygon(new Vector2(.52f,.68f),new Vector2(.65f,.88f),new Vector2(.87f,.86f),new Vector2(.8f,.66f));break;
                 case ShopIcon.Cart:
                     Line(.12f,.78f,.28f,.78f); Line(.28f,.78f,.38f,.3f);
                     Polygon(new Vector2(.31f,.68f),new Vector2(.86f,.68f),new Vector2(.76f,.4f),new Vector2(.37f,.4f));

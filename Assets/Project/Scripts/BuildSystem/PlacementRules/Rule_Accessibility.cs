@@ -30,7 +30,7 @@ namespace RetailEmpireTycoon.BuildSystem
                 bool accessible = false;
                 foreach (var cell in GetAccessCells(req, side))
                 {
-                    if (_occupancy.IsOccupied(cell)) continue;
+                    if (_occupancy.IsOccupied(cell) && (req.ignoredObject == null || !req.ignoredObject.occupiedCells.Contains(cell))) continue;
                     accessible = true;
                     break;
                 }

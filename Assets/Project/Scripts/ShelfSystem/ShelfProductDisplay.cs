@@ -168,6 +168,8 @@ namespace RetailEmpireTycoon.Shelves
             if (useSlotRotation)
                 instance.transform.localRotation = Quaternion.identity;
 
+            slot.GetComponent<ShelfProductSlot>()?.Seat(instance);
+
             if (disableSpawnedColliders)
                 DisableColliders(instance);
 

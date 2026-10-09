@@ -50,6 +50,16 @@ public sealed class StoreProgression : MonoBehaviour
         if (phase3)
             return id == TerritoryId.Yellow || id == TerritoryId.Pink;
 
+        if (purpleBought && redBought && greenBought && yellowBought && pinkBought)
+        {
+            switch (id)
+            {
+                case TerritoryId.EastSouth:
+                case TerritoryId.NorthWest: return true;
+                case TerritoryId.EastNorth: return State.IsPurchased(TerritoryId.EastSouth);
+                case TerritoryId.NorthEast: return State.IsPurchased(TerritoryId.NorthWest);
+            }
+        }
         return false;
     }
 
@@ -104,7 +114,7 @@ public sealed class StoreProgression : MonoBehaviour
         if (d?.purchased != null)
         {
             foreach (var s in d.purchased)
-                if (Enum.TryParse<TerritoryId>(s, out var id))
+                if (Enum.TryParse<TerritoryId>(s, out var id) && Enum.IsDefined(typeof(TerritoryId), id))
                     State.Purchased.Add(id);
         }
 

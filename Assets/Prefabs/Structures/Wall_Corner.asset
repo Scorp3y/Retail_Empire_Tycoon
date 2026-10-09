@@ -12,16 +12,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d6abad8a36b0794996f8dedd8a8e734, type: 3}
   m_Name: Wall_Corner
   m_EditorClassIdentifier: 
+  legacyWallDepth: 0.24000001
+  wallCellSize: 0.1667
   id: wallcorner_01
   displayName: Wall_Corner
   description: 
   icon: {fileID: 21300000, guid: 2b8eab3a12995ff4d86bb3be687dc85d, type: 3}
   price: 100
+  hiddenFromShop: 0
+  weightKg: 35
+  cargoVolumeM3: 0.3
+  isAsphalt: 0
+  isParkingSpace: 0
+  isUnloadingGate: 0
+  isWall: 1
+  beautyPoints: 0
   unlockedByDefault: 1
   unlockCondition: {fileID: 0}
   category: 1
   subCategory: 0
-  footprint: {x: 2, y: 2}
+  footprint: {x: 1, y: 1}
   allowRotation: 1
   ruleFlags: 3
   placementKind: 2
@@ -30,13 +40,14 @@ MonoBehaviour:
   pivotOffset: {x: 0, y: 0}
   alignModelToFootprint: 1
   placementBounds:
-    m_Center: {x: 0.029999994, y: 0.5, z: 0.029999994}
-    m_Extent: {x: 0.11999999, y: 0.5, z: 0.11999999}
+    m_Center: {x: 0.01667, y: 0.5, z: 0.01667}
+    m_Extent: {x: 0.06668001, y: 0.5, z: 0.06668001}
+  placementAlignmentOffset: {x: 0.01667, y: 0, z: 0.01667}
   frontFacing: 0
   twoSidedAccess: 0
   isDoorway: 0
   isCheckout: 0
-  prefab: {fileID: 5844154462797527900, guid: d525604eec82c5e4dbfde65a107535c1, type: 3}
+  prefab: {fileID: 8423254778264359252, guid: 8a51f29ddce2c8c4e82e61f69f92c0cc, type: 3}
   previewValidMaterial: {fileID: 2100000, guid: b737f1f25c90f1842999d06f57aa1608, type: 2}
   previewInvalidMaterial: {fileID: 2100000, guid: cd8bbf8a301d0664386b1c15cc42650f, type: 2}
   shelfData: {fileID: 0}

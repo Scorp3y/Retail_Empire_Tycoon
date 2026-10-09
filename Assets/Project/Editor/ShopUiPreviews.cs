@@ -36,7 +36,7 @@ public static class ShopUiPreviews
         }
         AssetDatabase.SaveAssets(); Debug.Log("Unified catalog previews rendered from the existing game models.");
     }
-    private static Sprite Render(GameObject prefab, string id, float yaw, ProductItemData example = null)
+    public static Sprite Render(GameObject prefab, string id, float yaw, ProductItemData example = null)
     {
         var scene = EditorSceneManager.NewPreviewScene();
         RenderTexture target = null; Texture2D image = null;

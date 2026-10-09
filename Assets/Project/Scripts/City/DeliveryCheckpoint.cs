@@ -1,0 +1,14 @@
+using UnityEngine;
+
+namespace RetailEmpireTycoon.City
+{
+    public enum CheckpointKind { Depot, Unload, Return }
+    public sealed class DeliveryCheckpoint : MonoBehaviour
+    {
+        public CheckpointKind kind;
+        public float radius = 5;
+        public bool CanUse(PickupDrive pickup) => pickup != null && pickup.Speed < .5f
+            && Vector3.Distance(new Vector3(pickup.transform.position.x,0,pickup.transform.position.z),
+                new Vector3(transform.position.x,0,transform.position.z)) <= radius;
+    }
+}

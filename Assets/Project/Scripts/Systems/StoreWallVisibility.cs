@@ -21,6 +21,7 @@ public sealed class StoreWallVisibility : MonoBehaviour
             _nextRefresh = Time.unscaledTime + 0.25f;
         }
         bool building = buildController != null && buildController.mode == BuildMode.Build;
+        if(building && buildController.SelectedItem!=null && buildController.SelectedItem.isWall) building=false;
         Vector3 focus = cameraInput != null ? cameraInput.FocusPoint : transform.position + transform.forward * 10f;
         if (building && buildController.TryGetPlacementFocus(out var placementFocus)) focus = placementFocus;
         _candidates.Clear();
@@ -28,6 +29,9 @@ public sealed class StoreWallVisibility : MonoBehaviour
         {
             if (wall == null) continue;
             wall.SetHidden(false);
+            var editing = buildController != null ? buildController.GetComponent<RetailEmpireTycoon.BuildSystem.BuildEditingController>() : null;
+            if (editing != null && editing.Selected != null && wall.GetComponentInParent<RetailEmpireTycoon.BuildSystem.PlacedObject>() == editing.Selected)
+            { wall.SetHidden(true); continue; }
             if (building && ShouldHide(wall.WorldBounds, transform.position, focus)) _candidates.Add(wall);
         }
         // Prefer the wall sections crossing the line of sight to the placement cursor.

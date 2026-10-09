@@ -12,31 +12,42 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d6abad8a36b0794996f8dedd8a8e734, type: 3}
   m_Name: Wall
   m_EditorClassIdentifier: 
+  legacyWallDepth: 0.18
+  wallCellSize: 0.1667
   id: wall_01
   displayName: Wall
   description: 
   icon: {fileID: 21300000, guid: ceaae29096037d5439eecca7c339b9b0, type: 3}
   price: 100
+  hiddenFromShop: 0
+  weightKg: 35
+  cargoVolumeM3: 0.3
+  isAsphalt: 0
+  isParkingSpace: 0
+  isUnloadingGate: 0
+  isWall: 1
+  beautyPoints: 0
   unlockedByDefault: 1
   unlockCondition: {fileID: 0}
   category: 1
   subCategory: 0
-  footprint: {x: 4, y: 2}
+  footprint: {x: 1, y: 1}
   allowRotation: 1
   ruleFlags: 3
   placementKind: 2
   floorMaterial: {fileID: 0}
   accessibilitySides: 1
-  pivotOffset: {x: -1, y: 0}
+  pivotOffset: {x: 0, y: 0}
   alignModelToFootprint: 1
   placementBounds:
     m_Center: {x: 0, y: 0.5, z: 0}
-    m_Extent: {x: 0.255, y: 0.5, z: 0.089999996}
+    m_Extent: {x: 0.08335, y: 0.5, z: 0.050010003}
+  placementAlignmentOffset: {x: 0, y: 0, z: 0}
   frontFacing: 0
   twoSidedAccess: 0
   isDoorway: 0
   isCheckout: 0
-  prefab: {fileID: 427192614082100532, guid: 20031b5aef6d3224f9fe2a42cee72eb5, type: 3}
+  prefab: {fileID: 6960668006808431264, guid: 7589057082ecc0f4d948bf7b833fea23, type: 3}
   previewValidMaterial: {fileID: 2100000, guid: b737f1f25c90f1842999d06f57aa1608, type: 2}
   previewInvalidMaterial: {fileID: 2100000, guid: cd8bbf8a301d0664386b1c15cc42650f, type: 2}
   shelfData: {fileID: 0}

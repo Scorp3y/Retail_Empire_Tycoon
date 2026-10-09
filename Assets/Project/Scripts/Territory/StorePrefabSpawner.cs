@@ -13,6 +13,8 @@ public class StorePrefabSpawner : MonoBehaviour
 
     [SerializeField] private Transform root;
     [SerializeField] private List<StorePrefabEntry> prefabs = new();
+    [SerializeField] private List<StorePrefabEntry> modularPrefabs = new();
+    public bool UsesModularStore { get; set; }
 
     private GameObject currentInstance;
 
@@ -20,13 +22,15 @@ public class StorePrefabSpawner : MonoBehaviour
     {
         if (currentInstance != null)
         {
+            currentInstance.SetActive(false);
             Destroy(currentInstance);
             currentInstance = null;
         }
 
-        var entry = prefabs.Find(p => p.level == level);
+        var entries = UsesModularStore ? modularPrefabs : prefabs;
+        var entry = entries.Find(p => p.level == level);
         if (entry == null || entry.prefab == null)
-            return;
+            throw new InvalidOperationException("Missing store landscape prefab for " + level);
 
         currentInstance = Instantiate(entry.prefab, root);
     }

@@ -17,7 +17,7 @@ public class Gussi : MonoBehaviour
     void Update()
     {
         float direction = movingRight ? 1 : -1;
-        rectTransform.anchoredPosition += new Vector2(direction * speed * Time.deltaTime, 0);
+        rectTransform.anchoredPosition += new Vector2(direction * speed * Time.unscaledDeltaTime, 0);
         float gooseWidth = rectTransform.rect.width;
         float canvasWidth = canvasRect.rect.width;
         if (movingRight && rectTransform.anchoredPosition.x + gooseWidth / 2 > canvasWidth / 2)

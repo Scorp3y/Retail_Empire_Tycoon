@@ -5,7 +5,9 @@ using RetailEmpireTycoon.SaveSystem;
 [Serializable]
 public class GameData
 {
+    public bool usesModularStore;
     public int playerMoney = 6000;
+    public RetailEmpireTycoon.Logistics.DeliverySaveData deliveries = new RetailEmpireTycoon.Logistics.DeliverySaveData();
     public RetailEmpireTycoon.StoreOperations.ShopOperationsSaveData shopOperations = new RetailEmpireTycoon.StoreOperations.ShopOperationsSaveData();
 
     public TerritorySaveData territory = new TerritorySaveData();
@@ -39,6 +41,9 @@ public class PlacedBuildSaveData
     public int z;
     public bool rotated;
     public int facing;
+    // Missing in old saves: their wall sections retain the previous multi-cell dimensions.
+    public int wallModuleVersion;
+    public bool playerParking;
 }
 
 [Serializable]

@@ -25,6 +25,17 @@ public static class ShopUiSetup
     private static ShopUi _ui;
     private static ShopUiTheme _theme;
 
+    public static void RebuildShopDepartments()
+    {
+        _theme = Resources.Load<ShopUiTheme>("ShopUi/Theme");
+        _ui = new ShopUi(_theme);
+        var shop = Object.FindObjectOfType<ShopWindow>(true);
+        UnpackUi(shop.gameObject);
+        CreateCards(shop, Object.FindObjectOfType<BuildInventoryWindow>(true));
+        BuildShop(shop);
+        shop.gameObject.SetActive(false);
+    }
+
     [MenuItem("Retail Empire/UI/Apply shop UI redesign %#F1")]
     public static void Apply()
     {
@@ -196,26 +207,28 @@ public static class ShopUiSetup
         Header(root,"Магазин","Store",shop.Close,shop.ShowMainTabs);
         var navigation=shop.GetComponent<ShopWindowNavigation>()??shop.gameObject.AddComponent<ShopWindowNavigation>(); navigation.shop=shop;
         navigation.tabs=new[] {
-            Link(root,"Оборудование","Equipment",new Vector2(18,-76),new Vector2(190,40),shop.OpenBuildCategories),
-            Link(root,"Товары","Products",new Vector2(218,-76),new Vector2(170,40),shop.OpenProducts),
-            Link(root,"Персонал","Staff",new Vector2(398,-76),new Vector2(204,40),shop.OpenStaff) };
+            Link(root,"Оборудование","Equipment",new Vector2(18,-76),new Vector2(116,40),shop.OpenBuildCategories),
+            Link(root,"Товары","Products",new Vector2(136,-76),new Vector2(114,40),shop.OpenProducts),
+            Link(root,"Персонал","Staff",new Vector2(252,-76),new Vector2(114,40),shop.OpenStaff),
+            Link(root,"Автомобили","Vehicles",new Vector2(368,-76),new Vector2(114,40),shop.OpenVehicles),
+            Link(root,"Декор","Decor",new Vector2(484,-76),new Vector2(118,40),shop.OpenCategory_Decoration) };
         var host=Area(root,"Store content",126);
         var home=Area(host,"Store departments",0,0); home.offsetMin=Vector2.zero;home.offsetMax=Vector2.zero;
-        string[] titles={"Оборудование","Закупка товаров","Персонал"};string[] english={"Equipment","Product orders","Staff"};
-        string[] descriptions={"Стеллажи, витрины, кассы и строительство","Пополнение склада для выкладки на полки","Найм кассиров, охраны, складовщиков и уборщиков"};
-        string[] englishDescriptions={"Shelves, displays, registers and construction","Order stock for your shelves","Hire cashiers, guards, stockers and cleaners"};
-        UnityAction[] actions={shop.OpenBuildCategories,shop.OpenProducts,shop.OpenStaff};
-        ShopIcon[] icons={ShopIcon.Equipment,ShopIcon.Products,ShopIcon.Staff};
+        string[] titles={"Оборудование","Закупка товаров","Персонал","Автомобили","Декорации"};string[] english={"Equipment","Product orders","Staff","Vehicles","Decorations"};
+        string[] descriptions={"Стеллажи, витрины, кассы и строительство","Пополнение склада для выкладки на полки","Найм сотрудников магазина","Транспорт для доставки грузов","Украшайте магазин и повышайте его красоту"};
+        string[] englishDescriptions={"Shelves, displays, registers and construction","Order stock for your shelves","Hire your store team","Vehicles for transporting orders","Improve your store's beauty"};
+        UnityAction[] actions={shop.OpenBuildCategories,shop.OpenProducts,shop.OpenStaff,shop.OpenVehicles,shop.OpenCategory_Decoration};
+        ShopIcon[] icons={ShopIcon.Equipment,ShopIcon.Products,ShopIcon.Staff,ShopIcon.Pickup,ShopIcon.Decoration};
         _ui.Heading(home,"Развивай свой магазин","Grow your store",new Vector2(8,-12),new Vector2(560,36),24);
-        for(int i=0;i<3;i++)
+        for(int i=0;i<5;i++)
         {
-            var button=Link(home,"","",new Vector2(0,-66-i*118),new Vector2(580,104),actions[i]);button.image.color=new Color32(232,235,216,255);
+            var button=Link(home,"","",new Vector2(0,-56-i*78),new Vector2(580,70),actions[i]);button.image.color=new Color32(232,235,216,255);
             _ui.Icon(button.transform,icons[i],new Vector2(-242,0),new Vector2(48,48));
-            _ui.Heading(button.transform,titles[i],english[i],new Vector2(86,-19),new Vector2(450,30),23);
-            _ui.Copy(button.transform,descriptions[i],englishDescriptions[i],new Vector2(86,-52),new Vector2(450,38),16).color=ShopUiTheme.Muted;
+            _ui.Heading(button.transform,titles[i],english[i],new Vector2(86,-8),new Vector2(450,28),22);
+            _ui.Copy(button.transform,descriptions[i],englishDescriptions[i],new Vector2(86,-36),new Vector2(450,28),14).color=ShopUiTheme.Muted;
         }
         var categories=_ui.Rect("Equipment categories",root,new Vector2(0,1),new Vector2(0,1),new Vector2(18,-125),new Vector2(580,36));
-        navigation.categories=new[] {Link(categories,"Стеллажи","Shelves",Vector2.zero,new Vector2(158,34),shop.OpenCategory_Shelves),Link(categories,"Структуры","Structures",new Vector2(168,0),new Vector2(158,34),shop.OpenCategory_Structures)};
+        navigation.categories=new[] {Link(categories,"Стеллажи","Shelves",Vector2.zero,new Vector2(184,34),shop.OpenCategory_Shelves),Link(categories,"Строительство","Construction",new Vector2(194,0),new Vector2(184,34),shop.OpenCategory_Structures),Link(categories,"Декорации","Decorations",new Vector2(388,0),new Vector2(192,34),shop.OpenCategory_Decoration)};
         var catalog=Area(root,"Store catalog",172);
         var content=Scroll(catalog,"Shop items",out var grid);
         root.GetComponent<ShopPanelFit>().SetGrid(grid);
@@ -254,9 +267,14 @@ public static class ShopUiSetup
     {
         var root=Card("Equipment card",out var icon,out var title,out var action);
         var build=root.gameObject.AddComponent<ShopItemCard>();build.icon=icon;build.nameText=title;build.buyButton=action;
-        build.sizeText=_ui.Label(root,"",new Vector2(162,-60),new Vector2(98,54),15);
-        build.priceText=_ui.Label(root,"",new Vector2(162,-123),new Vector2(100,32),23);build.priceText.color=ShopUiTheme.Gold;build.priceText.fontStyle=FontStyles.Bold;
+        build.sizeText=_ui.Label(root,"",new Vector2(150,-55),new Vector2(116,83),15);
+        build.priceText=_ui.Label(root,"",new Vector2(150,-138),new Vector2(116,28),22);build.priceText.color=ShopUiTheme.Gold;build.priceText.fontStyle=FontStyles.Bold;
         Set(shop,"buildCardPrefab",SaveCard(root,"EquipmentCard").GetComponent<ShopItemCard>());
+
+        root=Card("Vehicle card",out icon,out title,out action);
+        var vehicle=root.gameObject.AddComponent<VehicleShopCard>();vehicle.icon=icon;vehicle.title=title;vehicle.stateButton=action;
+        vehicle.details=_ui.Label(root,"",new Vector2(142,-54),new Vector2(122,120),14);
+        Set(shop,"vehicleCardPrefab",SaveCard(root,"VehicleCard").GetComponent<VehicleShopCard>());
 
         root=Card("Product card",out icon,out title,out action);var product=root.gameObject.AddComponent<ProductShopItemCard>();
         Set(product,"icon",icon);Set(product,"nameText",title);Set(product,"buyButton",action);

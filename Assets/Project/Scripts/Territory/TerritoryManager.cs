@@ -21,6 +21,7 @@ namespace RetailEmpireTycoon.Territory
         private List<PurchasedRect> purchased = new List<PurchasedRect>();
 
         public IReadOnlyList<PurchasedRect> PurchasedRects => purchased;
+        public TerritoryPlotLayout plotLayout;
 
         public void ClearPurchased()
         {

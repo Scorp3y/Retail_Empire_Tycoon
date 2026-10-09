@@ -15,6 +15,7 @@ public sealed class CameraModeController : MonoBehaviour
     [SerializeField] private Camera _camera;
     [SerializeField] private Transform _moveRoot;
     [SerializeField] private MonoBehaviour _userCameraInput;
+    [SerializeField] private RetailEmpireTycoon.Territory.TerritoryPlotLayout _plotLayout;
 
     [Header("Purchase Pose")]
     [SerializeField] private CameraPose _purchasePose;
@@ -52,7 +53,28 @@ public sealed class CameraModeController : MonoBehaviour
         SaveCurrentPose();
         SetUserInputEnabled(false);
         _locked = true;
-        _routine = StartCoroutine(AnimateTo(_purchasePose));
+        _routine = StartCoroutine(AnimateTo(AvailableLandPose()));
+    }
+
+    private CameraPose AvailableLandPose()
+    {
+        if (_plotLayout == null || _plotLayout.progression == null) return _purchasePose;
+        bool found = false;
+        Rect area = default;
+        foreach (var plot in _plotLayout.plots)
+        {
+            if (!_plotLayout.progression.IsTerritoryAvailable(plot.id)) continue;
+            if (!found) { area = plot.bounds; found = true; }
+            else area = Rect.MinMaxRect(Mathf.Min(area.xMin,plot.bounds.xMin),Mathf.Min(area.yMin,plot.bounds.yMin),Mathf.Max(area.xMax,plot.bounds.xMax),Mathf.Max(area.yMax,plot.bounds.yMax));
+        }
+        if (!found) return _purchasePose;
+        // Frame today's available plots, not the entire map: early purchases must remain easy to see and click.
+        float halfHeight = Mathf.Tan(_purchasePose.Fov * Mathf.Deg2Rad * .5f);
+        float aspect = _camera != null ? Mathf.Max(.6f,_camera.aspect) : 1.77f;
+        float distance = Mathf.Max(area.width / (2 * halfHeight * aspect), area.height * .9063f / (2 * halfHeight)) * 1.35f + 4;
+        var rotation = Quaternion.Euler(65,0,0);
+        var target = new Vector3(area.center.x,0,area.center.y);
+        return new CameraPose {Position=target-rotation*Vector3.forward*distance,Euler=rotation.eulerAngles,Fov=_purchasePose.Fov};
     }
 
 

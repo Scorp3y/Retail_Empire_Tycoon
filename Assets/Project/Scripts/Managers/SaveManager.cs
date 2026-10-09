@@ -27,6 +27,7 @@ public class SaveManager : MonoBehaviour
     [SerializeField] private BuildItemCatalog _buildCatalog;
     [SerializeField] private ProductSaveService productSaveService;
     [SerializeField] private RetailEmpireTycoon.StoreOperations.StoreOperations shopOperations;
+    [SerializeField] private StarterStoreInitialization starterStore;
 
     [Header("Territory/Store")]
     [SerializeField] private StorePrefabSpawner _storeSpawner;
@@ -54,6 +55,8 @@ public class SaveManager : MonoBehaviour
         if (saveButton != null)
             saveButton.onClick.AddListener(OnSaveButtonClicked);
     }
+
+    private void OnDestroy() { if (Instance == this) Instance = null; }
 
     private void FindRefs()
     {
@@ -99,6 +102,8 @@ public class SaveManager : MonoBehaviour
         FindRefs();
 
         gameData ??= new GameData();
+        var deliveries = FindObjectOfType<RetailEmpireTycoon.Logistics.DeliveryOrders>(true);
+        if (deliveries != null) gameData.deliveries = deliveries.Ledger.Capture();
         if (shopOperations != null) gameData.shopOperations = shopOperations.BuildSaveData();
 
         if (_money != null)
@@ -123,7 +128,11 @@ public class SaveManager : MonoBehaviour
         }
 
         string json = JsonUtility.ToJson(gameData, true);
-        File.WriteAllText(saveFilePath, json);
+        // A paid shipment and its money/stock changes must reach disk together, never as a partial JSON file.
+        string temporaryPath = saveFilePath + ".tmp";
+        File.WriteAllText(temporaryPath, json);
+        if (File.Exists(saveFilePath)) File.Replace(temporaryPath, saveFilePath, saveFilePath + ".bak");
+        else File.Move(temporaryPath, saveFilePath);
 
         Debug.Log("[SaveManager] Saved: " + saveFilePath);
     }
@@ -134,13 +143,17 @@ public class SaveManager : MonoBehaviour
 
         if (!File.Exists(saveFilePath))
         {
+            if (starterStore != null) gameData = starterStore.CreateNewGame(_money != null ? _money.Money : gameData.playerMoney);
             SpawnStoreFromProgressOrDefault();
+            if (starterStore != null) starterStore.ApplyNewGameBuildings(gameData);
             StartCoroutine(LoadProductsAfterWorldLoaded(gameData));
             return;
         }
 
         string json = File.ReadAllText(saveFilePath);
         gameData = JsonUtility.FromJson<GameData>(json);
+        if (gameData == null) throw new InvalidDataException("Player save is empty or invalid.");
+        FindObjectOfType<RetailEmpireTycoon.Logistics.DeliveryOrders>(true)?.Ledger.Restore(gameData.deliveries);
 
         SpawnStoreFromProgressOrDefault();
 
@@ -157,6 +170,7 @@ public class SaveManager : MonoBehaviour
 
         if (_floorPainter != null && _buildCatalog != null)
             _floorPainter.ApplySaveData(gameData.floorTiles, _buildCatalog);
+        starterStore?.RefreshPickupParking();
 
         StartCoroutine(LoadProductsAfterWorldLoaded(gameData));
 
@@ -170,6 +184,8 @@ public class SaveManager : MonoBehaviour
             return;
 
         StoreLevelId desiredLevel = StoreLevelId.Lvl1;
+        _storeSpawner.UsesModularStore = gameData != null && gameData.usesModularStore;
+        starterStore?.ConfigureSite(_storeSpawner.UsesModularStore);
 
         if (_progression != null && gameData?.territory != null)
         {

@@ -31,7 +31,7 @@ namespace RetailEmpireTycoon.StoreOperations
         public string BindingNotice { get; private set; }
         public bool LegacyWindowVisible => hud.shopWindow.activeInHierarchy || hud.buildInventoryWindow.activeInHierarchy
             || settings != null && settings.settingPanel.activeInHierarchy;
-        public bool IsConstructionActive => building.mode == BuildMode.Build || territoryMode.IsActive;
+        public bool IsConstructionActive => building.mode != BuildMode.Normal || territoryMode.IsActive;
         public event Action Changed;
         public KeyCode Key(ShopAction action) => _keys[(int)action];
         public bool Pressed(ShopAction action) => !Capturing.HasValue && Input.GetKeyDown(Key(action));
@@ -81,9 +81,13 @@ namespace RetailEmpireTycoon.StoreOperations
             if (Pressed(ShopAction.TopView) && cameraInput.enabled) cameraInput.ToggleTopView();
             if (Pressed(ShopAction.ResetView) && cameraInput.enabled) cameraInput.ResetView();
             if (Pressed(ShopAction.Pause)) pause?.TogglePause();
-            if (building.mode == BuildMode.Build)
+            if (building.mode != BuildMode.Normal)
             {
-                if (Pressed(ShopAction.Inventory) || Pressed(ShopAction.Warehouse)) building.ExitBuildMode();
+                if (Pressed(ShopAction.Inventory) || Pressed(ShopAction.Warehouse))
+                {
+                    building.GetComponent<BuildEditingController>()?.Finish();
+                    building.ExitBuildMode();
+                }
                 else return;
             }
             if (Pressed(ShopAction.Territory)) { bool wasActive = territoryMode.IsActive; CloseWindows(); if (wasActive) territoryMode.Exit(); else territoryMode.Enter(); return; }

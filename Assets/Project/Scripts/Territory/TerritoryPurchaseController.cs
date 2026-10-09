@@ -24,7 +24,7 @@ public sealed class TerritoryPurchaseController : MonoBehaviour
 
     public void RequestPurchase(TerritoryId id, int price)
     {
-
+        if (_busy || price < 0 || _progression == null || !_progression.IsTerritoryAvailable(id)) return;
         _confirm.Show(
             $"Are you sure you will buy this territory? {price}?",
             onYes: () => StartCoroutine(PurchaseRoutine(id, price)),
@@ -35,7 +35,7 @@ public sealed class TerritoryPurchaseController : MonoBehaviour
 
     private IEnumerator PurchaseRoutine(TerritoryId id, int price)
     {
-        if (_busy)
+        if (_busy || price < 0 || _progression == null || !_progression.IsTerritoryAvailable(id))
             yield break;
 
         _busy = true;
@@ -75,11 +75,12 @@ public sealed class TerritoryPurchaseController : MonoBehaviour
             yield break;
         }
 
+        StoreLevelId previousLevel = _progression.State.CurrentLevel;
         _progression.MarkPurchased(id);
 
         SaveManager.Instance?.SaveGame();
 
-        if (_prefabSpawner != null)
+        if (_prefabSpawner != null && previousLevel != _progression.State.CurrentLevel)
             _prefabSpawner.Spawn(_progression.State.CurrentLevel);
 
         FindObjectOfType<TerritoryPurchaseModeManager>(true)?.Exit();

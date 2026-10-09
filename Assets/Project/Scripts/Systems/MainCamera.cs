@@ -30,6 +30,13 @@ public sealed class MainCamera : MonoBehaviour
     private Vector2 _lastPointer;
     public Vector3 FocusPoint => _focus;
     public bool IsTopView => _topView;
+    public void SetHomeView(Vector3 position, Quaternion rotation)
+    {
+        _homePosition = position;
+        _homeRotation = rotation;
+        transform.SetPositionAndRotation(position, rotation);
+        SynchronizePose();
+    }
 
     private void Awake()
     {

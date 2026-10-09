@@ -12,11 +12,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d6abad8a36b0794996f8dedd8a8e734, type: 3}
   m_Name: Floor
   m_EditorClassIdentifier: 
+  legacyWallDepth: 0
+  wallCellSize: 0
   id: floor_01
   displayName: Floor
   description: 
   icon: {fileID: 21300000, guid: 694294511e886524698eebecde29b0a5, type: 3}
   price: 10
+  hiddenFromShop: 1
+  weightKg: 2
+  cargoVolumeM3: 0.012
+  isAsphalt: 0
+  isParkingSpace: 0
+  isUnloadingGate: 0
+  isWall: 0
+  beautyPoints: 0
   unlockedByDefault: 1
   unlockCondition: {fileID: 0}
   category: 1
@@ -28,6 +38,15 @@ MonoBehaviour:
   floorMaterial: {fileID: 2100000, guid: 388f0a53df6e97149b21555a727cb495, type: 2}
   accessibilitySides: 1
   pivotOffset: {x: 0, y: 0}
+  alignModelToFootprint: 0
+  placementBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
+  placementAlignmentOffset: {x: 0, y: 0, z: 0}
+  frontFacing: 0
+  twoSidedAccess: 0
+  isDoorway: 0
+  isCheckout: 0
   prefab: {fileID: 0}
   previewValidMaterial: {fileID: 2100000, guid: b737f1f25c90f1842999d06f57aa1608, type: 2}
   previewInvalidMaterial: {fileID: 2100000, guid: cd8bbf8a301d0664386b1c15cc42650f, type: 2}

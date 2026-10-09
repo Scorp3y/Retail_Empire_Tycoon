@@ -11,9 +11,28 @@ namespace RetailEmpireTycoon.UI.Shop
         public static string Item(BuildItemData item)
         {
             if (item == null) return Get("Предмет", "Item");
+            switch(item.id)
+            {
+                case "floor_cream": return Get("Светлая плитка", "Cream tile");
+                case "floor_graphite": return Get("Графитовая плитка", "Graphite tile");
+                case "floor_checker": return Get("Шахматный пол", "Checkerboard");
+                case "floor_wood": return Get("Деревянный пол", "Wooden floor");
+                case "floor_concrete": return Get("Бетон", "Concrete");
+                case "floor_terrazzo": return Get("Терраццо", "Terrazzo");
+                case "decor_plant": return Get("Растение в горшке", "Potted plant");
+                case "decor_bench": return Get("Деревянная скамья", "Wooden bench");
+                case "decor_bin": return Get("Урна", "Waste bin");
+                case "decor_lamp": return Get("Напольный светильник", "Floor lamp");
+                case "decor_planter": return Get("Цветочная кадка", "Flower planter");
+                case "decor_sign": return Get("Вывеска магазина", "Market sign");
+            }
             if (item.id == "wallcorner_01") return Get("Угловая стена", "Corner wall");
             if (item.id == "shelf_fresh_01") return Get("Хлебный стеллаж", "Bakery rack");
             if (item.id == "shelf_produce_01") return Get("Овощи и фрукты", "Produce rack");
+            if (item.id == "asphalt_01") return Get("Асфальт", "Asphalt");
+            if (item.id == "parking_01") return Get("Парковка", "Parking bay");
+            if (item.id == "unloading_gate_01") return Get("Ворота разгрузки", "Unloading gate");
+            if (item.id == "storage_rack_01") return Get("Складской стеллаж", "Storage rack");
             if (!Russian) return CleanName(item.displayName);
             switch (item.id)
             {
@@ -37,7 +56,12 @@ namespace RetailEmpireTycoon.UI.Shop
             switch (item.Id)
             {
                 case "product_milk": return "Молоко";
-                case "product_bread": return "Хлеб";
+                case "product_bread": return "Батон";
+                case "product_baguette": return "Багет";
+                case "product_brown_bread": return "Тёмный хлеб";
+                case "product_white_bread": return "Белый хлеб";
+                case "product_bun": return "Булочка";
+                case "product_sesame_bun": return "Булочка с кунжутом";
                 case "product_oil": return "Подсолнечное масло";
                 case "product_sodacola": return "Кола";
                 case "product_steak": return "Стейк";

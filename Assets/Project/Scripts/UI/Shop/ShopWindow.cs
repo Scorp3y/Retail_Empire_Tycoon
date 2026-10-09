@@ -20,7 +20,8 @@ namespace RetailEmpireTycoon.UI.Shop
             BuildCategories,
             BuildItems,
             Products,
-            Staff
+            Staff,
+            Vehicles
         }
 
         [Header("Build Data")]
@@ -46,6 +47,8 @@ namespace RetailEmpireTycoon.UI.Shop
         [SerializeField] private Transform listRoot;
         [SerializeField] private ShopItemCard buildCardPrefab;
         [SerializeField] private ProductShopItemCard productCardPrefab;
+        [SerializeField] private VehicleShopCard vehicleCardPrefab;
+        [SerializeField] private Sprite pickupIcon;
         [SerializeField] private GameObject buildInventoryWindow;
 
         [Header("State")]
@@ -57,6 +60,7 @@ namespace RetailEmpireTycoon.UI.Shop
         private readonly List<(Behaviour behaviour, bool wasEnabled)> _cameraState = new();
         private ViewMode _viewMode = ViewMode.MainTabs;
         private GameObject _staffPage;
+        [SerializeField] private RetailEmpireTycoon.Logistics.DeliveryOrders deliveryOrders;
         public Transform StaffHost => mainCategoriesPanel.transform;
         public Transform MainTabsHost => mainTabsPanel.transform;
         public Transform CategoryTabsHost => tabsCategoriesPanel.transform;
@@ -64,6 +68,7 @@ namespace RetailEmpireTycoon.UI.Shop
         public bool IsMainView => _viewMode == ViewMode.MainTabs;
         public bool IsBuildView => _viewMode == ViewMode.BuildItems || _viewMode == ViewMode.BuildCategories;
         public bool IsProductsView => _viewMode == ViewMode.Products;
+        public bool IsVehiclesView => _viewMode == ViewMode.Vehicles;
         public BuildCategory SelectedCategory => buildFilter;
         public event System.Action ViewChanged;
         public event System.Action StaffRequested;
@@ -126,7 +131,7 @@ namespace RetailEmpireTycoon.UI.Shop
 
         public void OpenBuildCategories()
         {
-            OpenCategory(buildFilter);
+            OpenCategory(buildFilter == BuildCategory.Decoration ? BuildCategory.Shelf : buildFilter);
         }
 
         public void OpenProducts()
@@ -187,6 +192,9 @@ namespace RetailEmpireTycoon.UI.Shop
         {
             switch (_viewMode)
             {
+                case ViewMode.Vehicles:
+                    OpenVehicles();
+                    break;
                 case ViewMode.Staff:
                     OpenStaff();
                     break;
@@ -208,6 +216,21 @@ namespace RetailEmpireTycoon.UI.Shop
             }
         }
 
+        public void OpenVehicles()
+        {
+            SetPanel(_staffPage, false);
+            _viewMode = ViewMode.Vehicles;
+            ClearList();
+            SetPanel(mainCategoriesPanel, true);
+            SetPanel(mainTabsPanel, false);
+            SetPanel(tabsCategoriesPanel, false);
+            SetPanel(categoryViewPanel, true);
+            SetEmpty(vehicleCardPrefab == null);
+            if (vehicleCardPrefab != null) Instantiate(vehicleCardPrefab, listRoot).Bind(pickupIcon, deliveryOrders);
+            ResetCatalogScroll();
+            ViewChanged?.Invoke();
+        }
+
         private void RefreshBuildItems()
         {
             ClearList();
@@ -224,11 +247,11 @@ namespace RetailEmpireTycoon.UI.Shop
             // Order the visible cards only; stable catalog entries and save identifiers remain unchanged.
             foreach (var item in buildCatalog.OrderBy(BuildDisplayPriority))
             {
-                if (item == null || item.category != buildFilter)
+                if (item == null || item.hiddenFromShop || item.category != buildFilter)
                     continue;
 
                 var card = Instantiate(buildCardPrefab, listRoot);
-                card.Bind(item, money, buildInventory);
+                card.Bind(item, money, buildInventory, deliveryOrders);
                 shown++;
             }
 
@@ -266,7 +289,7 @@ namespace RetailEmpireTycoon.UI.Shop
                     continue;
 
                 var card = Instantiate(productCardPrefab, listRoot);
-                card.Bind(product, money, productInventory);
+                card.Bind(product, money, productInventory, deliveryOrders);
                 shown++;
             }
 

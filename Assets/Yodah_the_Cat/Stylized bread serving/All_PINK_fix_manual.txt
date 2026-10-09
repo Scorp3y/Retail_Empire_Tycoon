@@ -1,0 +1,25 @@
+Are all assets in the scene pink?
+
+All prefabs and the DemoScene are set to work in URP by default. If you are using HDRP or the Built-in pipeline, do the following:
+
+If you are using the HDRP pipeline 
+    Navigate to Yodah_the_Cat\Low-poly Garden\Material in the project
+        Select Yodah_the_Cat_Material 
+    Change Shader to Shader Graphs/Yodah_the_Cat_HDRP 
+    Select Yodah_the_Cat_Material_GLASS 
+        Change Shader to Shader Graphs/Yodah_the_Cat_HDRP_GLASS 
+
+If you are using the Built-Inn pipeline 
+    Go to Window/PackageManagement/PackageManager
+    Install Shader Graph (by UnityTechnologies)
+    Navigate to Yodah_the_Cat\Low-poly Garden\Material in the project
+    Select Yodah_the_Cat_Material 
+        Change Shader to Shader Graphs/Yodah_the_Cat_Built-In 
+    Select Yodah_the_Cat_Material_GLASS 
+        Change Shader to Shader Graphs/Yodah_the_Cat_Built-In_GLASS
+
+You can also use the default Autodesk Interactive shaders in all pipelines (textures will be assigned automatically; just make sure they are checked), but they won’t give you as much control over the materials.
+
+Sorry for the inconvenience!
+If you have any questions or suggestions feel free to contact me by e-mail:yodah.the.cat@gmail.com
+Meow the fur be with you!

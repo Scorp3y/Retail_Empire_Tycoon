@@ -67,7 +67,7 @@ public static class ShopAssortmentSetup
                 throw new InvalidOperationException("Missing existing product model: " + definition.Model);
         Directory.CreateDirectory(ProductFolder); Directory.CreateDirectory(RackFolder); AssetDatabase.Refresh();
         var products = Definitions.Select(CreateProduct).ToArray();
-        ShopBakeryModel.Apply();
+        ShopBakeryAssortment.ApplyModels();
         var breadItem = AssetDatabase.LoadAssetAtPath<BuildItemData>("Assets/Prefabs/Shelf/FreshMarketShelf_BuildItem.asset");
         RebuildRack(breadItem, false);
         breadItem.displayName = "Bakery rack"; breadItem.description = "For bread and bakery products";
@@ -204,23 +204,29 @@ public static class ShopAssortmentSetup
             if (slots == null) { slots = new GameObject("ProductSlots").transform; slots.SetParent(root.transform, false); }
             slots.localPosition = Vector3.zero; slots.localRotation = Quaternion.identity; slots.localScale = Vector3.one;
             for (int i = slots.childCount - 1; i >= 0; i--) Object.DestroyImmediate(slots.GetChild(i).gameObject);
-            int columns = produce ? 5 : 4;
-            for (int tier = 0; tier < 3; tier++) for (int depth = 0; depth < 2; depth++) for (int column = 0; column < columns; column++)
+            int columns = 6;
+            // Interleave tiers so a partly stocked rack is readable, rather than hiding all units on its bottom tray.
+            for (int depth = 0; depth < (produce?2:3); depth++) for (int column = 0; column < columns; column++) for (int tier = 0; tier < 3; tier++)
             {
                 Transform slot = new GameObject("Slot_" + slots.childCount.ToString("D2")).transform;
                 slot.SetParent(slots, false);
-                slot.localPosition = new Vector3(Mathf.Lerp(-.24f, .24f, (float)column / (columns - 1)), .175f + tier * .20f, -.12f + depth * .24f);
+                float x = produce ? -.20f + (column / 2) * .20f + (column % 2 == 0 ? -.04f : .04f)
+                    : -.25f + column * .10f;
+                slot.localPosition = new Vector3(x, .173f + tier * .20f, produce?-.12f + depth * .24f:-.16f+depth*.16f);
+                slot.gameObject.AddComponent<ShelfProductSlot>().usableSize = produce
+                    ? new Vector3(.075f, .13f, .18f) : new Vector3(.09f, .14f, .145f);
             }
             var stockData = new SerializedObject(stock);
             stockData.FindProperty("shelfType").enumValueIndex = produce ? (int)ShelfStorageType.Produce : (int)ShelfStorageType.Fresh;
             stockData.FindProperty("acceptedProductTypes").arraySize = 1;
             stockData.FindProperty("acceptedProductTypes").GetArrayElementAtIndex(0).enumValueIndex = produce ? (int)ProductStorageType.Produce : (int)ProductStorageType.Bakery;
-            stockData.FindProperty("maxAmount").intValue = slots.childCount; stockData.ApplyModifiedPropertiesWithoutUndo();
+            // Existing stored quantities must not be clamped during this visual migration.
+            stockData.FindProperty("maxAmount").intValue = produce ? 30 : 54; stockData.ApplyModifiedPropertiesWithoutUndo();
             var displayData = new SerializedObject(display);
             displayData.FindProperty("shelfStock").objectReferenceValue = stock;
             displayData.FindProperty("slotsRoot").objectReferenceValue = slots;
             displayData.FindProperty("slots").arraySize = 0;
-            displayData.FindProperty("productScale").floatValue = produce ? 1 : .6f;
+            displayData.FindProperty("productScale").floatValue = 1;
             displayData.FindProperty("fillMode").enumValueIndex = 0; displayData.ApplyModifiedPropertiesWithoutUndo();
             Bounds bounds = Measure(rack.gameObject);
             var collider = root.GetComponent<BoxCollider>();

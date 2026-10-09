@@ -30,6 +30,13 @@ namespace RetailEmpireTycoon.BuildSystem
         private int _facing;
 
         private PlacementValidator _validator;
+        public BuildItemData SelectedItem=>_selected;
+        public PlacementResult PreviewResult {get;private set;}
+        public bool HasPlacementPreview {get;private set;}
+        public int FloorStrokeCellCount {get;private set;}
+        public event System.Action LayoutChanged;
+        public void NotifyLayoutChanged() => LayoutChanged?.Invoke();
+        public PlacementResult ValidateExistingPlacement(PlacementRequest request) => _validator.CanPlace(request);
 
         public bool TryGetPlacementFocus(out Vector3 focus)
         {
@@ -55,6 +62,10 @@ namespace RetailEmpireTycoon.BuildSystem
                 new Rule_InsidePurchasedArea(territory, grid),
                 new Rule_NoOverlap(grid, grid),
                 new Rule_Accessibility(grid, grid),
+                new Rule_ShelfApproach(grid,territory),
+                new Rule_VisualOverlap(grid),
+                new Rule_WallJoint(),
+                new RetailEmpireTycoon.Parking.Rule_ParkingSurface(grid, floorPainter),
             };
 
             _validator = new PlacementValidator(rules); 
@@ -78,6 +89,7 @@ namespace RetailEmpireTycoon.BuildSystem
 
             if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             {
+                HasPlacementPreview = false;
                 preview?.SetVisible(false);
                 if (_isPaintingFloor && Input.GetMouseButtonUp(0))
                 {
@@ -104,6 +116,9 @@ namespace RetailEmpireTycoon.BuildSystem
         public void EnterBuildMode(BuildItemData item)
         {
             if (item == null) return;
+            GetComponent<BuildEditingController>()?.Finish();
+            HasPlacementPreview = false;
+            FloorStrokeCellCount = 0;
             _isPaintingFloor = false;
             _floorPreviewCells.Clear();
             floorPainter?.ClearPreview();
@@ -123,6 +138,7 @@ namespace RetailEmpireTycoon.BuildSystem
 
         public void ExitBuildMode()
         {
+            HasPlacementPreview = false;
             mode = BuildMode.Normal;
             _selected = null;
             _isPaintingFloor = false;
@@ -161,6 +177,7 @@ namespace RetailEmpireTycoon.BuildSystem
 
             if (!TryGetMouseCell(out var cell, out _))
             {
+                HasPlacementPreview = false;
                 preview?.SetVisible(false);
                 return;
             }
@@ -170,6 +187,8 @@ namespace RetailEmpireTycoon.BuildSystem
 
             var req = new PlacementRequest(_selected, cell, _rotated, _facing);
             var res = CanPlaceAt(cell);
+            PreviewResult = res;
+            HasPlacementPreview = true;
 
             preview?.SetPose(worldPos, rot);
             preview?.ShowPlacement(grid, req, res);
@@ -202,7 +221,7 @@ namespace RetailEmpireTycoon.BuildSystem
                 {
                     var cells = new List<Vector3Int> { cell };
 
-                    if (floorPainter.AreCellsValid(cells) && inventory != null && inventory.GetCount(_selected) >= 1)
+                    if (floorPainter.AreCellsValid(cells, _selected) && inventory != null && inventory.GetCount(_selected) >= 1)
                     {
                         floorPainter.PaintCells(cells, _selected);
                         inventory.TryConsume(_selected, 1);
@@ -230,6 +249,7 @@ namespace RetailEmpireTycoon.BuildSystem
 
             if (!SpawnPlaced(req)) return false;
             OnPlacedSuccessfully?.Invoke(req.item);
+            NotifyLayoutChanged();
             return true;
         }
 
@@ -253,6 +273,7 @@ namespace RetailEmpireTycoon.BuildSystem
             placed.anchorCell = req.anchorCell;
             placed.rotated = req.rotated;
             placed.facing = req.facing;
+            placed.wallModuleVersion = req.item.isWall ? BuildItemData.CurrentWallModuleVersion : 0;
 
             var cells = new List<Vector3Int>(grid.GetFootprintCells(req.anchorCell, req.item.footprint, req.rotated, req.item.pivotOffset));
             placed.occupiedCells = cells;
@@ -293,8 +314,9 @@ namespace RetailEmpireTycoon.BuildSystem
                 {
                     var cells = new List<Vector3Int> { hoverCell };
 
-                    bool validArea = floorPainter.AreCellsValid(cells);
+                    bool validArea = floorPainter.AreCellsValid(cells, _selected);
                     bool enoughItems = inventory.GetCount(_selected) >= 1;
+                    UpdateFloorFeedback(1, validArea, enoughItems);
 
                     floorPainter.ShowPreview(cells, validArea && enoughItems);
                 }
@@ -318,8 +340,9 @@ namespace RetailEmpireTycoon.BuildSystem
 
                 _floorPreviewCells = floorPainter.GetRectCells(_floorStartCell, currentCell);
 
-                bool validArea = floorPainter.AreCellsValid(_floorPreviewCells);
+                bool validArea = floorPainter.AreCellsValid(_floorPreviewCells, _selected);
                 bool enoughItems = inventory.GetCount(_selected) >= _floorPreviewCells.Count;
+                UpdateFloorFeedback(_floorPreviewCells.Count, validArea, enoughItems);
 
                 floorPainter.ShowPreview(_floorPreviewCells, validArea && enoughItems);
             }
@@ -334,7 +357,7 @@ namespace RetailEmpireTycoon.BuildSystem
                     return;
                 }
 
-                bool validArea = floorPainter.AreCellsValid(_floorPreviewCells);
+                bool validArea = floorPainter.AreCellsValid(_floorPreviewCells, _selected);
                 bool enoughItems = inventory.GetCount(_selected) >= _floorPreviewCells.Count;
 
                 if (validArea && enoughItems)
@@ -348,6 +371,17 @@ namespace RetailEmpireTycoon.BuildSystem
 
                 floorPainter.ClearPreview();
             }
+        }
+
+        private void UpdateFloorFeedback(int count, bool validArea, bool enoughItems)
+        {
+            FloorStrokeCellCount = count;
+            HasPlacementPreview = true;
+            PreviewResult = !enoughItems
+                ? PlacementResult.Fail(PlaceFailReason.InsufficientInventory, "Недостаточно плиток на складе")
+                : !validArea
+                    ? PlacementResult.Fail(PlaceFailReason.RuleFailed, "Проверьте границы участка. На парковке и подъезде нужен асфальт.")
+                    : PlacementResult.Success();
         }
 
         public List<PlacedBuildSaveData> BuildPlacedSaveData()
@@ -367,7 +401,9 @@ namespace RetailEmpireTycoon.BuildSystem
                     x = placed.anchorCell.x,
                     z = placed.anchorCell.z,
                     rotated = placed.rotated,
-                    facing = placed.facing
+                    facing = placed.facing,
+                    wallModuleVersion = placed.wallModuleVersion,
+                    playerParking = placed.playerParking
                 });
             }
 
@@ -376,6 +412,7 @@ namespace RetailEmpireTycoon.BuildSystem
 
         public void ApplyPlacedSaveData(List<PlacedBuildSaveData> data, BuildItemCatalog catalog)
         {
+            GetComponent<BuildEditingController>()?.Finish();
             ClearPlacedObjects();
 
             if (grid != null)
@@ -393,8 +430,10 @@ namespace RetailEmpireTycoon.BuildSystem
                 var cell = new Vector3Int(d.x, 0, d.z);
                 var req = new PlacementRequest(item, cell, d.rotated, d.facing);
 
-                SpawnPlacedFromSave(req);
+                var placed = SpawnPlacedFromSave(req, d.wallModuleVersion);
+                if (placed != null) placed.playerParking = d.playerParking;
             }
+            NotifyLayoutChanged();
         }
 
         private void ClearPlacedObjects()
@@ -404,33 +443,52 @@ namespace RetailEmpireTycoon.BuildSystem
             foreach (var placed in placedObjects)
             {
                 if (placed != null && placed.GetComponentInParent<BuildPreview>() == null)
+                {
+                    placed.gameObject.SetActive(false);
                     Destroy(placed.gameObject);
+                }
             }
         }
 
-        private void SpawnPlacedFromSave(PlacementRequest req)
+        private PlacedObject SpawnPlacedFromSave(PlacementRequest req, int wallModuleVersion)
         {
-            if (req.item == null) return;
-            if (req.item.prefab == null) return;
-            if (grid == null) return;
+            if (req.item == null || req.item.prefab == null || grid == null) return null;
 
-            var worldPos = BuildPlacementPose.Position(grid, req.item, req.anchorCell, req.rotated, req.facing);
+            var footprint = req.item.footprint;
+            var pivotOffset = req.item.pivotOffset;
+            var modelScale = Vector3.one;
+            var bounds = req.item.placementBounds;
+            bool legacyWall = req.item.isWall && wallModuleVersion < BuildItemData.CurrentWallModuleVersion;
+            if (legacyWall)
+            {
+                // Both historical wall formats retain their original dimensions and anchors.
+                footprint = req.item.WallFootprint(wallModuleVersion);
+                pivotOffset = req.item.WallPivot(wallModuleVersion);
+                modelScale = req.item.WallModelScale(wallModuleVersion);
+                bounds = new Bounds(Vector3.Scale(bounds.center, modelScale), Vector3.Scale(bounds.size, modelScale));
+            }
+            var worldPos = legacyWall
+                ? BuildPlacementPose.AlignedPosition(grid, req.anchorCell, req.rotated, req.facing, footprint, pivotOffset, bounds)
+                : BuildPlacementPose.Position(grid, req.item, req.anchorCell, req.rotated, req.facing);
             var rot = Quaternion.Euler(0f, req.facing * 90f, 0f);
 
             var go = Instantiate(req.item.prefab, worldPos, rot);
+            go.transform.localScale = Vector3.Scale(go.transform.localScale, modelScale);
             var placed = go.GetComponent<PlacedObject>() ?? go.AddComponent<PlacedObject>();
 
             placed.item = req.item;
             placed.anchorCell = req.anchorCell;
             placed.rotated = req.rotated;
             placed.facing = req.facing;
+            placed.wallModuleVersion = wallModuleVersion;
 
             var cells = new List<Vector3Int>(
-                grid.GetFootprintCells(req.anchorCell, req.item.footprint, req.rotated, req.item.pivotOffset)
+                grid.GetFootprintCells(req.anchorCell, footprint, req.rotated, pivotOffset)
             );
 
             placed.occupiedCells = cells;
             grid.Occupy(cells);
+            return placed;
         }
     }
 

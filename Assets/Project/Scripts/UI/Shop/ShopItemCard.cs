@@ -23,9 +23,11 @@ namespace RetailEmpireTycoon.UI.Shop
         public MoneyController money;
         public BuildInventory inventory;
         private BuildItemData _item;
+        private RetailEmpireTycoon.Logistics.DeliveryOrders _orders;
 
-        public void Bind(BuildItemData item, MoneyController moneyController, BuildInventory buildInventory)
+        public void Bind(BuildItemData item, MoneyController moneyController, BuildInventory buildInventory, RetailEmpireTycoon.Logistics.DeliveryOrders orders = null)
         {
+            _orders = orders;
             if (money != null) money.Changed -= OnMoneyChanged;
             money = moneyController;
             inventory = buildInventory;
@@ -57,8 +59,11 @@ namespace RetailEmpireTycoon.UI.Shop
             if (sizeText != null)
             {
                 var f = _item.footprint;
-                sizeText.text = ShopText.Get("Размер", "Size") + $"\n{f.x} × {f.y}";
+                sizeText.text = ShopText.Get("Размер (клетки)", "Size (cells)") + $"\n{f.x} × {f.y}";
+                if (_orders != null) {sizeText.fontSize=13;sizeText.text += $"\n{_item.weightKg:0.#} kg";}
+                if (_item.beautyPoints > 0) sizeText.text += ShopText.Get($"\nКрасота +{_item.beautyPoints}", $"\nBeauty +{_item.beautyPoints}");
             }
+            if (_orders != null && buyButton != null) buyButton.GetComponentInChildren<ShopLocalizedLabel>()?.Set("Заказать","Order");
         }
 
         private void ApplyIcon()
@@ -82,14 +87,15 @@ namespace RetailEmpireTycoon.UI.Shop
         private void OnMoneyChanged(int amount) { RefreshButton(); }
         private void RefreshButton()
         {
-            if (buyButton != null) buyButton.interactable = _item != null && money != null && inventory != null && money.CanSpend(_item.price);
+            if (buyButton != null) buyButton.interactable = _item != null && !_item.hiddenFromShop && money != null && inventory != null && money.CanSpend(_item.price);
         }
         private void OnDisable() { if (money != null) money.Changed -= OnMoneyChanged; }
         private void OnEnable() { if (money != null) { money.Changed -= OnMoneyChanged; money.Changed += OnMoneyChanged; } RefreshButton(); }
 
         private void OnBuyClicked()
         {
-            if (_item == null || money == null || inventory == null) return;
+            if (_item == null || _item.hiddenFromShop || money == null || inventory == null) return;
+            if (_orders != null) { _orders.Order(_item); return; }
             if (!money.TrySpend(_item.price)) return;
 
             inventory.Add(_item, 1);

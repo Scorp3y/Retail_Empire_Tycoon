@@ -22,14 +22,16 @@ namespace RetailEmpireTycoon.UI.Products
         private ProductItemData _item;
         private MoneyController _money;
         private ProductInventory _inventory;
+        private RetailEmpireTycoon.Logistics.DeliveryOrders _orders;
 
-        public void Bind(ProductItemData item, MoneyController money, ProductInventory inventory)
+        public void Bind(ProductItemData item, MoneyController money, ProductInventory inventory, RetailEmpireTycoon.Logistics.DeliveryOrders orders = null)
         {
             Unsubscribe();
 
             _item = item;
             _money = money;
             _inventory = inventory;
+            _orders = orders;
 
             Subscribe();
             HookButton();
@@ -53,6 +55,7 @@ namespace RetailEmpireTycoon.UI.Products
 
             if (_inventory != null)
                 _inventory.Changed += RefreshView;
+            if (_orders != null) _orders.Changed += RefreshView;
         }
 
         private void Unsubscribe()
@@ -62,6 +65,7 @@ namespace RetailEmpireTycoon.UI.Products
 
             if (_inventory != null)
                 _inventory.Changed -= RefreshView;
+            if (_orders != null) _orders.Changed -= RefreshView;
         }
 
         private void HookButton()
@@ -95,10 +99,11 @@ namespace RetailEmpireTycoon.UI.Products
                 priceText.text = _item != null ? MoneyFormat.Compact(_item.BuyPrice) : "$0";
 
             if (boxAmountText != null)
-                boxAmountText.text = ShopText.Get("В упаковке: ", "Pack: ") + (_item != null ? _item.BoxAmount : 0);
+                boxAmountText.text = _item == null ? "" : ShopText.Get("Упаковка: ", "Pack: ") + _item.BoxAmount + $" • {_item.UnitWeightKg * _item.BoxAmount:0.#} kg";
 
             if (ownedAmountText != null)
                 ownedAmountText.text = GetOwnedText();
+            if (_orders != null && buyButton != null) buyButton.GetComponentInChildren<ShopLocalizedLabel>()?.Set("Заказать","Order");
         }
 
         private string GetOwnedText()
@@ -106,7 +111,14 @@ namespace RetailEmpireTycoon.UI.Products
             if (_item == null || _inventory == null)
                 return ShopText.Get("На складе: 0", "Owned: 0");
 
-            return ShopText.Get("На складе: ", "Owned: ") + _inventory.GetCount(_item);
+            string text = ShopText.Get("На складе: ", "Owned: ") + _inventory.GetCount(_item);
+            if (_orders != null)
+            {
+                int awaiting = _orders.Ledger.Count(_item.Id,RetailEmpireTycoon.Logistics.DeliveryItemKind.Product,RetailEmpireTycoon.Logistics.DeliveryLocation.Depot)
+                    + _orders.Ledger.Count(_item.Id,RetailEmpireTycoon.Logistics.DeliveryItemKind.Product,RetailEmpireTycoon.Logistics.DeliveryLocation.Pickup);
+                text += "\n" + ShopText.Get("К доставке: ","Awaiting: ") + awaiting;
+            }
+            return text;
         }
 
         private void RefreshIcon()
@@ -138,6 +150,8 @@ namespace RetailEmpireTycoon.UI.Products
         {
             if (!CanBuy())
                 return;
+
+            if (_orders != null) { _orders.Order(_item); RefreshView(); return; }
 
             if (!_money.TrySpend(_item.BuyPrice))
                 return;

@@ -25,6 +25,11 @@ namespace RetailEmpireTycoon.Territory
 
         public void Apply()
         {
+            if (territoryManager != null && territoryManager.plotLayout != null)
+            {
+                territoryManager.plotLayout.Apply();
+                return;
+            }
             if (territoryManager == null || grid == null || storeBuildArea == null)
                 return;
 
