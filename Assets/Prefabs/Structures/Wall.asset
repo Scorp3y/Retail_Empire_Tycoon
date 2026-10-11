@@ -14,6 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   legacyWallDepth: 0.18
   wallCellSize: 0.1667
+  wallGeometryVersion: 3
+  previousWallPrefab: {fileID: 6960668006808431264, guid: 4d15501ec42d84942a6a846edf306872, type: 3}
+  previousWallBounds:
+    m_Center: {x: 0, y: 0.5, z: 0}
+    m_Extent: {x: 0.08335, y: 0.5, z: 0.050010003}
+  previousWallAlignmentOffset: {x: 0, y: 0, z: 0}
+  decorationProportionsVersion: 0
   id: wall_01
   displayName: Wall
   description: 
@@ -31,7 +38,7 @@ MonoBehaviour:
   unlockCondition: {fileID: 0}
   category: 1
   subCategory: 0
-  footprint: {x: 1, y: 1}
+  footprint: {x: 1, y: 2}
   allowRotation: 1
   ruleFlags: 3
   placementKind: 2
@@ -41,7 +48,7 @@ MonoBehaviour:
   alignModelToFootprint: 1
   placementBounds:
     m_Center: {x: 0, y: 0.5, z: 0}
-    m_Extent: {x: 0.08335, y: 0.5, z: 0.050010003}
+    m_Extent: {x: 0.08335, y: 0.5, z: 0.1667}
   placementAlignmentOffset: {x: 0, y: 0, z: 0}
   frontFacing: 0
   twoSidedAccess: 0

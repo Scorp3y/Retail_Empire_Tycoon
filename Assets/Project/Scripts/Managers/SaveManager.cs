@@ -153,6 +153,7 @@ public class SaveManager : MonoBehaviour
         string json = File.ReadAllText(saveFilePath);
         gameData = JsonUtility.FromJson<GameData>(json);
         if (gameData == null) throw new InvalidDataException("Player save is empty or invalid.");
+        starterStore?.UpgradeUnmodifiedLayout(gameData);
         FindObjectOfType<RetailEmpireTycoon.Logistics.DeliveryOrders>(true)?.Ledger.Restore(gameData.deliveries);
 
         SpawnStoreFromProgressOrDefault();

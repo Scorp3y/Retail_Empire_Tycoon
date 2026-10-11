@@ -5,9 +5,9 @@ namespace RetailEmpireTycoon.Editor.TownKit
 {
     internal static class TownArchitecturalParts
     {
-        public static void Window(TownMeshBuilder mesh,Vector3 center,float width,float height,bool side=false)
+        public static void Window(TownMeshBuilder mesh,Vector3 center,float width,float height,bool side=false,bool reverse=false)
         {
-            var rotation=side?Quaternion.Euler(0,90,0):Quaternion.identity;
+            var rotation=Quaternion.Euler(0,side?(reverse?-90:90):(reverse?180:0),0);
             mesh.Box(center,new Vector3(width+.14f,height+.14f,.1f),TownColor.White,rotation);
             mesh.Box(center+rotation*Vector3.forward*.065f,new Vector3(width,height,.025f),TownColor.Glass,rotation);
             mesh.Box(center+rotation*Vector3.forward*.085f,new Vector3(.045f,height,.03f),TownColor.Frame,rotation);

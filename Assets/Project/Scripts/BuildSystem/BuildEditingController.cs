@@ -54,16 +54,18 @@ namespace RetailEmpireTycoon.BuildSystem
             {
                 placementDefinition.footprint = placed.item.WallFootprint(placed.wallModuleVersion);
                 placementDefinition.pivotOffset = placed.item.WallPivot(placed.wallModuleVersion);
-                placementDefinition.placementAlignmentOffset = Vector3.zero;
+                placementDefinition.prefab = placed.item.WallPrefab(placed.wallModuleVersion);
+                placementDefinition.placementAlignmentOffset = placed.wallModuleVersion==2 ? placed.item.previousWallAlignmentOffset : Vector3.zero;
                 var scale = placed.transform.localScale;
-                placementDefinition.placementBounds = new Bounds(Vector3.Scale(placed.item.placementBounds.center, scale), Vector3.Scale(placed.item.placementBounds.size, scale));
+                var bounds = placed.item.WallBounds(placed.wallModuleVersion);
+                placementDefinition.placementBounds = new Bounds(Vector3.Scale(bounds.center, scale), Vector3.Scale(bounds.size, scale));
             }
             candidateCell = placed.anchorCell;
             candidateFacing = placed.facing;
             selectedRenderers = placed.GetComponentsInChildren<Renderer>();
             hiddenStates = selectedRenderers.Select(r => r.forceRenderingOff).ToArray();
             foreach (var renderer in selectedRenderers) renderer.forceRenderingOff = true;
-            building.preview.SetItem(placed.item);
+            building.preview.SetItem(placementDefinition);
             building.preview.SetModelScale(placed.transform.localScale);
             PreviewAt(candidateCell);
             Notice = "Выберите новое место и подтвердите. Esc отменяет выбор.";

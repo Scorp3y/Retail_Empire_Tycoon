@@ -24,6 +24,13 @@ namespace RetailEmpireTycoon.BuildSystem
             if (blueprint == null) throw new InvalidOperationException("Starter store blueprint is not configured.");
             return blueprint.CreateNewGame(startingMoney);
         }
+        public void UpgradeUnmodifiedLayout(GameData data)
+        {
+            if(blueprint!=null&&building!=null&&blueprint.TryUpgradeUnmodifiedStructure(data,building.grid,catalog))
+                Debug.Log("Unmodified starter structure upgraded to two-cell wall thickness; custom construction preserved.");
+            if(blueprint!=null&&building!=null&&blueprint.TryUpgradeUnmodifiedFrontage(data,building.grid,catalog))
+                Debug.Log("Starter forecourt upgraded: two customer bays and one private bay; interior and inventories preserved.");
+        }
         public void ConfigureSite(bool modularStore)
         {
             modular = modularStore;

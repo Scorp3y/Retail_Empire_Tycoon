@@ -12,11 +12,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d6abad8a36b0794996f8dedd8a8e734, type: 3}
   m_Name: decor_sign
   m_EditorClassIdentifier: 
+  legacyWallDepth: 0
+  wallCellSize: 0
+  wallGeometryVersion: 0
+  previousWallPrefab: {fileID: 0}
+  previousWallBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
+  previousWallAlignmentOffset: {x: 0, y: 0, z: 0}
+  decorationProportionsVersion: 2
   id: decor_sign
   displayName: Market sign
   description: 
   icon: {fileID: 21300000, guid: 9329fe9452e2e0f4ab9f4795da64fd2c, type: 3}
   price: 110
+  hiddenFromShop: 0
   weightKg: 5
   cargoVolumeM3: 0.08
   isAsphalt: 0
@@ -37,8 +47,9 @@ MonoBehaviour:
   pivotOffset: {x: 0, y: 0}
   alignModelToFootprint: 1
   placementBounds:
-    m_Center: {x: 0, y: 0.40350002, z: 0.0000000037252903}
-    m_Extent: {x: 0.285, y: 0.3075, z: 0.060000002}
+    m_Center: {x: 0, y: 0.24974997, z: 0.0000000018626451}
+    m_Extent: {x: 0.1425, y: 0.15374997, z: 0.030000001}
+  placementAlignmentOffset: {x: 0, y: 0, z: 0}
   frontFacing: 0
   twoSidedAccess: 0
   isDoorway: 0

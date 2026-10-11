@@ -124,50 +124,7 @@ public static class StoreUpgradeSetup
 
     private static void ConfigureWall(string path, GridSystem grid)
     {
-        var item = AssetDatabase.LoadAssetAtPath<BuildItemData>(path);
-        var root = new GameObject(item.id);
-        try
-        {
-            // Keep the authored mesh/materials and height; only modularise its horizontal dimensions.
-            string sourcePath = path.Replace(".asset", ".prefab");
-            var source = AssetDatabase.LoadAssetAtPath<GameObject>(sourcePath);
-            if (source == null) throw new InvalidOperationException("Missing original wall: " + sourcePath);
-            var model = (GameObject)PrefabUtility.InstantiatePrefab(source);
-            PrefabUtility.UnpackPrefabInstance(model, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
-            model.transform.SetParent(root.transform, false);
-            foreach (var marker in model.GetComponentsInChildren<StoreWallOccluder>(true)) Object.DestroyImmediate(marker);
-            foreach (var partCollider in model.GetComponentsInChildren<Collider>(true)) Object.DestroyImmediate(partCollider);
-            var bounds = CityUpdateSetup.Measure(model);
-            item.legacyWallDepth = Mathf.Min(bounds.size.z, grid.cellSize * 2);
-            float blockSize = BuildItemData.WallBlockSizeInCells * grid.cellSize;
-            var straightSource = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Structures/Wall.prefab");
-            var straight = Object.Instantiate(straightSource);
-            float horizontalScale;
-            try
-            {
-                horizontalScale = blockSize / CityUpdateSetup.Measure(straight).size.x * straight.transform.localScale.x;
-            }
-            finally { Object.DestroyImmediate(straight); }
-            // The original corner's two connection faces share the straight wall's local profile.
-            // Preserve that profile: independently stretching their bounding boxes breaks the joint.
-            model.transform.localScale = new Vector3(horizontalScale, model.transform.localScale.y, horizontalScale);
-            bounds = CityUpdateSetup.Measure(model);
-            var collider = root.AddComponent<BoxCollider>();
-            collider.center = bounds.center;
-            collider.size = bounds.size;
-            root.AddComponent<StoreWallOccluder>();
-            item.prefab = PrefabUtility.SaveAsPrefabAsset(root, Folder + "/" + item.id + ".prefab");
-            item.footprint = Vector2Int.one * BuildItemData.WallBlockSizeInCells;
-            item.pivotOffset = Vector2Int.zero;
-            item.placementBounds = bounds;
-            item.wallCellSize = grid.cellSize;
-            item.placementAlignmentOffset = new Vector3(bounds.center.x, 0, bounds.center.z);
-            item.isWall = true;
-            item.alignModelToFootprint = true;
-            item.ruleFlags = PlacementRuleFlags.InsidePurchasedArea | PlacementRuleFlags.NoOverlap;
-            EditorUtility.SetDirty(item);
-        }
-        finally { Object.DestroyImmediate(root); }
+        TownWorldProportions.ConfigureWall(path,grid);
     }
 
     private static BuildItemData Item(string id, string name, int price, Vector2Int footprint, GameObject prefab)
@@ -298,12 +255,18 @@ public static class StoreUpgradeSetup
                     for(int n=0;n<2;n++) Part(root.transform,"Sign stand",PrimitiveType.Cube,new Vector3(n==0?-.22f:.22f,.14f,0),new Vector3(.025f,.28f,.12f),metal);
                 }
                 // Imported shop flooring is at 0.096; decor should stand on it rather than sink into it.
-                foreach(Transform part in root.transform) part.localPosition+=Vector3.up*.096f;
+                float proportion=i==3?1/1.3f:i==1||i==2||i==4?.6f:.5f;
+                foreach(Transform part in root.transform)
+                {
+                    part.localPosition=part.localPosition*proportion+Vector3.up*.096f;
+                    part.localScale*=proportion;
+                }
                 var bounds=CityUpdateSetup.Measure(root);
                 var collider=root.AddComponent<BoxCollider>();collider.center=bounds.center;collider.size=bounds.size;
                 var prefab=PrefabUtility.SaveAsPrefabAsset(root,Folder+"/"+ids[i]+".prefab");
                 var item=Item(ids[i],names[i],prices[i],new Vector2Int(i==1||i==4||i==5?4:2,2),prefab);
                 item.category=BuildCategory.Decoration;item.beautyPoints=beauty[i];item.weightKg=i==1?15:5;item.cargoVolumeM3=i==1?.25f:.08f;
+                item.decorationProportionsVersion=2;
                 EditorUtility.SetDirty(item);
             }
             finally {Object.DestroyImmediate(root);}
@@ -316,11 +279,13 @@ public static class StoreUpgradeSetup
         // Shop units are much smaller than city metres. Match the actual parked neighbouring cars, not either prefab's authoring scale.
         var cars=GameObject.Find("Cars");
         var neighbour=cars!=null ? cars.GetComponentsInChildren<Renderer>().Where(r=>Mathf.Max(r.bounds.size.x,r.bounds.size.z)>.9f&&Mathf.Max(r.bounds.size.x,r.bounds.size.z)<4).OrderBy(r=>(r.bounds.center-pickup.transform.position).sqrMagnitude).FirstOrDefault() : null;
-        float size=neighbour!=null?Mathf.Max(neighbour.bounds.size.x,neighbour.bounds.size.z):1.22f;
+        float size=(neighbour!=null?Mathf.Max(neighbour.bounds.size.x,neighbour.bounds.size.z):1.22f)/1.3f;
         var bounds=CityUpdateSetup.Measure(pickup);
         pickup.transform.localScale*=size/Mathf.Max(bounds.size.x,bounds.size.z);
         bounds=CityUpdateSetup.Measure(pickup);
         pickup.transform.position-=Vector3.up*(bounds.min.y-.025f);
+        var starter=AssetDatabase.LoadAssetAtPath<StarterStoreBlueprint>("Assets/Prefabs/StarterStore/StarterStore.asset");
+        if(starter!=null){starter.proportionsVersion=1;EditorUtility.SetDirty(starter);}
     }
 
     private static void ConfigureTerritories(GridSystem grid)

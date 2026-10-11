@@ -12,11 +12,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d6abad8a36b0794996f8dedd8a8e734, type: 3}
   m_Name: parking_01
   m_EditorClassIdentifier: 
+  legacyWallDepth: 0
+  wallCellSize: 0
+  wallGeometryVersion: 0
+  previousWallPrefab: {fileID: 0}
+  previousWallBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
+  previousWallAlignmentOffset: {x: 0, y: 0, z: 0}
+  decorationProportionsVersion: 0
   id: parking_01
   displayName: "\u041F\u0430\u0440\u043A\u043E\u0432\u043A\u0430"
   description: 
   icon: {fileID: 21300000, guid: 90a6ef75800ae0943859343a72d1ae27, type: 3}
   price: 40
+  hiddenFromShop: 0
   weightKg: 1
   cargoVolumeM3: 0.02
   isAsphalt: 0
@@ -28,7 +38,7 @@ MonoBehaviour:
   unlockCondition: {fileID: 0}
   category: 1
   subCategory: 0
-  footprint: {x: 4, y: 8}
+  footprint: {x: 6, y: 11}
   allowRotation: 1
   ruleFlags: 3
   placementKind: 0
@@ -38,7 +48,8 @@ MonoBehaviour:
   alignModelToFootprint: 1
   placementBounds:
     m_Center: {x: 0, y: 0.014, z: 0}
-    m_Extent: {x: 0.30900002, y: 0.0020000003, z: 0.64}
+    m_Extent: {x: 0.40169996, y: 0.0020000003, z: 0.8319999}
+  placementAlignmentOffset: {x: 0, y: 0, z: 0}
   frontFacing: 0
   twoSidedAccess: 0
   isDoorway: 0

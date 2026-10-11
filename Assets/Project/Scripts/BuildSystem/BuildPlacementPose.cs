@@ -11,7 +11,9 @@ namespace RetailEmpireTycoon.BuildSystem
             Vector3 position = grid.CellToWorld(anchor);
             if (!item.alignModelToFootprint) return position;
             return AlignedPosition(grid, anchor, rotated, facing, item.footprint, item.pivotOffset, item.placementBounds)
-                + Quaternion.Euler(0f, facing * 90f, 0f) * item.placementAlignmentOffset;
+                + Quaternion.Euler(0f, facing * 90f, 0f) * item.placementAlignmentOffset
+                // Parking paint must sit above the editable asphalt (0.015 m), not inside it.
+                + (item.isParkingSpace ? Vector3.up * .01f : Vector3.zero);
         }
 
         public static Vector3 AlignedPosition(GridSystem grid, Vector3Int anchor, bool rotated, int facing,

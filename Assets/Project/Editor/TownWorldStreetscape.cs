@@ -33,55 +33,47 @@ internal sealed partial class TownWorldAssembler
         mesh.Box(new Vector3(bounds.xMax,y,bounds.center.y),new Vector3(.25f,.12f,bounds.height),color);
         Geometry(name,mesh,"Paving borders");
     }
-    private void ParkingRow(Vector3 start,int count,bool occupied,string district)
+    private void ParkingRow(Vector3 start,int count,bool occupied,string district,float sizeScale=1.3f)
     {
+        float spacing=3.4f*sizeScale,halfLength=3*sizeScale;
         var mesh=new TownMeshBuilder();
         for(int i=0;i<=count;i++)
-            PaintedLine(mesh,start+new Vector3(i*3.4f,.09f,-3),start+new Vector3(i*3.4f,.09f,3),.095f,TownColor.White);
-        PaintedLine(mesh,start+new Vector3(0,.09f,3),start+new Vector3(count*3.4f,.09f,3),.095f,TownColor.White);
+            PaintedLine(mesh,start+new Vector3(i*spacing,.09f,-halfLength),start+new Vector3(i*spacing,.09f,halfLength),.095f,TownColor.White);
+        PaintedLine(mesh,start+new Vector3(0,.09f,halfLength),start+new Vector3(count*spacing,.09f,halfLength),.095f,TownColor.White);
         for(int i=0;i<count;i++)
         {
-            mesh.Box(start+new Vector3((i+.5f)*3.4f,.14f,2.5f),new Vector3(1.7f,.18f,.2f),TownColor.Pavement);
-            if(occupied&&i%3!=1)Model(i%2==0?"VisitorSedan":"VisitorHatchback",start+new Vector3((i+.5f)*3.4f,0,.4f),180,"Parked cars");
+            mesh.Box(start+new Vector3((i+.5f)*spacing,.14f,2.5f*sizeScale),new Vector3(1.7f*sizeScale,.18f,.2f),TownColor.Pavement);
+            if(occupied&&i%3!=1)Model(i%2==0?"VisitorSedan":"VisitorHatchback",start+new Vector3((i+.5f)*spacing,0,.4f*sizeScale),180,"Parked cars");
         }
         Geometry(district+" parking markings",mesh,"Car park markings");
     }
     private void StoreFrontage()
     {
-        var paving=new Rect(-62,-124,49,15);
-        Surface("Store visitor parking",new Rect(-62,-124,49,8),TownColor.Asphalt,.038f);
-        Surface("Entrance promenade",new Rect(-62,-116,49,7),TownColor.Pavement,.045f);
-        Border(paving,TownColor.Pavement,"Store kerb");
-        ParkingRow(new Vector3(-59,0,-120),11,false,"Player storefront");
-        var mesh=new TownMeshBuilder();
-        for(float x=-61;x<-12;x+=2.8f)PaintedLine(mesh,new Vector3(x,.073f,-114.3f),new Vector3(x,.073f,-109.5f),.024f,TownColor.Stone);
-        PaintedLine(mesh,new Vector3(-62,.073f,-111.8f),new Vector3(-13,.073f,-111.8f),.024f,TownColor.Stone);
-        // Safe visual route to the shop. No collision or decorative object is added inside the editable parcel.
-        for(float z=-132;z<-123;z+=.75f)mesh.Ground(-38,z,4,.36f,.082f,TownColor.White);
-        Geometry("Store entrance paving and crossing",mesh,"Entrance promenade");
-        foreach(float x in new[]{-60f,-16f})
+        const float frontage=30;
+        float x=layout.cityShopOrigin.x,z=layout.cityShopOrigin.z;
+        // Functional parking paint is supplied by StarterStoreBlueprint and copied into City.
+        // Keep this background below the editable asphalt, otherwise it hides the three real bays.
+        Surface("Compact store forecourt",layout.StoreForecourt,TownColor.Asphalt,.02f);
+        Surface("Store street access",layout.StoreStreetAccess,TownColor.Asphalt,.035f);
+        Surface("Store forecourt connection",layout.StoreForecourtConnection,TownColor.Asphalt,.025f);
+        Surface("Store loading wall access",new Rect(x-8,z,8,24),TownColor.Asphalt,.02f);
+        Surface("Store entrance promenade",new Rect(x,z-3,frontage,3),TownColor.Pavement,.075f);
+        Surface("Public pedestrian promenade west",new Rect(-114,-139,86,4),TownColor.Pavement,.07f);
+        Surface("Public pedestrian promenade east",new Rect(-20,-139,6,4),TownColor.Pavement,.07f);
+        var access=new TownMeshBuilder();
+        // Flush pedestrian crossing, not a raised curb obstructing vehicles.
+        for(float stripe=-27.5f;stripe<-20;stripe+=1.35f)
+            access.Box(new Vector3(stripe,.075f,-137),new Vector3(.65f,.018f,3.7f),TownColor.White);
+        foreach(float edge in new[]{-28f,-20f})
+            PaintedLine(access,new Vector3(edge,.05f,-141),new Vector3(edge,.05f,-124),.1f,TownColor.White);
+        Geometry("Store driveway crossing and edge markings",access,"Player frontage furniture");
+        foreach(float offset in new[]{2f,frontage-2})
         {
-            Model("FlowerPlanter",new Vector3(x,0,-112),0,"Player frontage landscaping",new Vector3(1.6f,1,1));
-            Model("StreetLamp",new Vector3(x,0,-113.5f),0,"Player frontage lighting");
+            Model("FlowerPlanter",new Vector3(x+offset,0,z-3),0,"Player frontage landscaping");
+            Model("StreetLamp",new Vector3(x+offset,0,z-2),0,"Player frontage lighting");
         }
-        Model("Bench",new Vector3(-54,0,-111),180,"Player frontage furniture");
-        Model("LitterBin",new Vector3(-50,0,-111),0,"Player frontage furniture");
-        foreach(float x in new[]{-100f,-92f})
-        {
-            Model("TreeWide",new Vector3(x,0,-117),15,"Store service verge",Vector3.one*1.35f);
-            Model("BushWide",new Vector3(x-2,0,-116),0,"Store service verge");
-        }
-        var loading=new TownMeshBuilder();
-        for(float z=-88;z<-75;z+=1.2f)PaintedLine(loading,new Vector3(-84,.08f,z),new Vector3(-77,.08f,z+2),.09f,TownColor.Yellow);
-        Geometry("Service loading keep-clear markings",loading,"Loading bays");
-        // A readable finished edge, not a broad asphalt cross spanning the entire expansion site.
-        Surface("Service verge gravel",new Rect(-96,-124,7,164),TownColor.Sand,.016f);
-        for(int i=0;i<9;i++)
-        {
-            float z=-99+i*15;
-            Model(i%2==0?"TreeWide":"TreeTall",new Vector3(-92,0,z),i*37,"Store service verge",Vector3.one*(.85f+i%3*.16f));
-            Model("BushWide",new Vector3(-92.8f,0,z+4),0,"Store service verge");
-        }
+        Model("Bench",new Vector3(x+6,0,z-3),180,"Player frontage furniture");
+        Model("LitterBin",new Vector3(x+10,0,z-3),0,"Player frontage furniture");
     }
     private void ArchitecturalDetail(GameObject building,string id)
     {

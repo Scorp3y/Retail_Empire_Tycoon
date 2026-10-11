@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -11,6 +12,13 @@ namespace RetailEmpireTycoon.Editor.TownKit
         private readonly List<Vector3> normals = new();
         private readonly List<Vector2> uvs = new();
         private readonly List<int> triangles = new();
+        private readonly Func<TownColor, Vector2> resolveUv;
+
+        // Default construction preserves the old atlas; only the new architectural kit opts into its resolver.
+        public TownMeshBuilder(Func<TownColor, Vector2> resolveUv = null)
+        {
+            this.resolveUv = resolveUv ?? TownPalette.UV;
+        }
 
         public void Triangle(Vector3 a, Vector3 b, Vector3 c, TownColor color)
         {
@@ -19,7 +27,7 @@ namespace RetailEmpireTycoon.Editor.TownKit
             int first = vertices.Count;
             vertices.Add(a); vertices.Add(b); vertices.Add(c);
             var normal = cross.normalized;
-            var uv = TownPalette.UV(color);
+            var uv = resolveUv(color);
             for (int i=0;i<3;i++) { normals.Add(normal); uvs.Add(uv); triangles.Add(first+i); }
         }
 

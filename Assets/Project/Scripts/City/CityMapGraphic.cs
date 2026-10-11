@@ -22,6 +22,14 @@ namespace RetailEmpireTycoon.City
                 var p=road.Position(layout.roadTileSize);
                 AddRect(mesh,new Rect(p.x-5,p.z-5,10,10),new Color(.2f,.25f,.23f));
             }
+            AddPath(mesh,layout.countryRoad,new Color(.2f,.25f,.23f));
+            AddPath(mesh,layout.railway,new Color(.78f,.68f,.48f));
+            AddPath(mesh,layout.freightSiding,new Color(.78f,.68f,.48f));
+            for(float z=layout.cityBounds.yMin;z<layout.cityBounds.yMax;z+=6)
+                AddRect(mesh,new Rect(layout.RiverCenter(z)-14,z,28,6),new Color(.25f,.55f,.72f));
+            // Redraw transport over the river so bridges stay visible on the same authored map.
+            AddPath(mesh,layout.countryRoad,new Color(.2f,.25f,.23f));
+            AddPath(mesh,layout.railway,new Color(.78f,.68f,.48f));
             foreach(var checkpoint in town.suppliers)Marker(mesh,checkpoint.transform.position,5,new Color(.93f,.72f,.16f));
             if(home!=null)Marker(mesh,home.transform.position,6,new Color(.85f,.31f,.23f));
             if(destination!=null)Marker(mesh,destination.transform.position,9,new Color(.95f,.94f,.8f));
@@ -32,6 +40,19 @@ namespace RetailEmpireTycoon.City
             var bounds=town.layout.cityBounds;var rect=rectTransform.rect;
             return new Vector2(rect.xMin+(position.x-bounds.xMin)/bounds.width*rect.width,
                 rect.yMin+(position.y-bounds.yMin)/bounds.height*rect.height);
+        }
+        private void AddPath(VertexHelper mesh,TownTransportPath path,Color color)
+        {
+            if(path?.points==null)return;
+            for(int i=1;i<path.points.Length;i++)
+            {
+                var a=new Vector2(path.points[i-1].x,path.points[i-1].z);
+                var b=new Vector2(path.points[i].x,path.points[i].z);
+                var side=new Vector2(-(b-a).y,(b-a).x).normalized*path.width/2;
+                int start=mesh.currentVertCount;
+                foreach(var point in new[]{a-side,a+side,b+side,b-side})mesh.AddVert(Map(point),color,Vector2.zero);
+                mesh.AddTriangle(start,start+1,start+2);mesh.AddTriangle(start,start+2,start+3);
+            }
         }
         private void AddRect(VertexHelper mesh,Rect rect,Color color)
         {

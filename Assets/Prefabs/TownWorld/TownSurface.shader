@@ -8,6 +8,9 @@ Shader "Universal Render Pipeline/Town Surface"
         _Metallic("Metallic",Range(0,1))=0
         _Cull("Cull",Float)=2
         _Cutoff("Alpha cutoff",Range(0,1))=.5
+        _PaletteIndex("Fixed palette index (-1 uses mesh UV)",Float)=-1
+        _DetailScale("Detail coordinate scale",Float)=1
+        _DetailOffset("Detail coordinate offset",Vector)=(0,0,0,0)
     }
     SubShader
     {
@@ -37,6 +40,9 @@ Shader "Universal Render Pipeline/Town Surface"
                 half _Smoothness;
                 half _Metallic;
                 half _Cutoff;
+                float _PaletteIndex;
+                float _DetailScale;
+                float4 _DetailOffset;
             CBUFFER_END
             struct Attributes
             {
@@ -76,16 +82,18 @@ Shader "Universal Render Pipeline/Town Surface"
             half4 Frag(Varyings input):SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
-                half3 color=SAMPLE_TEXTURE2D(_BaseMap,sampler_BaseMap,input.uv).rgb*_BaseColor.rgb;
-                float kind=floor(input.uv.x*32);
+                float2 paletteUV=_PaletteIndex>=0?float2((_PaletteIndex+.5)/32,.5):input.uv;
+                half3 color=SAMPLE_TEXTURE2D(_BaseMap,sampler_BaseMap,paletteUV).rgb*_BaseColor.rgb;
+                float kind=floor(paletteUV.x*32);
+                float2 detailXZ=input.nativeXZ*_DetailScale+_DetailOffset.xy;
                 if(input.normalWS.y>.65)
                 {
-                    float noise=Grain(input.nativeXZ*18);
+                    float noise=Grain(detailXZ*18);
                     if(kind==7)color*=.97+noise*.06; // Fine aggregate in asphalt, kept subtle at driving distance.
                     else if(kind==8||kind==26)color*=.95+noise*.085;
                     else if(kind==15||kind==12)
                     {
-                        float macro=sin(input.nativeXZ.x*.09)*sin(input.nativeXZ.y*.07);
+                        float macro=sin(detailXZ.x*.09)*sin(detailXZ.y*.07);
                         color*=.95+macro*.07+noise*.035;
                     }
                     else if(kind==27||kind==25)color*=.92+noise*.15;

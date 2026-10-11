@@ -116,7 +116,7 @@ public static class CityUpdateValidation
             var after=city.pickup.transform.position;city.pickup.Stop();
             Require(Vector3.Distance(before,after)>1,$"The pickup cannot drive forward: {before} -> {after}; time scale {Time.timeScale}.");
             log.AppendLine("PASS real pickup physics and stopping");
-            city.pickup.Body.position=city.depot.transform.position+Vector3.up*.12f;city.pickup.Stop();yield return new WaitForFixedUpdate();
+            city.pickup.Body.position=city.depot.transform.position+Vector3.up*.12f;city.pickup.Body.rotation=city.depot.transform.rotation;city.pickup.Stop();yield return new WaitForFixedUpdate();
             Require(city.depot.CanUse(city.pickup),"Depot cannot be used with a stopped pickup.");
             var entry=orders.Ledger.Entries.First(e=>e.itemId==product.Id);Require(orders.Load(entry),"Depot collection failed.");yield return null;
             Require(orders.Load(orders.Ledger.Entries.First(e=>e.itemId==building.id)),"Furniture collection failed.");yield return null;

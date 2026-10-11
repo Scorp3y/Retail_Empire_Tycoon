@@ -28,6 +28,14 @@ namespace RetailEmpireTycoon.City
         public Color color;
     }
 
+    [Serializable]
+    public sealed class TownTransportPath
+    {
+        public string name;
+        public float width=8;
+        public Vector3[] points=Array.Empty<Vector3>();
+    }
+
     /// <summary>One coordinate system for the authored town in shop and driving views.</summary>
     [CreateAssetMenu(menuName="Retail Empire Tycoon/Town Layout")]
     public sealed class TownWorldLayout : ScriptableObject
@@ -41,7 +49,20 @@ namespace RetailEmpireTycoon.City
         public List<TownRoadTile> roads=new List<TownRoadTile>();
         public List<TownDistrict> districts=new List<TownDistrict>();
         public List<TownExpansionPlot> expansionPlots=new List<TownExpansionPlot>();
+        public TownTransportPath countryRoad=new TownTransportPath();
+        public TownTransportPath railway=new TownTransportPath();
+        public TownTransportPath freightSiding=new TownTransportPath();
+        public float stationDistance;
         public Vector3 MapShopPoint(Vector3 point) => cityShopOrigin+(point-sourceShopOrigin)*shopToCityScale;
+
+        // Compact customer apron; the city street remains outside the purchasable store plots.
+        public Rect StoreForecourt => new Rect(cityShopOrigin.x-8,cityShopOrigin.z-16,38,16);
+        public Rect StoreStreetAccess => new Rect(-28,-144,8,28);
+        public Rect StoreForecourtConnection => new Rect(-32,-124,12,8);
+        public Vector3 StoreStreetEntry => new Vector3(-24,0,-140);
+
+        public float RiverCenter(float z)=>328+Mathf.Sin((z+40)*.013f)*18;
+        public bool IsRiver(Vector3 position)=>Mathf.Abs(position.x-RiverCenter(position.z))<14;
     }
 
 }

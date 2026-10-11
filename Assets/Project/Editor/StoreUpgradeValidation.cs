@@ -46,11 +46,12 @@ public static class StoreUpgradeValidation
         {
             var item=Object.FindObjectOfType<BuildItemCatalog>(true).GetById(id);
             Require(item.isWall,"Wall item marker is missing.");
-            float blockSize=layout.grid.cellSize*BuildItemData.WallBlockSizeInCells;
-            Require(item.footprint==Vector2Int.one*BuildItemData.WallBlockSizeInCells&&item.pivotOffset==Vector2Int.zero,"A wall module must occupy exactly one construction block.");
-            Require(item.placementBounds.size.x<=blockSize+.0001f&&item.placementBounds.size.z<=blockSize+.0001f,"Wall mesh does not fit a single construction block.");
+            var footprint=new Vector2Int(id=="wall_01"?1:2,BuildItemData.WallThicknessInCells);
+            Require(item.footprint==footprint&&item.pivotOffset==Vector2Int.zero,"A wall must occupy its two-cell-thick footprint.");
+            Require(item.placementBounds.size.x<=footprint.x*layout.grid.cellSize+.0001f&&item.placementBounds.size.z<=footprint.y*layout.grid.cellSize+.0001f,"Wall mesh exceeds its construction footprint.");
+            Require(item.previousWallPrefab!=null&&item.WallFootprint(2)==Vector2Int.one,"Saved one-cell wall geometry is missing.");
             Require(item.prefab.GetComponent<StoreWallOccluder>()!=null,"Built walls cannot participate in visibility or intersection checks.");
-            var original=AssetDatabase.LoadAssetAtPath<GameObject>(id=="wall_01"?"Assets/Prefabs/Structures/Wall.prefab":"Assets/Prefabs/Structures/Wall_Corner.prefab");
+            var original=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Structures/Wall.prefab");
             Require(item.prefab.GetComponentInChildren<MeshFilter>().sharedMesh==original.GetComponentInChildren<MeshFilter>().sharedMesh,"Original wall mesh was replaced.");
             Require(item.prefab.GetComponentInChildren<Renderer>().sharedMaterial==original.GetComponentInChildren<Renderer>().sharedMaterial,"Original wall material was replaced.");
         }
@@ -87,13 +88,14 @@ public static class StoreUpgradeValidation
         }
         var pickup=GameObject.Find("Player pickup");
         var bounds=CityUpdateSetup.Measure(pickup);
-        Require(Mathf.Max(bounds.size.x,bounds.size.z)>.95f,"Parked pickup is still too small.");
+        Require(Mathf.Max(bounds.size.x,bounds.size.z)>.7f,"Parked pickup is too small after the requested 1.3x reduction.");
         var world=GameObject.Find("World").transform;
         File.WriteAllText(Folder+"/world.txt",string.Join("\n",world.Cast<Transform>().SelectMany(root=>root.GetComponentsInChildren<Renderer>(true).Select(r=>$"{root.name}/{r.name} center={r.bounds.center} size={r.bounds.size}"))));
         File.WriteAllText(Folder+"/assets.txt",$"PASS {checks} asset assertions. Pickup bounds {bounds.size}.\n");
     }
-    private static void ValidateCornerConnections(GridSystem grid, BuildItemCatalog catalog)
+    public static void ValidateCornerConnections(GridSystem grid, BuildItemCatalog catalog)
     {
+        Directory.CreateDirectory(Folder);
         var corner=catalog.GetById("wallcorner_01");
         var wall=catalog.GetById("wall_01");
         var cornerModel=Object.Instantiate(corner.prefab);
@@ -101,28 +103,27 @@ public static class StoreUpgradeValidation
         try
         {
             var anchor=new Vector3Int(12,0,12);
-            var junction=grid.CellToWorld(anchor);
             for(int facing=0;facing<4;facing++)
             foreach(var localDirection in new[]{Vector3.right,Vector3.forward})
             {
                 var rotation=Quaternion.Euler(0,facing*90,0);
                 var direction=rotation*localDirection;
                 cornerModel.transform.SetPositionAndRotation(BuildPlacementPose.Position(grid,corner,anchor,facing%2!=0,facing),rotation);
-                var neighbour=anchor+new Vector3Int(Mathf.RoundToInt(direction.x),0,Mathf.RoundToInt(direction.z));
+                int dx=Mathf.RoundToInt(direction.x),dz=Mathf.RoundToInt(direction.z);
+                var neighbour=anchor+new Vector3Int(dx>0?2:dx,0,dz>0?2:dz);
                 int wallFacing=(facing+(localDirection==Vector3.forward?1:0))%4;
                 wallModel.transform.SetPositionAndRotation(BuildPlacementPose.Position(grid,wall,neighbour,wallFacing%2!=0,wallFacing),Quaternion.Euler(0,wallFacing*90,0));
-                var cornerFace=ConnectionVertices(cornerModel,junction,direction,grid.cellSize*.5f);
-                var wallFace=ConnectionVertices(wallModel,junction,direction,grid.cellSize*.5f);
-                Require(cornerFace.Length>0&&wallFace.Length>0,"Corner has no connection face at the neighbouring cell boundary.");
-                Require(cornerFace.All(v=>wallFace.Any(w=>(v-w).sqrMagnitude<.00000001f))&&wallFace.All(v=>cornerFace.Any(w=>(v-w).sqrMagnitude<.00000001f)),"Corner and straight wall profiles do not meet in orientation "+facing+" direction "+localDirection);
+                var cornerBounds=CityUpdateSetup.Measure(cornerModel);
+                var wallBounds=CityUpdateSetup.Measure(wallModel);
+                float cornerEdge=Vector3.Dot(cornerBounds.center,direction)+Vector3.Dot(cornerBounds.extents,new Vector3(Mathf.Abs(direction.x),0,Mathf.Abs(direction.z)));
+                float wallEdge=Vector3.Dot(wallBounds.center,direction)-Vector3.Dot(wallBounds.extents,new Vector3(Mathf.Abs(direction.x),0,Mathf.Abs(direction.z)));
+                Require(Mathf.Abs(cornerEdge-wallEdge)<.0001f,"Thick corner and straight wall leave a gap or overlap in orientation "+facing+" direction "+localDirection);
+                var tangent=new Vector3(-direction.z,0,direction.x);
+                Require(Mathf.Abs(Vector3.Dot(cornerBounds.center-wallBounds.center,tangent))<.0001f
+                    &&Mathf.Abs(cornerBounds.size.y-wallBounds.size.y)<.0001f,"Wall and corner connection faces are not aligned.");
             }
         }
         finally {Object.DestroyImmediate(cornerModel);Object.DestroyImmediate(wallModel);}
-    }
-    private static Vector3[] ConnectionVertices(GameObject model,Vector3 origin,Vector3 direction,float distance)
-    {
-        return model.GetComponentsInChildren<MeshFilter>().SelectMany(f=>f.sharedMesh.vertices.Select(v=>f.transform.TransformPoint(v)))
-            .Where(v=>Mathf.Abs(Vector3.Dot(v-origin,direction)-distance)<.00001f).ToArray();
     }
     public static void Run()
     {
@@ -218,7 +219,7 @@ public static class StoreUpgradeValidation
         var second=walls.Single(p=>p.anchorCell==secondAnchor).GetComponent<StoreWallOccluder>().WorldBounds;
         Require(Mathf.Abs(first.max.x-second.min.x)<.0001f,"Adjacent walls leave a visible gap.");
         Require(!build.TryPlaceAt(wallAnchor),"Overlapping walls were accepted.");
-        Require(walls.Single(p=>p.anchorCell==wallAnchor).occupiedCells.Count==1,"A new wall must occupy one fine grid cell.");
+        Require(walls.Single(p=>p.anchorCell==wallAnchor).occupiedCells.Count==2,"A new wall must reserve both thickness cells.");
         var corner=catalog.GetById("wallcorner_01");build.inventory.Add(corner,2);build.EnterBuildMode(corner);
         Require(!build.TryPlaceAt(secondAnchor+Vector3Int.right),"An incorrectly turned corner can leave a broken wall joint.");
         build.RotateSelected(-1);
@@ -228,7 +229,7 @@ public static class StoreUpgradeValidation
         for(int facing=0;facing<4;facing++)
         {
             var candidate=new PlacementRequest(wall,wallAnchor+new Vector3Int(10,0,10),facing%2!=0,facing);
-            Require(build.grid.GetFootprintCells(candidate.anchorCell,wall.footprint,candidate.rotated,wall.pivotOffset).Count()==1,"Wall footprint is not one fine grid cell in every orientation.");
+            Require(build.grid.GetFootprintCells(candidate.anchorCell,wall.footprint,candidate.rotated,wall.pivotOffset).Count()==2,"Wall footprint is not two cells in every orientation.");
             Require(new Rule_VisualOverlap(build.grid).Evaluate(candidate).ok,"Clear wall position rejected in a rotated orientation.");
         }
         yield return null;yield return null;
@@ -312,17 +313,17 @@ public static class StoreUpgradeValidation
         var modern=restored.Single(p=>p.anchorCell==wallAnchor);
         Require(legacy.occupiedCells.Count==8&&legacy.wallModuleVersion==0,"Old saved wall lost its multi-cell dimensions.");
         Require(Mathf.Abs(legacy.GetComponent<StoreWallOccluder>().WorldBounds.size.x-4*build.grid.cellSize)<.0001f,"Old wall shrank on save load.");
-        Require(modern.occupiedCells.Count==1&&modern.wallModuleVersion==2,"New single-cell wall lost its module version on load.");
+        Require(modern.occupiedCells.Count==2&&modern.wallModuleVersion==BuildItemData.CurrentWallModuleVersion,"New thick wall lost its module version on load.");
         var previous=restored.Single(p=>p.anchorCell==previousAnchor);
         Require(previous.occupiedCells.Count==4&&Mathf.Abs(previous.GetComponent<StoreWallOccluder>().WorldBounds.size.x-2*build.grid.cellSize)<.0001f,"Version-one wall shrank on save load.");
         var editing=build.GetComponent<BuildEditingController>();
         editing.Begin();Require(editing.Select(previous)&&editing.PreviewAt(previousAnchor).ok,"A historical wall cannot be edited at its original size: "+editing.CandidateResult.reason);editing.Finish();
         var savedWalls=build.BuildPlacedSaveData();
-        Require(savedWalls.Single(p=>p.x==legacyAnchor.x&&p.z==legacyAnchor.z).wallModuleVersion==0&&savedWalls.Single(p=>p.x==wallAnchor.x&&p.z==wallAnchor.z).wallModuleVersion==2,"Saving mixes legacy and one-block wall formats.");
+        Require(savedWalls.Single(p=>p.x==legacyAnchor.x&&p.z==legacyAnchor.z).wallModuleVersion==0&&savedWalls.Single(p=>p.x==wallAnchor.x&&p.z==wallAnchor.z).wallModuleVersion==BuildItemData.CurrentWallModuleVersion,"Saving mixes legacy and current wall formats.");
         build.ApplyPlacedSaveData(savedWalls,catalog);yield return null;yield return null;
         Require(Object.FindObjectsOfType<PlacedObject>().Single(p=>p.item==wall&&p.anchorCell==legacyAnchor).occupiedCells.Count==8,"Legacy wall geometry changes on the second load.");
         Require(Object.FindObjectsOfType<PlacedObject>().Single(p=>p.item==wall&&p.anchorCell==previousAnchor).occupiedCells.Count==4,"Version-one wall changes on the second load.");
-        report.AppendLine("PASS one-block walls and corners, original meshes/materials, retired floor and old/new wall save compatibility");
+        report.AppendLine("PASS two-cell-thick walls and corners, original meshes/materials, retired floor and old/new wall save compatibility");
         File.WriteAllText(Folder+"/integration.txt",report+$"\nSTORE UPGRADE PASSED: {checks} assertions. Player save components absent.\n");
     }
     private static void Capture(string name)

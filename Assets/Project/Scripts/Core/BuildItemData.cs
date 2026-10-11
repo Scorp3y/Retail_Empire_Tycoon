@@ -9,22 +9,33 @@ namespace RetailEmpireTycoon.Core
     public class BuildItemData : ScriptableObject
     {
         public const int WallBlockSizeInCells = 1;
-        public const int CurrentWallModuleVersion = 2;
+        public const int WallThicknessInCells = 2;
+        public const int CurrentWallModuleVersion = 3;
         [HideInInspector] public float legacyWallDepth;
         [HideInInspector] public float wallCellSize;
+        [HideInInspector] public int wallGeometryVersion;
+        [HideInInspector] public GameObject previousWallPrefab;
+        [HideInInspector] public Bounds previousWallBounds;
+        [HideInInspector] public Vector3 previousWallAlignmentOffset;
+        [HideInInspector] public int decorationProportionsVersion;
 
         public Vector2Int WallFootprint(int version) => version == 0 && id == "wall_01"
-            ? new Vector2Int(4, 2) : version < CurrentWallModuleVersion ? new Vector2Int(2, 2) : footprint;
+            ? new Vector2Int(4, 2) : version < 2 ? new Vector2Int(2, 2) : version == 2 ? Vector2Int.one : footprint;
+
+        public GameObject WallPrefab(int version) => version < 3 && previousWallPrefab != null ? previousWallPrefab : prefab;
+        public Bounds WallBounds(int version) => version < 3 && previousWallPrefab != null ? previousWallBounds : placementBounds;
 
         public Vector2Int WallPivot(int version) => version == 0 && id == "wall_01" ? new Vector2Int(-1, 0) : pivotOffset;
 
         public Vector3 WallModelScale(int version)
         {
             var savedFootprint = WallFootprint(version);
-            float width = wallCellSize > 0 ? wallCellSize * savedFootprint.x : placementBounds.size.x * savedFootprint.x / footprint.x;
+            var modelBounds = WallBounds(version);
+            if(version == 2)return Vector3.one;
+            float width = wallCellSize > 0 ? wallCellSize * savedFootprint.x : modelBounds.size.x * savedFootprint.x / footprint.x;
             float depth = id == "wall_01" && legacyWallDepth > 0 ? legacyWallDepth
-                : wallCellSize > 0 ? wallCellSize * savedFootprint.y : placementBounds.size.z * savedFootprint.y / footprint.y;
-            return new Vector3(width / placementBounds.size.x, 1, depth / placementBounds.size.z);
+                : wallCellSize > 0 ? wallCellSize * savedFootprint.y : modelBounds.size.z * savedFootprint.y / footprint.y;
+            return new Vector3(width / modelBounds.size.x, 1, depth / modelBounds.size.z);
         }
         [Header("Identity")]
         public string id;

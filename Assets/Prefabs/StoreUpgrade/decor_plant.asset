@@ -12,11 +12,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d6abad8a36b0794996f8dedd8a8e734, type: 3}
   m_Name: decor_plant
   m_EditorClassIdentifier: 
+  legacyWallDepth: 0
+  wallCellSize: 0
+  wallGeometryVersion: 0
+  previousWallPrefab: {fileID: 0}
+  previousWallBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
+  previousWallAlignmentOffset: {x: 0, y: 0, z: 0}
+  decorationProportionsVersion: 2
   id: decor_plant
   displayName: Potted plant
   description: 
   icon: {fileID: 21300000, guid: abee1d31e39cacb4f905505609e59fa3, type: 3}
   price: 45
+  hiddenFromShop: 0
   weightKg: 5
   cargoVolumeM3: 0.08
   isAsphalt: 0
@@ -37,8 +47,9 @@ MonoBehaviour:
   pivotOffset: {x: 0, y: 0}
   alignModelToFootprint: 1
   placementBounds:
-    m_Center: {x: 0.0022437274, y: 0.3802014, z: -0.006879613}
-    m_Extent: {x: 0.17178419, y: 0.28420138, z: 0.17374499}
+    m_Center: {x: 0.0011218637, y: 0.2381007, z: -0.0034398064}
+    m_Extent: {x: 0.085892096, y: 0.1421007, z: 0.086872496}
+  placementAlignmentOffset: {x: 0, y: 0, z: 0}
   frontFacing: 0
   twoSidedAccess: 0
   isDoorway: 0

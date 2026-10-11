@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace RetailEmpireTycoon.Editor.TownKit
@@ -7,7 +8,9 @@ namespace RetailEmpireTycoon.Editor.TownKit
         Cream, Brick, Mint, RoofDark, Frame, Glass, White, Asphalt,
         Pavement, Wood, WoodLight, Leaf, LeafLight, LeafDark, Trunk, Grass,
         Yellow, Orange, Red, Blue, Box, BoxDark, Metal, Rubber,
-        Flowers, Sand, Stone, Soil, GreenStripe, Light, Pink, Charcoal
+        Flowers, Sand, Stone, Soil, GreenStripe, Light, Pink, Charcoal,
+        // Architectural extensions use another atlas. Existing enum values and 32 legacy UVs stay stable.
+        BrickLight = 32, BrickDeep, PlasterWarm, PlasterGrey, PlasterWhite, RoofSlate, RoofTerracotta, RoofZinc
     }
 
     internal static class TownPalette
@@ -24,6 +27,12 @@ namespace RetailEmpireTycoon.Editor.TownKit
             new Color32(44,113,88,255), new Color32(249,223,126,255), new Color32(188,105,151,255), new Color32(64,65,62,255)
         };
 
-        public static Vector2 UV(TownColor color) => new Vector2(((int)color + .5f) / Colors.Length, .5f);
+        public static Vector2 UV(TownColor color)
+        {
+            int index = (int)color;
+            if (index < 0 || index >= Colors.Length)
+                throw new ArgumentOutOfRangeException(nameof(color), color, "Architectural colours require the separate architecture palette resolver.");
+            return new Vector2((index + .5f) / Colors.Length, .5f);
+        }
     }
 }

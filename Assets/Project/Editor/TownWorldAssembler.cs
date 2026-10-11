@@ -16,6 +16,7 @@ internal sealed partial class TownWorldAssembler
     public const string Folder="Assets/Prefabs/TownWorld";
     public const string PrefabPath=Folder+"/TownEnvironment.prefab";
     private readonly TownWorldLayout layout;
+    private readonly TownhousePilotVariant townhousePilotVariant;
     private readonly Material material;
     private readonly GameObject root;
     private readonly List<DeliveryCheckpoint> suppliers=new List<DeliveryCheckpoint>();
@@ -23,13 +24,29 @@ internal sealed partial class TownWorldAssembler
     private readonly Dictionary<string,Transform> sections=new Dictionary<string,Transform>();
     private readonly List<Rect> pavedAreas=new List<Rect>();
     private readonly List<Rect> buildingAreas=new List<Rect>();
+    private int originalLandscapePavingCount;
 
-    public TownWorldAssembler(TownWorldLayout layout)
+    public TownWorldAssembler(TownWorldLayout layout,TownhousePilotVariant townhousePilotVariant=TownhousePilotVariant.FiveBuildings)
     {
+        if(townhousePilotVariant!=TownhousePilotVariant.FourBuildings&&townhousePilotVariant!=TownhousePilotVariant.FiveBuildings)
+            throw new ArgumentOutOfRangeException(nameof(townhousePilotVariant));
         this.layout=layout;
+        this.townhousePilotVariant=townhousePilotVariant;
         material=TownWorldArtDirection.Palette();
         if(material==null)throw new InvalidOperationException("TownKit palette material is missing.");
         foreach(string guid in AssetDatabase.FindAssets("t:Prefab",new[]{"Assets/Art/TownKit/Prefabs"}))
+        {
+            string path=AssetDatabase.GUIDToAssetPath(guid);models.Add(Path.GetFileNameWithoutExtension(path),AssetDatabase.LoadAssetAtPath<GameObject>(path));
+        }
+        const string conceptFolder="Assets/Art/ConceptTownKit/Prefabs";
+        if(!AssetDatabase.IsValidFolder(conceptFolder))throw new InvalidOperationException("Approved concept models are missing from isolated generation inputs.");
+        foreach(string guid in AssetDatabase.FindAssets("t:Prefab",new[]{conceptFolder}))
+        {
+            string path=AssetDatabase.GUIDToAssetPath(guid);models.Add(Path.GetFileNameWithoutExtension(path),AssetDatabase.LoadAssetAtPath<GameObject>(path));
+        }
+        const string detailFolder=TownDetailKitGeneration.Root+"/Prefabs";
+        if(!AssetDatabase.IsValidFolder(detailFolder))throw new InvalidOperationException("Generate the detail models before placing the city objects.");
+        foreach(string guid in AssetDatabase.FindAssets("t:Prefab",new[]{detailFolder}))
         {
             string path=AssetDatabase.GUIDToAssetPath(guid);models.Add(Path.GetFileNameWithoutExtension(path),AssetDatabase.LoadAssetAtPath<GameObject>(path));
         }
@@ -40,7 +57,10 @@ internal sealed partial class TownWorldAssembler
     {
         try
         {
-            Terrain();Roads();SupplierSites();Residential();TownCentre();Rural();Park();Streets();Outskirts();Streetscape();ExpansionScenery();
+            ApprovedTerrain();Roads();ApprovedTransport();RearCourtyardSuppliers();CompactCity();ApprovedFarm();
+            StoreFrontage();originalLandscapePavingCount=pavedAreas.Count;
+            CityPublicDetails();CompletePublicSpaces();ApprovedLandscape();Streets();ExpansionScenery();
+            ValidateCompletedNeighbourhoods();
             var places=root.AddComponent<TownWorldPlaces>();places.layout=layout;places.suppliers=suppliers.ToArray();
             CombineVisualChunks();
             return PrefabUtility.SaveAsPrefabAsset(root,PrefabPath);
@@ -59,9 +79,10 @@ internal sealed partial class TownWorldAssembler
         var instance=(GameObject)PrefabUtility.InstantiatePrefab(prefab);
         PrefabUtility.UnpackPrefabInstance(instance,PrefabUnpackMode.Completely,InteractionMode.AutomatedAction);
         instance.name=id;instance.transform.SetParent(Section(section),false);
+        foreach(var renderer in instance.GetComponentsInChildren<MeshRenderer>())renderer.sharedMaterial=material;
         instance.transform.localPosition=position;instance.transform.localRotation=Quaternion.Euler(0,yaw,0);
-        if(scale.HasValue)instance.transform.localScale=scale.Value;
-        if(id.StartsWith("Tree",StringComparison.Ordinal)&&id!="TreeBelt"||id=="Pine")
+        instance.transform.localScale=(scale??Vector3.one)*TownModelScale(id);
+        if(IsTreeModel(id))
         {
             var trunk=instance.AddComponent<CapsuleCollider>();trunk.center=Vector3.up*.9f;trunk.height=1.8f;trunk.radius=.2f;
         }
@@ -76,6 +97,14 @@ internal sealed partial class TownWorldAssembler
         }
         return instance;
     }
+    private static float TownModelScale(string id)
+    {
+        if(id=="StreetLamp")return 1/1.3f;
+        if(IsTreeModel(id))return 1.3f;
+        if(id=="Bench"||id=="LitterBin"||id=="FlowerPlanter"||id=="WasteContainer")return .6f;
+        return 1;
+    }
+    private static bool IsTreeModel(string id)=>id=="TreeRound"||id=="TreeTall"||id=="TreeWide"||id=="Pine";
     private GameObject Geometry(string name,TownMeshBuilder geometry,string section)
     {
         var instance=new GameObject(name,typeof(MeshFilter),typeof(MeshRenderer));instance.transform.SetParent(Section(section),false);
@@ -150,9 +179,16 @@ internal sealed partial class TownWorldAssembler
         foreach(var road in layout.roads)
         {
             int mask=road.connections,count=Enumerable.Range(0,4).Count(i=>(mask&(1<<i))!=0);
-            string id=count==4?"RoadCross":count==3?"RoadTee":mask==5||mask==10?"RoadStraight":"RoadCorner";
+            // Three public streets plus a private driveway: open the north curb without inventing another city street.
+            bool storeEntrance=road.cell==new Vector2Int(-2,-12);
+            bool fuelEntrance=road.cell.y==-12&&(road.cell.x==17||road.cell.x==19);
+            bool farmJunction=road.cell==new Vector2Int(22,-3);
+            bool supplierEntrance=road.cell.x==-18&&road.cell.y>=-12&&road.cell.y<=13&&(road.cell.y+12)%5==0;
+            int visualMask=storeEntrance?15:fuelEntrance?11:farmJunction?7:supplierEntrance?mask|8:NeighbourhoodStreetMask(road);
+            int visibleConnections=Enumerable.Range(0,4).Count(i=>(visualMask&(1<<i))!=0);
+            string id=visibleConnections==4?"RoadCross":visibleConnections==3?"RoadTee":visualMask==5||visualMask==10?"RoadStraight":"RoadCorner";
             int nativeMask=id=="RoadCross"?15:id=="RoadTee"?14:id=="RoadStraight"?5:3;
-            int turn=0;while(turn<4&&RotateMask(nativeMask,turn)!=mask)turn++;
+            int turn=0;while(turn<4&&RotateMask(nativeMask,turn)!=visualMask)turn++;
             if(turn==4)throw new InvalidOperationException("Unsupported road shape: "+road.cell);
             Model(id,road.Position(layout.roadTileSize)+Vector3.up*.01f,turn*90,"Road network");
             if(count<3)continue;
@@ -257,8 +293,9 @@ internal sealed partial class TownWorldAssembler
     private void House(Vector3 position,int variant,float yaw)
     {
         string id=variant==0?"HouseCream":variant==1?"HouseBrick":"Townhouse";
-        Building(id,position,yaw,new Vector3(variant==2?5.4f:7,variant==2?7.8f:5,6.5f),"Residential houses");
-        Surface("Private garden",new Rect(position.x-7,position.z-6,14,13),TownColor.LeafLight,.012f);
+        var house=Building(id,position,yaw,new Vector3(variant==2?5.4f:7,variant==2?7.8f:5,6.5f),"Residential houses");
+        house.transform.localScale=Vector3.one*1.35f;
+        Surface("Private garden",new Rect(position.x-8.5f,position.z-8.5f,17,17),TownColor.LeafLight,.012f);
         Model("DomesticFence",position+new Vector3(-6,0,0),90,"Garden fences",new Vector3(4,1,1));
         Model("DomesticFence",position+new Vector3(6,0,0),90,"Garden fences",new Vector3(4,1,1));
         Model("TreeTall",position+new Vector3(4.6f,0,3.7f),0,"Residential greenery",Vector3.one*.72f);
@@ -327,12 +364,14 @@ internal sealed partial class TownWorldAssembler
         Model("RockGroup",new Vector3(35,0,183),0,"Park rocks");
         Model("LitterBin",new Vector3(-8,0,169),0,"Park furniture");
     }
-    private bool ClearVerge(Vector3 p)
+    private bool ClearVerge(Vector3 p,int? pavingCount=null)
     {
         var plot=layout.reservedShopPlot;
         if(new Rect(plot.xMin-3,plot.yMin-3,plot.width+6,plot.height+6).Contains(new Vector2(p.x,p.z)))return false;
         if(buildingAreas.Any(rect=>rect.Contains(new Vector2(p.x,p.z))))return false;
-        return !pavedAreas.Any(rect=>new Rect(rect.xMin-2,rect.yMin-2,rect.width+4,rect.height+4).Contains(new Vector2(p.x,p.z)));
+        if(Mathf.Abs(p.x-layout.RiverCenter(p.z))<22||TransportDistance(p,layout.countryRoad.points)<12||TransportDistance(p,layout.railway.points)<9
+            ||TransportDistance(p,layout.freightSiding.points)<7)return false;
+        return !pavedAreas.Take(pavingCount??pavedAreas.Count).Any(rect=>new Rect(rect.xMin-2,rect.yMin-2,rect.width+4,rect.height+4).Contains(new Vector2(p.x,p.z)));
     }
     private void Streets()
     {
@@ -393,17 +432,19 @@ internal sealed partial class TownWorldAssembler
     private void CombineVisualChunks()
     {
         Directory.CreateDirectory(Folder+"/Meshes");AssetDatabase.Refresh();
-        var filters=root.GetComponentsInChildren<MeshFilter>().Where(f=>f.sharedMesh!=null&&f.GetComponentInParent<TownExpansionScenery>()==null).ToArray();
-        var groups=filters.GroupBy(f=>new Vector2Int(Mathf.FloorToInt(f.GetComponent<Renderer>().bounds.center.x/48),Mathf.FloorToInt(f.GetComponent<Renderer>().bounds.center.z/48)));
+        var filters=root.GetComponentsInChildren<MeshFilter>().Where(f=>f.sharedMesh!=null&&f.GetComponentInParent<TownExpansionScenery>()==null
+            &&f.GetComponentInParent<TownRailTraffic>()==null&&f.GetComponentInParent<TownAmbientWalker>()==null).ToArray();
+        var groups=filters.GroupBy(f=>new{cell=new Vector2Int(Mathf.FloorToInt(f.GetComponent<Renderer>().bounds.center.x/48),Mathf.FloorToInt(f.GetComponent<Renderer>().bounds.center.z/48)),
+            surface=f.GetComponent<Renderer>().sharedMaterial});
         foreach(var group in groups)
         {
             var batch=new List<MeshFilter>();int vertices=0,part=0;
             foreach(var filter in group)
             {
-                if(batch.Count>0&&vertices+filter.sharedMesh.vertexCount>60000){Combine(group.Key,part++,batch);batch.Clear();vertices=0;}
+                if(batch.Count>0&&vertices+filter.sharedMesh.vertexCount>60000){Combine(group.Key.cell,part++,batch,null,group.Key.surface);batch.Clear();vertices=0;}
                 batch.Add(filter);vertices+=filter.sharedMesh.vertexCount;
             }
-            if(batch.Count>0)Combine(group.Key,part,batch);
+            if(batch.Count>0)Combine(group.Key.cell,part,batch,null,group.Key.surface);
         }
         var transientMeshes=filters.Select(f=>f.sharedMesh).Where(m=>!AssetDatabase.Contains(m)).Distinct().ToArray();
         foreach(var filter in filters)
@@ -421,13 +462,18 @@ internal sealed partial class TownWorldAssembler
         {
             var group=new GameObject("Future plot "+plot.territory);group.transform.SetParent(scenery.transform,false);
             var sources=new List<MeshFilter>();int index=0;var random=new System.Random(714+(int)plot.territory);
-            for(float x=plot.bounds.xMin+5;x<plot.bounds.xMax-5;x+=10)
-                for(float z=plot.bounds.yMin+5;z<plot.bounds.yMax-5;z+=11)
+            var garden=new TownMeshBuilder();
+            garden.Ground(plot.bounds.center.x,plot.bounds.center.y,plot.bounds.width,plot.bounds.height,.018f,TownColor.LeafLight);
+            garden.Ground(plot.bounds.center.x,plot.bounds.center.y,2,plot.bounds.height,.037f,TownColor.Sand);
+            garden.Ground(plot.bounds.center.x,plot.bounds.center.y,plot.bounds.width,2,.038f,TownColor.Sand);
+            var paving=Geometry("Temporary allotment garden paths",garden,"Temporary greenery");
+            paving.transform.SetParent(group.transform,true);sources.Add(paving.GetComponent<MeshFilter>());
+            for(float x=plot.bounds.xMin+4;x<plot.bounds.xMax-3;x+=9)
+                for(float z=plot.bounds.yMin+4;z<plot.bounds.yMax-3;z+=9)
                 {
-                    if(Mathf.PerlinNoise(x*.045f+12,z*.04f+19)<.46f)continue;
-                    float dx=(float)random.NextDouble()*6-3,dz=(float)random.NextDouble()*6-3;
-                    float scale=.72f+(float)random.NextDouble()*.65f;
-                    var tree=Model(index++%3==0?"Pine":"TreeRound",new Vector3(x+dx,0,z+dz),(float)random.NextDouble()*360,"Temporary greenery",Vector3.one*scale);
+                    if(Mathf.Abs(x-plot.bounds.center.x)<2||Mathf.Abs(z-plot.bounds.center.y)<2)continue;
+                    float scale=.65f+(float)random.NextDouble()*.12f;
+                    var tree=Model(index++%3==0?"BushWide":"TreeRound",new Vector3(x,0,z),(float)random.NextDouble()*360,"Temporary greenery",Vector3.one*scale);
                     foreach(var collider in tree.GetComponents<Collider>())Object.DestroyImmediate(collider);
                     tree.transform.SetParent(group.transform,true);sources.Add(tree.GetComponent<MeshFilter>());
                 }
@@ -437,13 +483,13 @@ internal sealed partial class TownWorldAssembler
         }
         scenery.plots=plots.ToArray();
     }
-    private void Combine(Vector2Int cell,int part,List<MeshFilter> sources,Transform parent=null)
+    private void Combine(Vector2Int cell,int part,List<MeshFilter> sources,Transform parent=null,Material surface=null)
     {
-        string name=(parent==null?"":"Reserve_")+$"TownChunk_{cell.x}_{cell.y}_{part}";var instance=new GameObject(name,typeof(MeshFilter),typeof(MeshRenderer));
+        string name=(parent==null?"":"Reserve_")+$"TownChunk_{cell.x}_{cell.y}_{part}"+(surface!=null&&surface!=material?"_"+surface.name:"");var instance=new GameObject(name,typeof(MeshFilter),typeof(MeshRenderer));
         instance.transform.SetParent(parent!=null?parent:Section("Render chunks — 48 metre cells"),false);instance.transform.localPosition=new Vector3(cell.x*48,0,cell.y*48);
         var combine=sources.Select(s=>new CombineInstance{mesh=s.sharedMesh,transform=instance.transform.worldToLocalMatrix*s.transform.localToWorldMatrix}).ToArray();
         var mesh=new Mesh{name=name,indexFormat=IndexFormat.UInt32};mesh.CombineMeshes(combine,true,true);mesh.RecalculateBounds();
-        // Preserve procedural material scale when the exact same geometry is shown at 1:3 in the shop scene.
+        // Preserve procedural material scale when the same geometry is reduced in the shop scene.
         var nativeUv=mesh.vertices.Select(v=>instance.transform.TransformPoint(v)).Select(p=>new Vector2(p.x,p.z)).ToArray();
         mesh.uv2=nativeUv;
         string path=Folder+"/Meshes/"+name+".asset";var saved=AssetDatabase.LoadAssetAtPath<Mesh>(path);
@@ -453,6 +499,6 @@ internal sealed partial class TownWorldAssembler
             saved.Clear();saved.indexFormat=mesh.indexFormat;saved.vertices=mesh.vertices;saved.normals=mesh.normals;
             saved.uv=mesh.uv;saved.uv2=mesh.uv2;saved.triangles=mesh.triangles;saved.RecalculateBounds();EditorUtility.SetDirty(saved);Object.DestroyImmediate(mesh);
         }
-        instance.GetComponent<MeshFilter>().sharedMesh=saved;instance.GetComponent<MeshRenderer>().sharedMaterial=material;
+        instance.GetComponent<MeshFilter>().sharedMesh=saved;instance.GetComponent<MeshRenderer>().sharedMaterial=surface??material;
     }
 }

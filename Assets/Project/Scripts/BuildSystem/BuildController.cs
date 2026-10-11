@@ -458,6 +458,7 @@ namespace RetailEmpireTycoon.BuildSystem
             var pivotOffset = req.item.pivotOffset;
             var modelScale = Vector3.one;
             var bounds = req.item.placementBounds;
+            var prefab = req.item.prefab;
             bool legacyWall = req.item.isWall && wallModuleVersion < BuildItemData.CurrentWallModuleVersion;
             if (legacyWall)
             {
@@ -465,14 +466,17 @@ namespace RetailEmpireTycoon.BuildSystem
                 footprint = req.item.WallFootprint(wallModuleVersion);
                 pivotOffset = req.item.WallPivot(wallModuleVersion);
                 modelScale = req.item.WallModelScale(wallModuleVersion);
+                prefab = req.item.WallPrefab(wallModuleVersion);
+                bounds = req.item.WallBounds(wallModuleVersion);
                 bounds = new Bounds(Vector3.Scale(bounds.center, modelScale), Vector3.Scale(bounds.size, modelScale));
             }
             var worldPos = legacyWall
                 ? BuildPlacementPose.AlignedPosition(grid, req.anchorCell, req.rotated, req.facing, footprint, pivotOffset, bounds)
+                    + (wallModuleVersion==2?Quaternion.Euler(0,req.facing*90,0)*req.item.previousWallAlignmentOffset:Vector3.zero)
                 : BuildPlacementPose.Position(grid, req.item, req.anchorCell, req.rotated, req.facing);
             var rot = Quaternion.Euler(0f, req.facing * 90f, 0f);
 
-            var go = Instantiate(req.item.prefab, worldPos, rot);
+            var go = Instantiate(prefab, worldPos, rot);
             go.transform.localScale = Vector3.Scale(go.transform.localScale, modelScale);
             var placed = go.GetComponent<PlacedObject>() ?? go.AddComponent<PlacedObject>();
 

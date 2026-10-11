@@ -1,0 +1,199 @@
+{
+    "generator": "RetailEmpireTycoon.ConceptTownKit.v1",
+    "units": "metres; Y up; facade +Z; grounded origin",
+    "scope": "12 static visual asset groups, staged outside main Assets. No map placement, colliders, interiors or gameplay.",
+    "assets": [
+        {
+            "id": "01_Apartment",
+            "name": "Жилой дом",
+            "prefab": "Prefabs/01_Apartment.prefab",
+            "obj": "Models/Objects/01_Apartment.obj",
+            "preview": "Previews/01_Apartment.png",
+            "rearPreview": "Previews/01_Apartment_Rear.png",
+            "triangles": 9518,
+            "vertices": 28554,
+            "materials": 1,
+            "size": {
+                "x": 16.0,
+                "y": 11.985000610351563,
+                "z": 14.0
+            }
+        },
+        {
+            "id": "02_RetailRow",
+            "name": "Торговый ряд",
+            "prefab": "Prefabs/02_RetailRow.prefab",
+            "obj": "Models/Objects/02_RetailRow.obj",
+            "preview": "Previews/02_RetailRow.png",
+            "rearPreview": "Previews/02_RetailRow_Rear.png",
+            "triangles": 5572,
+            "vertices": 16716,
+            "materials": 1,
+            "size": {
+                "x": 20.0,
+                "y": 5.670000076293945,
+                "z": 12.0
+            }
+        },
+        {
+            "id": "03_Cafe",
+            "name": "Кафе",
+            "prefab": "Prefabs/03_Cafe.prefab",
+            "obj": "Models/Objects/03_Cafe.obj",
+            "preview": "Previews/03_Cafe.png",
+            "rearPreview": "Previews/03_Cafe_Rear.png",
+            "triangles": 4052,
+            "vertices": 12156,
+            "materials": 1,
+            "size": {
+                "x": 15.0,
+                "y": 6.364999771118164,
+                "z": 14.0
+            }
+        },
+        {
+            "id": "04_FuelStation",
+            "name": "Заправка",
+            "prefab": "Prefabs/04_FuelStation.prefab",
+            "obj": "Models/Objects/04_FuelStation.obj",
+            "preview": "Previews/04_FuelStation.png",
+            "rearPreview": "Previews/04_FuelStation_Rear.png",
+            "triangles": 3494,
+            "vertices": 10482,
+            "materials": 1,
+            "size": {
+                "x": 24.0,
+                "y": 5.672500133514404,
+                "z": 21.0
+            }
+        },
+        {
+            "id": "05_BusStop",
+            "name": "Остановка",
+            "prefab": "Prefabs/05_BusStop.prefab",
+            "obj": "Models/Objects/05_BusStop.obj",
+            "preview": "Previews/05_BusStop.png",
+            "rearPreview": "Previews/05_BusStop_Rear.png",
+            "triangles": 1466,
+            "vertices": 4398,
+            "materials": 2,
+            "size": {
+                "x": 8.5,
+                "y": 3.299999952316284,
+                "z": 5.0
+            }
+        },
+        {
+            "id": "06_Warehouse",
+            "name": "Городской склад",
+            "prefab": "Prefabs/06_Warehouse.prefab",
+            "obj": "Models/Objects/06_Warehouse.obj",
+            "preview": "Previews/06_Warehouse.png",
+            "rearPreview": "Previews/06_Warehouse_Rear.png",
+            "triangles": 4574,
+            "vertices": 13722,
+            "materials": 1,
+            "size": {
+                "x": 25.0,
+                "y": 7.739999771118164,
+                "z": 21.0
+            }
+        },
+        {
+            "id": "07_ConstructionSite",
+            "name": "Стройплощадка",
+            "prefab": "Prefabs/07_ConstructionSite.prefab",
+            "obj": "Models/Objects/07_ConstructionSite.obj",
+            "preview": "Previews/07_ConstructionSite.png",
+            "rearPreview": "Previews/07_ConstructionSite_Rear.png",
+            "triangles": 2960,
+            "vertices": 8880,
+            "materials": 1,
+            "size": {
+                "x": 22.100000381469728,
+                "y": 17.290000915527345,
+                "z": 22.0
+            }
+        },
+        {
+            "id": "08_RailwayStation",
+            "name": "Железнодорожная станция",
+            "prefab": "Prefabs/08_RailwayStation.prefab",
+            "obj": "Models/Objects/08_RailwayStation.obj",
+            "preview": "Previews/08_RailwayStation.png",
+            "rearPreview": "Previews/08_RailwayStation_Rear.png",
+            "triangles": 4028,
+            "vertices": 12084,
+            "materials": 1,
+            "size": {
+                "x": 25.0,
+                "y": 7.429999828338623,
+                "z": 19.0
+            }
+        },
+        {
+            "id": "09_Bridge",
+            "name": "Мост",
+            "prefab": "Prefabs/09_Bridge.prefab",
+            "obj": "Models/Objects/09_Bridge.obj",
+            "preview": "Previews/09_Bridge.png",
+            "rearPreview": "Previews/09_Bridge_Rear.png",
+            "triangles": 3176,
+            "vertices": 9528,
+            "materials": 1,
+            "size": {
+                "x": 22.0,
+                "y": 7.515000343322754,
+                "z": 18.0
+            }
+        },
+        {
+            "id": "10_Farmstead",
+            "name": "Ферма: дом и амбар",
+            "prefab": "Prefabs/10_Farmstead.prefab",
+            "obj": "Models/Objects/10_Farmstead.obj",
+            "preview": "Previews/10_Farmstead.png",
+            "rearPreview": "Previews/10_Farmstead_Rear.png",
+            "triangles": 6272,
+            "vertices": 18816,
+            "materials": 1,
+            "size": {
+                "x": 27.0,
+                "y": 8.34640884399414,
+                "z": 22.0
+            }
+        },
+        {
+            "id": "11_Greenhouse",
+            "name": "Теплица",
+            "prefab": "Prefabs/11_Greenhouse.prefab",
+            "obj": "Models/Objects/11_Greenhouse.obj",
+            "preview": "Previews/11_Greenhouse.png",
+            "rearPreview": "Previews/11_Greenhouse_Rear.png",
+            "triangles": 8672,
+            "vertices": 26016,
+            "materials": 2,
+            "size": {
+                "x": 15.0,
+                "y": 4.68250036239624,
+                "z": 14.0
+            }
+        },
+        {
+            "id": "12_SilosAndGarage",
+            "name": "Силос и гараж",
+            "prefab": "Prefabs/12_SilosAndGarage.prefab",
+            "obj": "Models/Objects/12_SilosAndGarage.obj",
+            "preview": "Previews/12_SilosAndGarage.png",
+            "rearPreview": "Previews/12_SilosAndGarage_Rear.png",
+            "triangles": 5564,
+            "vertices": 16692,
+            "materials": 1,
+            "size": {
+                "x": 25.0,
+                "y": 13.332500457763672,
+                "z": 20.0
+            }
+        }
+    ]
+}

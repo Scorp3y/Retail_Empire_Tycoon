@@ -1,0 +1,27 @@
+PILOT COMPOSITION REVIEW — Before
+Scene: Assets/Project/Scenes/City.unity; captured 2026-10-11T19:30:07.4828130Z
+Fixed 1280 x 800 Camera.Render images; no SceneView selections or gizmos; no scene/asset save.
+PilotTownhouses: 5 bodies; 1512.00 / 3024.00 m² = 50.00% building coverage; body names Residential long block, TownhousePair; heights [6.20, 8.60, 9.30, 12.40] m; largest UNBUILT rectangle 84.0 x 8.0 m = 672.00 m².
+Workshop: 2 bodies; 294.00 / 3024.00 m² = 9.72% building coverage; body names AutoWorkshop, BrickAnnex; heights [4.40, 4.80] m; largest UNBUILT rectangle 84.0 x 13.0 m = 1092.00 m².
+RiversideBlock: 3 bodies; 2304.00 / 9360.00 m² = 24.62% building coverage; body names Residential long block; heights [12.40, 15.50] m; largest UNBUILT rectangle 63.0 x 88.0 m = 5544.00 m².
+SmallOffice: 1 bodies; 240.00 / 2808.00 m² = 8.55% building coverage; body names OfficeAnnex; heights [9.30] m; largest UNBUILT rectangle 45.0 x 36.0 m = 1620.00 m².
+Coverage is the exact union of clipped body-collider axis-aligned bounds in native town metres, not roof/canopy coverage.
+Non-right-angle bodies would inflate these bounds. Height means collision-body height, not roof/apex height.
+Authored body names identify model families, not proven distinct visual variants after chunk merging.
+Largest UNBUILT rectangle uses a conservative 0.5 m grid. It may contain lawn, paths, parking or furniture; it is NOT an object-free or purposeless area.
+The 12 x 12 m undecorated-paving criterion requires visual review; this measurement does not claim to validate it.
+Geometry including inactive future plots: 339 scene renderers, 332 town renderers, 965406 scene triangles.
+Active geometry: 339 scene renderers, 965406 triangles.
+Decorative people: 0 active / 0 saved walkers; 0 active AvatarSpawn components.
+Line/Trail renderer audit:
+No saved LineRenderer or TrailRenderer components in City.
+Debug.Draw code is not inferred from this component inventory. SceneView-only lines are excluded from the images, not removed from source.
+PERFORMANCE LIMIT: UnityStats below are editor-frame counters read after Camera.Render, informational only. They are not isolated runtime draw calls or FPS.
+PilotTop: 8 enabled renderer bounds in frustum; editor draw calls 0, batches 0, SetPass 0.
+PilotStreet: 187 enabled renderer bounds in frustum; editor draw calls 0, batches 0, SetPass 0.
+PilotVehicleHeight: 276 enabled renderer bounds in frustum; editor draw calls 0, batches 0, SetPass 0.
+TownhouseContext: 46 enabled renderer bounds in frustum; editor draw calls 0, batches 0, SetPass 0.
+WorkshopContext: 104 enabled renderer bounds in frustum; editor draw calls 0, batches 0, SetPass 0.
+RiversideContext: 191 enabled renderer bounds in frustum; editor draw calls 0, batches 0, SetPass 0.
+SmallOfficeContext: 126 enabled renderer bounds in frustum; editor draw calls 0, batches 0, SetPass 0.
+CityOverview: 322 enabled renderer bounds in frustum; editor draw calls 0, batches 0, SetPass 0.

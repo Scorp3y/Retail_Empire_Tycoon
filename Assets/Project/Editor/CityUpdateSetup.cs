@@ -37,7 +37,7 @@ public static class CityUpdateSetup
         var asphalt=BuildItem("asphalt_01","Асфальт",8,Vector2Int.one,Object.FindObjectOfType<FloorPainter>(true).floorTilePrefab);
         asphalt.placementKind=PlacementKind.Floor; asphalt.floorMaterial=Mat("Asphalt",new Color(.16f,.19f,.19f)); asphalt.isAsphalt=true;
         asphalt.weightKg=2; asphalt.cargoVolumeM3=.012f;
-        var parking=BuildItem("parking_01","Парковка",40,new Vector2Int(4,8),bay); parking.isParkingSpace=true;
+        var parking=BuildItem("parking_01","Парковка",40,new Vector2Int(6,11),bay); parking.isParkingSpace=true;
         parking.ruleFlags=PlacementRuleFlags.InsidePurchasedArea|PlacementRuleFlags.NoOverlap; parking.weightKg=1; parking.cargoVolumeM3=.02f;
         var unloading=BuildItem("unloading_gate_01","Ворота разгрузки",180,new Vector2Int(6,2),gate); unloading.isUnloadingGate=true;
         unloading.weightKg=70; unloading.cargoVolumeM3=.5f;
@@ -161,7 +161,8 @@ public static class CityUpdateSetup
             contact.dynamicFriction=0;contact.staticFriction=0;contact.frictionCombine=PhysicMaterialCombine.Minimum;
             EditorUtility.SetDirty(contact);body.sharedMaterial=contact;
             root.AddComponent<Rigidbody>();root.AddComponent<PickupDrive>();
-            var cargo=new GameObject("Cargo bed").transform;cargo.SetParent(root.transform,false);cargo.localPosition=new Vector3(0,1,-1.5f);
+            var cargo=new GameObject("Cargo bed").transform;cargo.SetParent(root.transform,false);cargo.localPosition=new Vector3(0,1,-1.85f);
+            root.transform.localScale=Vector3.one;
             return PrefabUtility.SaveAsPrefabAsset(root,Folder+"/Pickup.prefab");
         }
         finally {Object.DestroyImmediate(root);}
@@ -226,9 +227,9 @@ public static class CityUpdateSetup
         try
         {
             var paint=Mat("ParkingPaint",new Color(.96f,.93f,.75f));
-            foreach(float x in new[]{-.30f,.30f}) Cube(root.transform,"Parking line",new Vector3(x,.014f,0),new Vector3(.018f,.004f,1.28f),paint,false);
-            Cube(root.transform,"Back line",new Vector3(0,.014f,-.62f),new Vector3(.61f,.004f,.018f),paint,false);
-            root.AddComponent<ParkingBay>();root.AddComponent<PlacedObject>();return PrefabUtility.SaveAsPrefabAsset(root,Folder+"/ParkingBay.prefab");
+            foreach(float x in new[]{-.39f,.39f}) Cube(root.transform,"Parking line",new Vector3(x,.014f,0),new Vector3(.0234f,.004f,1.664f),paint,false);
+            Cube(root.transform,"Back line",new Vector3(0,.014f,-.806f),new Vector3(.793f,.004f,.0234f),paint,false);
+            root.AddComponent<ParkingBay>().dimensionsScale=1.3f;root.AddComponent<PlacedObject>();return PrefabUtility.SaveAsPrefabAsset(root,Folder+"/ParkingBay.prefab");
         }
         finally {Object.DestroyImmediate(root);}
     }

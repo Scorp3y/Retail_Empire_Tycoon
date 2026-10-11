@@ -35,7 +35,8 @@ public static class StarterStoreValidation
         Require(data.placedObjects.Count(p=>p.itemId=="storage_rack_01")==3,"Warehouse must contain three racks.");
         Require(data.placedObjects.Count(p=>p.itemId=="unloading_gate_01")==1,"Required warehouse unloading gate is missing.");
         Require(data.placedObjects.Count(p=>p.playerParking)==1,"Personal vehicle bay is missing.");
-        Require(data.floorTiles.Count==7056,"The complete store and service yard are not floored.");
+        Require(data.floorTiles.Count==blueprint.initialState.floorTiles.Count,"The complete store and service yard are not floored.");
+        Require(data.placedObjects.Count(p=>p.itemId=="parking_01")==3,"Starter forecourt must have exactly three functional bays.");
         var spawner=Object.FindObjectOfType<StorePrefabSpawner>();
         spawner.UsesModularStore=true;
         initializer.land.progression.ApplySaveData(data.territory);
@@ -72,7 +73,7 @@ public static class StarterStoreValidation
             Require(placed.occupiedCells.All(occupied.Add),"Starter objects overlap grid cells: "+placed.item.id);
             if(placed.item.isWall)
             {
-                Require(placed.occupiedCells.Count==1&&placed.wallModuleVersion==2,"Starter wall is not one fine grid cell.");
+                Require(placed.occupiedCells.Count==(placed.item.id=="wallcorner_01"?4:2)&&placed.wallModuleVersion==3,"Starter wall does not occupy its two-cell thickness.");
                 Require(new Rule_WallJoint().Evaluate(new PlacementRequest(placed.item,placed.anchorCell,placed.rotated,placed.facing,placed)).ok,"Starter corner has a mismatched connection.");
             }
             if(placed.item.category==BuildCategory.Shelf)

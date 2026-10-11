@@ -12,11 +12,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d6abad8a36b0794996f8dedd8a8e734, type: 3}
   m_Name: decor_bench
   m_EditorClassIdentifier: 
+  legacyWallDepth: 0
+  wallCellSize: 0
+  wallGeometryVersion: 0
+  previousWallPrefab: {fileID: 0}
+  previousWallBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
+  previousWallAlignmentOffset: {x: 0, y: 0, z: 0}
+  decorationProportionsVersion: 2
   id: decor_bench
   displayName: Wooden bench
   description: 
   icon: {fileID: 21300000, guid: 4522830bd2d43a64c80aa9eac065e6bb, type: 3}
   price: 90
+  hiddenFromShop: 0
   weightKg: 15
   cargoVolumeM3: 0.25
   isAsphalt: 0
@@ -37,8 +47,9 @@ MonoBehaviour:
   pivotOffset: {x: 0, y: 0}
   alignModelToFootprint: 1
   placementBounds:
-    m_Center: {x: 0, y: 0.311, z: 0}
-    m_Extent: {x: 0.31, y: 0.21499997, z: 0.125}
+    m_Center: {x: 0, y: 0.225, z: 0}
+    m_Extent: {x: 0.186, y: 0.12900004, z: 0.075}
+  placementAlignmentOffset: {x: 0, y: 0, z: 0}
   frontFacing: 0
   twoSidedAccess: 0
   isDoorway: 0

@@ -78,6 +78,8 @@ namespace RetailEmpireTycoon.City
             map?.Tick();
             if(map!=null&&map.IsOpen){interact.gameObject.SetActive(false);return;}
             nearest = checkpoints.Where(c=>c.CanUse(pickup)).OrderBy(c=>Vector3.Distance(c.transform.position,pickup.transform.position)).FirstOrDefault();
+            var nearby=checkpoints.Where(c=>c.DistanceTo(pickup)<14).OrderBy(c=>c.DistanceTo(pickup)).FirstOrDefault();
+            string dockingHint=nearby!=null&&!nearby.CanUse(pickup)?nearby.UnavailableReason(pickup):string.Empty;
             interact.gameObject.SetActive(nearest != null && panel == null);
             if (nearest != null)
                 interact.GetComponentInChildren<TMP_Text>().text = nearest.kind == CheckpointKind.Depot ? "E — "+SupplierRouting.Name(nearest.supplier)
@@ -85,7 +87,8 @@ namespace RetailEmpireTycoon.City
                     : nearest.kind == CheckpointKind.Unload ? "E — Разгрузить пикап" : "E — Вернуться в магазин";
             status.text = $"Пикап: {orders.PickupWeightKg:0.#} / {orders.pickupCapacityKg:0} кг • {orders.PickupVolumeM3:0.##} / {orders.pickupCapacityM3:0.#} м³\n"
                 + $"Магазин: {Vector3.Distance(pickup.transform.position,home.transform.position):0} м • M — карта районов\n"
-                + "WASD — ехать · Пробел — тормоз · Мышь — камера · V — вид сзади · Esc — курсор\n" + (orders.NoticeIsError ? orders.Notice : "");
+                + "WASD — ехать · Пробел — тормоз · Мышь — камера · V — вид сзади · Esc — курсор\n"
+                + (GetComponent<CityRiverRecovery>()?.ShowRecoveryNotice==true?"Пикап возвращён на берег. Груз сохранён.":orders.NoticeIsError?orders.Notice:dockingHint);
             if (panel == null && Input.GetKeyDown(KeyCode.E)) Interact();
             if (panel != null && Input.GetKeyDown(KeyCode.Escape)) ClosePanel();
         }
@@ -180,7 +183,7 @@ namespace RetailEmpireTycoon.City
             int count = Mathf.Clamp(Mathf.CeilToInt(orders.PickupVolumeM3/.18f),0,12);
             for (int i=0;i<count;i++)
             {
-                var box=Instantiate(cargoBoxPrefab,cargoRoot); box.transform.localPosition = new Vector3((i%2-.5f)*.65f,(i/6)*.48f,(i/2%3)*.55f);
+                var box=Instantiate(cargoBoxPrefab,cargoRoot); box.transform.localPosition = new Vector3((i%2-.5f)*.65f,(i/6)*.48f,(i/2%3)*.5f);
                 box.transform.localRotation=Quaternion.identity;
             }
         }

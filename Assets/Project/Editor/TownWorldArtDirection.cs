@@ -33,7 +33,38 @@ internal static class TownWorldArtDirection
         if(material==null){material=new Material(shader);AssetDatabase.CreateAsset(material,Folder+"/TownPalette.mat");}
         material.shader=shader;
         material.SetTexture("_BaseMap",texture);material.SetColor("_BaseColor",Color.white);material.SetFloat("_Smoothness",.16f);EditorUtility.SetDirty(material);
+        material.SetFloat("_PaletteIndex",-1);material.SetFloat("_DetailScale",1);material.SetVector("_DetailOffset",Vector4.zero);
         return material;
+    }
+
+    public static Material Glass()
+    {
+        string path=Folder+"/TownGlass.mat";var glass=AssetDatabase.LoadAssetAtPath<Material>(path);
+        if(glass==null){glass=new Material(Shader.Find("Universal Render Pipeline/Lit")){name="TownGlass"};AssetDatabase.CreateAsset(glass,path);}
+        glass.SetTexture("_BaseMap",AssetDatabase.LoadAssetAtPath<Texture2D>(Folder+"/TownPalette.asset"));
+        glass.SetColor("_BaseColor",new Color(1,1,1,.2f));glass.SetFloat("_Surface",1);glass.SetFloat("_Blend",0);
+        glass.SetFloat("_SrcBlend",(float)BlendMode.SrcAlpha);glass.SetFloat("_DstBlend",(float)BlendMode.OneMinusSrcAlpha);
+        glass.SetFloat("_ZWrite",0);glass.SetFloat("_Cull",0);glass.SetFloat("_Smoothness",.35f);
+        glass.SetOverrideTag("RenderType","Transparent");glass.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+        glass.renderQueue=(int)RenderQueue.Transparent;glass.SetShaderPassEnabled("ShadowCaster",false);
+        EditorUtility.SetDirty(glass);return glass;
+    }
+
+    public static void ConfigureStoreAsphalt(RetailEmpireTycoon.City.TownWorldLayout layout)
+    {
+        var palette=Palette();
+        string path=Folder+"/StoreAsphalt.mat";
+        var asphalt=AssetDatabase.LoadAssetAtPath<Material>(path);
+        if(asphalt==null){asphalt=new Material(palette);AssetDatabase.CreateAsset(asphalt,path);}
+        asphalt.shader=palette.shader;asphalt.CopyPropertiesFromMaterial(palette);
+        asphalt.SetFloat("_PaletteIndex",(int)TownColor.Asphalt);
+        asphalt.SetFloat("_DetailScale",layout.shopToCityScale);
+        var offset=layout.cityShopOrigin-layout.sourceShopOrigin*layout.shopToCityScale;
+        asphalt.SetVector("_DetailOffset",new Vector4(offset.x,offset.z,0,0));
+        EditorUtility.SetDirty(asphalt);
+        var item=AssetDatabase.LoadAssetAtPath<RetailEmpireTycoon.Core.BuildItemData>("Assets/Prefabs/City/asphalt_01.asset");
+        if(item==null)throw new InvalidOperationException("Editable store asphalt is missing.");
+        item.floorMaterial=asphalt;EditorUtility.SetDirty(item);
     }
 
     public static void GraphicsProfiles()

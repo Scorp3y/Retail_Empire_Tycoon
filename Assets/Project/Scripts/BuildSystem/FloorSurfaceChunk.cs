@@ -69,6 +69,7 @@ namespace RetailEmpireTycoon.BuildSystem
             var vertices = new List<Vector3>(cells.Count * 4);
             var normals = new List<Vector3>(cells.Count * 4);
             var uvs = new List<Vector2>(cells.Count * 4);
+            var surfaceCoordinates = new List<Vector2>(cells.Count * 4);
             var indices = new List<int>(cells.Count * 6);
             var offsets = new[] { Vector2.zero, Vector2.up, Vector2.one, Vector2.right };
             foreach (var cell in cells)
@@ -81,6 +82,8 @@ namespace RetailEmpireTycoon.BuildSystem
                     normals.Add(filter.transform.InverseTransformDirection(Vector3.up).normalized);
                     // Preserve the four-cell texture repeat and its continuity across region borders.
                     uvs.Add(new Vector2(cell.x + offset.x, cell.z + offset.y) * .25f);
+                    // Remains in source shop coordinates when the same mesh is copied into City.
+                    surfaceCoordinates.Add(new Vector2(world.x,world.z));
                 }
                 indices.AddRange(new[] { first, first + 1, first + 2, first, first + 2, first + 3 });
             }
@@ -89,6 +92,7 @@ namespace RetailEmpireTycoon.BuildSystem
             mesh.SetVertices(vertices);
             mesh.SetNormals(normals);
             mesh.SetUVs(0, uvs);
+            mesh.SetUVs(1, surfaceCoordinates);
             mesh.SetTriangles(indices, 0);
             mesh.RecalculateBounds();
         }

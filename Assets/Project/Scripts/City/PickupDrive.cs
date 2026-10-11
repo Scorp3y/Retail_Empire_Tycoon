@@ -20,7 +20,8 @@ namespace RetailEmpireTycoon.City
         private void Awake()
         {
             body = GetComponent<Rigidbody>(); body.mass = 1400;
-            body.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+            // Steering owns yaw. Collision impulses may move the car, but must not leave an uncontrolled spin.
+            body.constraints = RigidbodyConstraints.FreezeRotation;
             body.interpolation = RigidbodyInterpolation.Interpolate;
             body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
             body.centerOfMass = new Vector3(0, .35f, 0);
@@ -33,6 +34,7 @@ namespace RetailEmpireTycoon.City
         { throttle = Mathf.Clamp(forward,-1,1); steering = Mathf.Clamp(turn,-1,1); handbrake = brake; }
         private void FixedUpdate()
         {
+            body.angularVelocity = Vector3.zero;
             float forwardSpeed = Vector3.Dot(body.velocity, transform.forward);
             float desired = InputEnabled && !handbrake ? throttle * (throttle >= 0 ? topSpeed : reverseSpeed) : 0;
             float rate = handbrake || throttle == 0 || Mathf.Sign(desired) != Mathf.Sign(forwardSpeed) ? braking : acceleration;

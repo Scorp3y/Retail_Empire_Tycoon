@@ -47,19 +47,19 @@ public static class StarterStoreSetup
         }
         for (int x = -24; x < 0; x++) for (int z = 0; z < 24; z++)
             state.floorTiles.Add(new FloorTileSaveData { itemId = "asphalt_01", x = start.x + x, z = start.z + z });
-        for (int x = 1; x < 89; x++)
+        for (int x = 2; x < 88; x++)
         {
             if (x < 54 || x >= 60) Add("wall_01", x, 0);
-            Add("wall_01", x, 71);
+            Add("wall_01", x, 70);
         }
-        for (int z = 1; z < 71; z++)
+        for (int z = 2; z < 70; z++)
         {
             if (z < 56 || z >= 62) Add("wall_01", 0, z, 1);
-            Add("wall_01", 89, z, 1);
+            Add("wall_01", 88, z, 1);
             if (z < 12 || z >= 18) Add("wall_01", 18, z, 1);
         }
-        Add("wallcorner_01", 0, 0); Add("wallcorner_01", 89, 0, 3);
-        Add("wallcorner_01", 89, 71, 2); Add("wallcorner_01", 0, 71, 1);
+        Add("wallcorner_01", 0, 0); Add("wallcorner_01", 88, 0, 3);
+        Add("wallcorner_01", 88, 70, 2); Add("wallcorner_01", 0, 70, 1);
         Add("door_01", 56, 0); // Main entrance, blue edge in the reference.
         Add("door_01", 18, 14, 1); // Staff doorway into the separated warehouse.
         Add("unloading_gate_01", 0, 56, 1); // Mandatory dock on the outer warehouse wall.

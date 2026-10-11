@@ -12,6 +12,7 @@ namespace RetailEmpireTycoon.Parking
         public FloorPainter asphalt;
         public GameObject carPrefab;
         public Transform roadEntry;
+        public Transform drivewayEntry;
         public float arrivalInterval=12;
         [Min(0)] public float parkingStaySeconds=25;
         private readonly ParkingReservations reservations=new ParkingReservations();
@@ -50,7 +51,8 @@ namespace RetailEmpireTycoon.Parking
         {
             var cells=asphalt.BuildSaveData().Select(s=>new Vector3Int(s.x,0,s.z)).Where(asphalt.IsAsphalt).ToHashSet();
             if(cells.Count==0) return new List<Vector3>();
-            var start=cells.OrderBy(c=>(grid.CellToWorld(c)-roadEntry.position).sqrMagnitude).First();
+            var entry=drivewayEntry!=null?drivewayEntry.position:roadEntry.position;
+            var start=cells.OrderBy(c=>(grid.CellToWorld(c)-entry).sqrMagnitude).First();
             var goal=grid.WorldToCell(bay.ApproachPosition);
             if(!cells.Contains(goal)) return new List<Vector3>();
             var frontier=new Queue<Vector3Int>(); var previous=new Dictionary<Vector3Int,Vector3Int>(); frontier.Enqueue(start); previous[start]=start;
@@ -72,7 +74,10 @@ namespace RetailEmpireTycoon.Parking
             if(!previous.ContainsKey(goal)) return new List<Vector3>();
             var path=new List<Vector3>(); var cursor=goal;
             while(cursor!=start) { path.Add(grid.CellToWorld(cursor)+Vector3.up*.02f); cursor=previous[cursor]; }
-            path.Add(grid.CellToWorld(start)+Vector3.up*.02f); path.Reverse(); path.Add(bay.ParkPosition+Vector3.up*.02f);
+            path.Add(grid.CellToWorld(start)+Vector3.up*.02f); path.Reverse();
+            if(drivewayEntry!=null)path.Insert(0,drivewayEntry.position+Vector3.up*.02f);
+            path.Insert(0,roadEntry.position+Vector3.up*.02f);
+            path.Add(bay.ParkPosition+Vector3.up*.02f);
             return path;
         }
         private void Move()

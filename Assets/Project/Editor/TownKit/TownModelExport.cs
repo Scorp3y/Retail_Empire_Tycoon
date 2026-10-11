@@ -9,9 +9,9 @@ namespace RetailEmpireTycoon.Editor.TownKit
     {
         private static string Number(float value)=>value.ToString("0.######",CultureInfo.InvariantCulture);
 
-        public static void Obj(Mesh mesh,string path)
+        public static void Obj(Mesh mesh,string path,string materialLibrary="../TownKit.mtl")
         {
-            var text=new StringBuilder("# Retail Empire Tycoon TownKit; metres; ground-centred pivot\nmtllib ../TownKit.mtl\no "+mesh.name+"\n");
+            var text=new StringBuilder("# Retail Empire Tycoon TownKit; metres; ground-centred pivot\nmtllib "+materialLibrary+"\no "+mesh.name+"\n");
             foreach(var vertex in mesh.vertices)text.AppendLine($"v {Number(-vertex.x)} {Number(vertex.y)} {Number(vertex.z)}");
             foreach(var uv in mesh.uv)text.AppendLine($"vt {Number(uv.x)} {Number(uv.y)}");
             foreach(var normal in mesh.normals)text.AppendLine($"vn {Number(-normal.x)} {Number(normal.y)} {Number(normal.z)}");

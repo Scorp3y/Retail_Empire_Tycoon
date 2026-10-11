@@ -12,11 +12,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d6abad8a36b0794996f8dedd8a8e734, type: 3}
   m_Name: asphalt_01
   m_EditorClassIdentifier: 
+  legacyWallDepth: 0
+  wallCellSize: 0
+  wallGeometryVersion: 0
+  previousWallPrefab: {fileID: 0}
+  previousWallBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
+  previousWallAlignmentOffset: {x: 0, y: 0, z: 0}
+  decorationProportionsVersion: 0
   id: asphalt_01
   displayName: "\u0410\u0441\u0444\u0430\u043B\u044C\u0442"
   description: 
   icon: {fileID: 21300000, guid: eed0db428bf997b439b5d7ca86e49ce0, type: 3}
   price: 8
+  hiddenFromShop: 0
   weightKg: 2
   cargoVolumeM3: 0.012
   isAsphalt: 1
@@ -32,13 +42,14 @@ MonoBehaviour:
   allowRotation: 1
   ruleFlags: 7
   placementKind: 1
-  floorMaterial: {fileID: 2100000, guid: 2a18235f356d42243a8a7ac4ee5bc5ce, type: 2}
+  floorMaterial: {fileID: 2100000, guid: b38b6909737154f4a8b16f797f8c69bc, type: 2}
   accessibilitySides: 1
   pivotOffset: {x: 0, y: 0}
   alignModelToFootprint: 1
   placementBounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0.5, y: 0.0005, z: 0.5}
+  placementAlignmentOffset: {x: 0, y: 0, z: 0}
   frontFacing: 0
   twoSidedAccess: 0
   isDoorway: 0

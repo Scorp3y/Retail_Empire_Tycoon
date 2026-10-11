@@ -13,7 +13,7 @@ namespace RetailEmpireTycoon.Editor.TownKit
     internal static class TownModelPreviews
     {
         private const int TileSize=384;
-        public static Texture2D Render(GameObject prefab)
+        public static Texture2D Render(GameObject prefab,float orbitYaw=0)
         {
             var scene=EditorSceneManager.NewPreviewScene();RenderTexture target=null;Texture2D image=null;
             var previous=RenderTexture.active;
@@ -27,7 +27,7 @@ namespace RetailEmpireTycoon.Editor.TownKit
                 camera.cullingMask=1<<30;camera.orthographic=true;camera.clearFlags=CameraClearFlags.SolidColor;
                 camera.backgroundColor=new Color(.96f,.95f,.91f,0);
                 float radius=Mathf.Max(.1f,bounds.extents.magnitude);
-                camera.transform.position=bounds.center+new Vector3(1,.85f,1.3f).normalized*radius*4;
+                camera.transform.position=bounds.center+Quaternion.Euler(0,orbitYaw,0)*new Vector3(1,.85f,1.3f).normalized*radius*4;
                 camera.transform.LookAt(bounds.center);camera.orthographicSize=radius*1.06f;camera.nearClipPlane=.01f;camera.farClipPlane=radius*10+10;
                 AddLight(scene,new Vector3(40,-135,0),1.3f);
                 AddFillLight(scene,bounds.center,radius);
