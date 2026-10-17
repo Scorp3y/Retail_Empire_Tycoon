@@ -9,19 +9,26 @@ namespace RetailEmpireTycoon.City
         public TownWorldPlaces town;
         public PickupDrive pickup;
         public DeliveryCheckpoint home,destination;
+        private TownWorldPlaces cachedTown;
+        private TownForestMapData forestDistrict;
 
         protected override void OnPopulateMesh(VertexHelper mesh)
         {
             mesh.Clear();if(town==null||town.layout==null)return;
             var layout=town.layout;
+            // Resolve once per map/town, not by scanning the large scenery hierarchy every UI frame.
+            if(cachedTown!=town){cachedTown=town;forestDistrict=town.GetComponentInChildren<TownForestMapData>();}
             AddRect(mesh,layout.cityBounds,new Color(.48f,.64f,.37f));
             foreach(var district in layout.districts)AddRect(mesh,district.bounds,district.color);
+            if(forestDistrict!=null)AddRect(mesh,forestDistrict.DistrictBounds,new Color(.51f,.65f,.40f));
             AddRect(mesh,layout.reservedShopPlot,new Color(.81f,.79f,.62f));
             foreach(var road in layout.roads)
             {
                 var p=road.Position(layout.roadTileSize);
                 AddRect(mesh,new Rect(p.x-5,p.z-5,10,10),new Color(.2f,.25f,.23f));
             }
+            if(forestDistrict!=null)
+                foreach(var road in forestDistrict.RoadAreas)AddRect(mesh,road,new Color(.2f,.25f,.23f));
             AddPath(mesh,layout.countryRoad,new Color(.2f,.25f,.23f));
             AddPath(mesh,layout.railway,new Color(.78f,.68f,.48f));
             AddPath(mesh,layout.freightSiding,new Color(.78f,.68f,.48f));

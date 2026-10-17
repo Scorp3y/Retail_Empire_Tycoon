@@ -62,7 +62,7 @@ public static class TerritoryBarrierSetup
         return material;
     }
 
-    private static void Build(TerritoryZone zone, Material[] materials)
+    internal static void Build(TerritoryZone zone, Material[] materials, string outputFolder = Folder, bool english = false)
     {
         var visual = new SerializedObject(zone).FindProperty("_visual").objectReferenceValue as TerritoryVisual;
         if (visual == null) throw new InvalidOperationException("Missing visual: " + zone.name);
@@ -106,7 +106,7 @@ public static class TerritoryBarrierSetup
             geometry.Box(sign + new Vector3(-0.46f + offset, 0.10f, -0.060f), new Vector3(0.035f, 0.13f, 0.018f), 2);
         geometry.Box(sign + new Vector3(-0.46f, 0.165f, -0.060f), new Vector3(0.19f, 0.035f, 0.018f), 2);
         geometry.Box(sign + new Vector3(-0.46f, -0.055f, -0.070f), new Vector3(0.026f, 0.07f, 0.018f), 2);
-        string meshPath = Folder + "/Barrier_" + zone.Id + ".asset";
+        string meshPath = outputFolder + "/Barrier_" + zone.Id + ".asset";
         Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(meshPath);
         if (mesh == null)
         {
@@ -140,6 +140,7 @@ public static class TerritoryBarrierSetup
         settings.FindProperty("_model").objectReferenceValue = model.gameObject;
         settings.FindProperty("_fenceRenderer").objectReferenceValue = renderer;
         settings.FindProperty("_priceLabel").objectReferenceValue = text;
+        settings.FindProperty("_englishText").boolValue = english;
         settings.ApplyModifiedPropertiesWithoutUndo();
         barrier.SetPrice(zone.Price);
         visualSettings.FindProperty("_constructionBarrier").objectReferenceValue = barrier;

@@ -36,7 +36,7 @@ namespace RetailEmpireTycoon.Territory
             if (grid == null || territory == null || progression == null) return;
             territory.ClearPurchased();
             Add(initialBounds);
-            if (initialServiceYard.width > 0 && initialServiceYard.height > 0) Add(initialServiceYard);
+            // Public parking and access do not grant construction rights outside authored parcels.
             foreach (var plot in plots)
                 if (progression.State.IsPurchased(plot.id)) Add(plot.bounds);
         }

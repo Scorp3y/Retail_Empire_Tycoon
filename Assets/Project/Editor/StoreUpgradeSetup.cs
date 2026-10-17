@@ -312,7 +312,8 @@ public static class StoreUpgradeSetup
             new Rect(start.x,start.z+baseD+rearD,2*baseW,baseD),
             new Rect(start.x+2*baseW,start.z+baseD+rearD,2*eastW,baseD)
         };
-        var ids=(TerritoryId[])Enum.GetValues(typeof(TerritoryId));
+        // This legacy authoring command owns nine regions, not the appended subdivision IDs.
+        var ids=Enumerable.Range(0,9).Select(i=>(TerritoryId)i).ToArray();
         var zones=Object.FindObjectsOfType<TerritoryZone>(true).ToDictionary(z=>z.Id);
         for(int i=0;i<ids.Length;i++)
         {
@@ -344,12 +345,16 @@ public static class StoreUpgradeSetup
         serialized.ApplyModifiedPropertiesWithoutUndo();
     }
 
-    private static void ConfigureZone(TerritoryZone zone,Rect rect)
+    internal static void ConfigureZone(TerritoryZone zone,Rect rect)
     {
         var prefabRoot=PrefabUtility.GetOutermostPrefabInstanceRoot(zone.gameObject);
         if(prefabRoot!=null) PrefabUtility.UnpackPrefabInstance(prefabRoot,PrefabUnpackMode.Completely,InteractionMode.AutomatedAction);
         // Replace only the authored presentation/click plane. The zone identity and existing scene references remain intact.
         for(int i=zone.transform.childCount-1;i>=0;i--) Object.DestroyImmediate(zone.transform.GetChild(i).gameObject);
+        // Remove the authoring component before its collider: OnValidate must not recreate a
+        // component while Unity is checking a serialized reference to a destroyed collider.
+        var oldClick=zone.GetComponent<TerritoryClickPlane>();
+        if(oldClick!=null)Object.DestroyImmediate(oldClick);
         foreach(var old in zone.GetComponents<Collider>()) Object.DestroyImmediate(old);
         foreach(var old in zone.GetComponents<LineRenderer>()) Object.DestroyImmediate(old);
         zone.transform.SetPositionAndRotation(new Vector3(rect.center.x,0,rect.center.y),Quaternion.identity);zone.transform.localScale=Vector3.one;

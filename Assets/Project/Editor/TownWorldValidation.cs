@@ -31,9 +31,9 @@ public static class TownWorldValidation
         {
             var places=contents.GetComponent<TownWorldPlaces>();Require(places!=null&&places.suppliers.Length==7,"Seven distinct supplier/showroom sites required.");
             Require(places.suppliers.Select(s=>s.supplier).Distinct().Count()==7,"Duplicate supplier destination.");
-            var western=places.suppliers.Where(s=>s.supplier!=SupplierKind.Farmers).ToArray();
+            var western=places.suppliers.Where(s=>s.supplier!=SupplierKind.Farmers&&s.supplier!=SupplierKind.Showroom).ToArray();
             Require(western.All(s=>Mathf.Abs(s.transform.localPosition.x+252)<.01f),"City suppliers are not aligned along the western street.");
-            Require(western.Select(s=>s.transform.localPosition.z).Distinct().Count()==6,"Western supplier plots overlap.");
+            Require(western.Select(s=>s.transform.localPosition.z).Distinct().Count()==western.Length,"Western supplier plots overlap.");
             Require(contents.GetComponentsInChildren<Renderer>().Length<480,"World render chunks exceeded budget.");
             Require(contents.GetComponentsInChildren<MonoBehaviour>().All(c=>c!=null),"Missing world script.");
             Require(contents.transform.Find("Mixed low-rise streets")?.GetComponentsInChildren<BoxCollider>().Length==13,"Thirteen mixed low-rise buildings are required.");
@@ -53,11 +53,15 @@ public static class TownWorldValidation
             foreach(var court in courts)
             {
                 Require(court.checkpoint.requiresRearDocking&&court.bounds.Contains(new Vector2(court.staging.x,court.staging.z)),"Rear court lacks docking contract or staging space.");
-                Require(court.bounds.height>=35&&!court.bounds.Overlaps(layout.reservedShopPlot),"Service court is too shallow or overlaps shop land.");
+                float minimumDepth=court.designVehicleLength>10?35:20;
+                var heading=court.checkpoint.transform.forward;
+                float longitudinalDepth=Mathf.Abs(heading.x)*court.bounds.width+Mathf.Abs(heading.z)*court.bounds.height;
+                Require(longitudinalDepth>=minimumDepth&&!court.bounds.Overlaps(layout.reservedShopPlot),"Service court is too shallow for its design vehicle or overlaps shop land.");
                 if(court.checkpoint.supplier!=SupplierKind.Farmers)
                 {
-                    Require(Mathf.Abs(court.streetAccess.x+216)<.01f,"Supplier access does not meet the western street.");
-                    Require(layout.roads.Any(r=>Vector3.Distance(r.Position(layout.roadTileSize),court.streetAccess)<.01f),"Supplier driveway misses the connected street.");
+                    if(court.designVehicleLength>10)Require(Mathf.Abs(court.streetAccess.x+216)<.01f,"Industrial supplier access does not meet the western street.");
+                    Require(layout.roads.Any(r=>Mathf.Abs(r.Position(layout.roadTileSize).x-court.streetAccess.x)<=layout.roadTileSize/2
+                        &&Mathf.Abs(r.Position(layout.roadTileSize).z-court.streetAccess.z)<=layout.roadTileSize/2),"Supplier driveway misses the connected street.");
                 }
             }
             Require(contents.transform.Find("Construction plot").GetComponentsInChildren<BoxCollider>().Any(c=>c.transform.position.x>120&&c.transform.position.x<164),"Construction site is not inside the town.");
@@ -535,7 +539,10 @@ public static class TownWorldValidation
             Require(pickup.Body.position.z>=180&&Mathf.Abs(pickup.Body.position.x+216)<.5f,"Enlarged pickup cannot traverse the western supplier street.");
             pickup.Stop();
             var showroom=city.town.suppliers.Single(s=>s.supplier==SupplierKind.Showroom);
-            var route=new[]{new Vector3(-216,0,156),new Vector3(-224,0,156),new Vector3(-252,0,156),showroom.transform.position};
+            var road=TownWorldPlan.NearestRoad(city.town.layout,showroom.transform.position);
+            var delta=showroom.transform.position-road;
+            var street=Mathf.Abs(delta.x)>Mathf.Abs(delta.z)?new Vector3(road.x,0,showroom.transform.position.z):new Vector3(showroom.transform.position.x,0,road.z);
+            var route=new[]{street,showroom.transform.position};
             for(int i=1;i<route.Length;i++)
             {
                 var a=route[i-1];var b=route[i];int samples=Mathf.CeilToInt(Vector3.Distance(a,b));
@@ -559,11 +566,13 @@ public static class TownWorldValidation
         {
             var station=court.checkpoint;
             var roadSurface=city.town.transform.Find("Road infrastructure/Country road physical surface").GetComponent<MeshCollider>();
-            // Provisional 20 x 3.4 x 4.2 m envelope, not an articulated-vehicle simulation.
-            // A longer vehicle's centre must be farther from the door than the pickup's centre.
+            // Industrial yards reserve the original 20 m envelope; a compact urban bakery explicitly
+            // supports pickups, not an articulated truck. Its access may bend around the storefront.
+            float vehicleLength=court.designVehicleLength;
+            Require(vehicleLength>=5,"Invalid court design vehicle length: "+station.supplier);
             foreach(var centre in new[]{court.staging,station.transform.position+station.transform.forward*7.5f})
             {
-                var truckObstacles=Physics.OverlapBox(new Vector3(centre.x,2.2f,centre.z),new Vector3(1.7f,2.1f,10),station.transform.rotation,~0,QueryTriggerInteraction.Ignore)
+                var truckObstacles=Physics.OverlapBox(new Vector3(centre.x,2.2f,centre.z),new Vector3(1.7f,2.1f,vehicleLength/2),station.transform.rotation,~0,QueryTriggerInteraction.Ignore)
                     .Where(c=>c.gameObject.scene==city.gameObject.scene&&!c.transform.IsChildOf(city.pickup.transform)&&c!=roadSurface).ToArray();
                 Require(truckObstacles.Length==0,"Future truck staging/docking envelope blocked: "+station.supplier);
             }
@@ -574,7 +583,8 @@ public static class TownWorldValidation
             city.pickup.Body.rotation=station.transform.rotation;city.pickup.Stop();yield return new WaitForFixedUpdate();
             Require(station.CanUse(city.pickup),"Correct docking rejected: "+station.supplier);
             // Inspect the complete access corridor, then physically reverse the real pickup to its bay.
-            var route=new[]{court.streetAccess,court.entrance,court.staging,station.transform.position};
+            var route=new[]{court.streetAccess,court.entrance}.Concat(court.approachWaypoints??Array.Empty<Vector3>())
+                .Concat(new[]{court.staging,station.transform.position}).ToArray();
             for(int i=1;i<route.Length;i++)
             {
                 var a=route[i-1];var b=route[i];int samples=Mathf.CeilToInt(Vector3.Distance(a,b));

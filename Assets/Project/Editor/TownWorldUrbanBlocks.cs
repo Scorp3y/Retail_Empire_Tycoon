@@ -107,6 +107,7 @@ internal sealed partial class TownWorldAssembler
                 float windowHalfWidth=(office?2.4f:1.6f)/2;
                 // Omit every ground-floor window whose full frame intersects an entrance bay.
                 if(floor==0&&face>0&&entrances.Exists(entrance=>Mathf.Abs(x-entrance)<windowHalfWidth+1.25f))continue;
+                if(!office&&face>0&&floor>0&&entrances.Exists(entrance=>Mathf.Abs(x-entrance)<2.1f))continue;
                 mesh.Box(new Vector3(x,y,face*(depth/2+.045f)),new Vector3(office?2.4f:1.6f,1.7f,.09f),TownColor.White);
                 mesh.Box(new Vector3(x,y,face*(depth/2+.11f)),new Vector3(office?2.2f:1.4f,1.5f,.035f),TownColor.Glass);
                 if(!office&&floor>0&&face>0&&Mathf.Abs(Mathf.RoundToInt((x+width/2)/3.4f))%3==variant)
@@ -124,6 +125,8 @@ internal sealed partial class TownWorldAssembler
                     mesh.Box(new Vector3(x,y,depth/2+.16f),new Vector3(.5f,3.1f,.2f),office?TownColor.Metal:TownColor.Brick);
         }
         TownArchitecturalParts.FlatRoof(mesh,width,depth,height);
+        if(!office)foreach(float entrance in entrances)for(int landing=0;landing<floors-1;landing++)
+            TownArchitecturalParts.Window(mesh,new Vector3(entrance,3.65f+landing*3.1f,depth/2+.06f),1,1);
         if(!office&&variant!=1&&variant!=4)mesh.Gable(new Vector3(0,height+.2f,0),width+.6f,depth+.6f,2.4f,variant==2?TownColor.RoofDark:TownColor.Mint,facade);
         if(office&&variant>=3)
         {

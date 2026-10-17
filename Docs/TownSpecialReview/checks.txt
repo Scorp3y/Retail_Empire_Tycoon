@@ -1,0 +1,9 @@
+PASS: current Stage 5 authoring sources including native driveway ramps and ground cutouts, 2026-10-12. Repeated after the final source corrections.
+pwsh -NoProfile -File Scripts/ValidateCityCompile.ps1
+CITY UPDATE COMPILE PASSED (runtime and editor assemblies).
+Existing warnings only: TutorialDialogue.isTyping and TutorialDialogue.settingsOpened, CS0414.
+pwsh -NoProfile -File Scripts/ValidateCityDomain.ps1
+CITY DOMAIN TESTS PASSED: 1031 assertions.
+pwsh -NoProfile -File Scripts/Tests/TownSpecialPipelineTests.ps1
+STAGE 5 PIPELINE CONTRACTS PASSED: 24.
+Native Unity generation, saved geometry, previous stages and preservation evidence are recorded in assets.txt, protection.txt, result.txt and the pipeline receipts. Full Play Mode outcome is recorded separately; this file does not assert its completion.

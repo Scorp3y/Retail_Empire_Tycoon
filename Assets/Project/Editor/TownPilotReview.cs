@@ -30,6 +30,14 @@ public static class TownPilotReview
     public static void CaptureAfter() => Run("After");
     public static void CaptureArchitectureBefore() => Run("Before", "Library/TownArchitectureQA");
     public static void CaptureArchitectureAfter() => Run("After", "Library/TownArchitectureQA");
+    public static void CaptureResidentialBefore() => Run("Before", "Library/TownResidentialQA");
+    public static void CaptureResidentialAfter() => Run("After", "Library/TownResidentialQA");
+    public static void CaptureCourtyardsBefore() => Run("Before", "Library/TownCourtyardQA");
+    public static void CaptureCourtyardsAfter() => Run("After", "Library/TownCourtyardQA");
+    public static void CaptureSpecialBefore() => Run("Before", "Library/TownSpecialQA");
+    public static void CaptureSpecialAfter() => Run("After", "Library/TownSpecialQA");
+    public static void CaptureSeamBefore() => Run("Before", "Library/TownSeamQA");
+    public static void CaptureSeamAfter() => Run("After", "Library/TownSeamQA");
 
     private static void Run(string phase, string reviewRoot = ReviewRoot)
     {
@@ -39,7 +47,11 @@ public static class TownPilotReview
             Require(!EditorApplication.isPlaying, "Capture the saved authoring scene outside Play Mode.");
             string directory = Path.Combine(reviewRoot, phase);
             string baselineDirectory = Path.Combine(reviewRoot, "Before");
-            var definitions = CameraDefinitions();
+            bool courtyard = reviewRoot == "Library/TownCourtyardQA";
+            bool special = reviewRoot == "Library/TownSpecialQA";
+            bool seams = reviewRoot == "Library/TownSeamQA";
+            bool residential=reviewRoot=="Library/TownResidentialQA" || courtyard || special;
+            var definitions = seams ? SeamCameraDefinitions() : special ? SpecialCameraDefinitions() : courtyard ? CourtyardCameraDefinitions() : residential ? ResidentialCameraDefinitions() : CameraDefinitions();
             string manifest = JsonUtility.ToJson(new CameraManifest { cameras = definitions }, true);
             if (phase != "Before")
             {
@@ -61,6 +73,14 @@ public static class TownPilotReview
             var scene = EditorSceneManager.OpenScene(CityUpdateSetup.CityPath, OpenSceneMode.Single);
             var town = SceneComponents<TownWorldPlaces>(scene).Single();
             var report = Measure(scene, town.transform);
+            if(residential)
+            {
+                var buildings=town.GetComponentsInChildren<BoxCollider>(true)
+                    .Where(c=>c.enabled&&c.gameObject.activeInHierarchy&&IsBuildingBody(c,town.transform))
+                    .Select(c=>BodyFootprint.From(c,town.transform)).ToArray();
+                report.plots=report.plots.Concat(TownResidentialPlan.Create().Blocks
+                    .Select(block=>MeasurePlot(block.Id,block.Bounds,buildings))).ToArray();
+            }
             report.phase = phase;
             report.scenePath = scene.path;
             report.capturedUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture);
@@ -108,6 +128,33 @@ public static class TownPilotReview
             new CameraDefinition("SmallOfficeContext", new Vector3(284, 47, 118), new Vector3(219, 2, 168)),
             new CameraDefinition("CityOverview", new Vector3(580, 930, -770), new Vector3(175, 0, 135), 470, true)
         };
+    }
+
+    private static CameraDefinition[] ResidentialCameraDefinitions()
+    {
+        var cameras=CameraDefinitions().ToList();
+        foreach(var block in TownResidentialPlan.Create().Blocks)
+        {
+            // The immutable baseline already covers this parcel with SmallOfficeContext.
+            if (block.Id == "OfficeNeighbour") continue;
+            var focus=new Vector3(block.Bounds.center.x,0,block.Bounds.center.y);
+            cameras.Add(new CameraDefinition(block.Id+"Top",focus+Vector3.up*130,focus,
+                Mathf.Max(block.Bounds.height/2+6,block.Bounds.width*.35f),true));
+        }
+        cameras.Add(new CameraDefinition("NorthCourts",new Vector3(155,110,-25),new Vector3(20,8,95),0,true));
+        cameras.Add(new CameraDefinition("WestStreet",new Vector3(-223,3,-112),new Vector3(-166,6,-93),0,true));
+        cameras.Add(new CameraDefinition("RiverStreet",new Vector3(261,3,-77),new Vector3(215,6,7),0,true));
+        return cameras.ToArray();
+    }
+
+    private static CameraDefinition[] CourtyardCameraDefinitions()
+    {
+        var cameras = ResidentialCameraDefinitions().ToList();
+        cameras.Add(new CameraDefinition("GardenHeight", new Vector3(34, 3, 103), new Vector3(14, 2, 97), 0, true));
+        cameras.Add(new CameraDefinition("WestCourtContext", new Vector3(-126, 44, -47), new Vector3(-166, 0, 4), 0, true));
+        cameras.Add(new CameraDefinition("RiverCourtContext", new Vector3(251, 48, -107), new Vector3(219, 0, -11), 0, true));
+        cameras.Add(new CameraDefinition("OfficeNeighbourTop", new Vector3(219, 130, 168), new Vector3(219, 0, 168), 29, true));
+        return cameras.ToArray();
     }
 
     private static CaptureCounters Capture(Scene scene, CameraDefinition definition, string directory)
@@ -165,6 +212,31 @@ public static class TownPilotReview
         }
     }
 
+    private static CameraDefinition[] SeamCameraDefinitions()
+    {
+        var cameras=CameraDefinitions().ToList();
+        cameras.Add(new CameraDefinition("SlopedRoof",new Vector3(-58,19,-12),new Vector3(-50,14,-3),0,true));
+        cameras.Add(new CameraDefinition("AerialSeat",new Vector3(-25,17,-9),new Vector3(-29.8f,14,-3),0,true));
+        cameras.Add(new CameraDefinition("OfficeRoof",new Vector3(154,33,-129),new Vector3(143,28,-120),0,true));
+        cameras.Add(new CameraDefinition("LowerOfficeRoof",new Vector3(155,20,-20),new Vector3(144,16,-10),0,true));
+        cameras.Add(new CameraDefinition("OldEntrance",new Vector3(-56,3.1f,9),new Vector3(-52,1.8f,3),0,true));
+        cameras.Add(new CameraDefinition("Downpipe",new Vector3(-61,4,-14),new Vector3(-56.7f,4,-8.16f),0,true));
+        cameras.Add(new CameraDefinition("ShelterJoin",new Vector3(-87,2.2f,-144),new Vector3(-80,.7f,-152),0,true));
+        cameras.Add(new CameraDefinition("ApprovedStopJoin",new Vector3(99,2.2f,-144),new Vector3(90,.7f,-152),0,true));
+        return cameras.ToArray();
+    }
+
+    private static CameraDefinition[] SpecialCameraDefinitions()
+    {
+        var cameras=CameraDefinitions().ToList();
+        cameras.Add(new CameraDefinition("WorkshopTop",new Vector3(120,130,-168),new Vector3(120,0,-168),30,true));
+        cameras.Add(new CameraDefinition("ConstructionTop",new Vector3(146,130,-58),new Vector3(146,0,-58),36,true));
+        cameras.Add(new CameraDefinition("WorkshopVehicleHeight",new Vector3(144,2.6f,-197),new Vector3(112,2.4f,-163),0,true));
+        cameras.Add(new CameraDefinition("ConstructionVehicleHeight",new Vector3(118,2.5f,-60),new Vector3(144,4,-42),0,true));
+        cameras.Add(new CameraDefinition("ConstructionContext",new Vector3(201,51,-111),new Vector3(145,4,-55),0,true));
+        return cameras.ToArray();
+    }
+
     private static ReviewReport Measure(Scene scene, Transform town)
     {
         var renderers = SceneComponents<Renderer>(scene);
@@ -205,7 +277,8 @@ public static class TownPilotReview
         // Restricting the sections avoids counting bins, canopies, fences and cars as houses.
         Transform section = collider.transform;
         while (section.parent != null && section.parent != town) section = section.parent;
-        bool buildingSection = section.name == "Mixed low-rise streets" || section.name == "Urban buildings";
+        bool buildingSection = section.name == "Mixed low-rise streets" || section.name == "Urban buildings"
+            || section.name==TownResidentialPlan.HierarchyRoot || section.name=="Special sites stage 5";
         return buildingSection && collider.size.x >= 3 && collider.size.z >= 3 && collider.size.y >= 2.5f;
     }
 

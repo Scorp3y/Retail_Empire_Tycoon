@@ -115,6 +115,18 @@ namespace RetailEmpireTycoon.Editor.TownKit
             }
         }
 
+        /// <summary>Copies a palette mesh with a pose, preserving its flat normals and UVs.</summary>
+        public void Append(Mesh mesh,Matrix4x4 pose)
+        {
+            var points=mesh.vertices;var inputNormals=mesh.normals;var inputUvs=mesh.uv;
+            if(inputNormals.Length!=points.Length||inputUvs.Length!=points.Length||mesh.subMeshCount!=1)
+                throw new ArgumentException("A complete single-material palette mesh is required.",nameof(mesh));
+            int offset=vertices.Count;var normalPose=pose.inverse.transpose;
+            for(int i=0;i<points.Length;i++)
+            {vertices.Add(pose.MultiplyPoint3x4(points[i]));normals.Add(normalPose.MultiplyVector(inputNormals[i]).normalized);uvs.Add(inputUvs[i]);}
+            foreach(int index in mesh.triangles)triangles.Add(offset+index);
+        }
+
         public Mesh Build(string name)
         {
             var mesh=new Mesh {name=name,indexFormat=vertices.Count>65535?IndexFormat.UInt32:IndexFormat.UInt16};

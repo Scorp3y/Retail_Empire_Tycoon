@@ -44,6 +44,7 @@ namespace RetailEmpireTycoon.City
         public void Enter(CityTrip trip, DeliveryOrders orders, Scene shopScene)
         {
             this.trip = trip; this.orders = orders;
+            if(town!=null)town.GetComponent<TownSignalChunks>()?.SetObserver(pickup.transform);
             checkpoints=(town!=null?town.suppliers:Array.Empty<DeliveryCheckpoint>()).Concat(new[]{depot,unload,home}).Where(c=>c!=null).Distinct().ToArray();
             orders.Changed += RefreshCargo;
             ui = new ShopUi(Resources.Load<ShopUiTheme>("ShopUi/Theme"));

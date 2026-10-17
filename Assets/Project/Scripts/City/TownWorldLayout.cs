@@ -56,10 +56,10 @@ namespace RetailEmpireTycoon.City
         public Vector3 MapShopPoint(Vector3 point) => cityShopOrigin+(point-sourceShopOrigin)*shopToCityScale;
 
         // Compact customer apron; the city street remains outside the purchasable store plots.
-        public Rect StoreForecourt => new Rect(cityShopOrigin.x-8,cityShopOrigin.z-16,38,16);
-        public Rect StoreStreetAccess => new Rect(-28,-144,8,28);
-        public Rect StoreForecourtConnection => new Rect(-32,-124,12,8);
-        public Vector3 StoreStreetEntry => new Vector3(-24,0,-140);
+        public Rect StoreForecourt => new Rect(cityShopOrigin.x,cityShopOrigin.z-16,30,16);
+        public Rect StoreStreetAccess => new Rect(cityShopOrigin.x,-140,8,16);
+        public Rect StoreForecourtConnection => new Rect(cityShopOrigin.x,-124,8,0);
+        public Vector3 StoreStreetEntry => new Vector3(cityShopOrigin.x+4,0,-140);
 
         public float RiverCenter(float z)=>328+Mathf.Sin((z+40)*.013f)*18;
         public bool IsRiver(Vector3 position)=>Mathf.Abs(position.x-RiverCenter(position.z))<14;

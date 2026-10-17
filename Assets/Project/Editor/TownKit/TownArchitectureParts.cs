@@ -60,7 +60,16 @@ namespace RetailEmpireTycoon.Editor.TownKit
             for (int i = 0; i < count; i++)
             {
                 float x = body.center.x + (i - (count - 1) / 2f) * 3.7f;
-                var center = new Vector3(x, Mathf.Min(body.max.y - 1.2f, 4.9f), body.min.z - .26f);
+                // The band between apartment floors is solid wall, unlike the window-centre grid.
+                float y = volumes[volumeIndex].FloorHeight + .18f;
+                var center = new Vector3(x, y, body.min.z - .26f);
+                int columns=Mathf.Max(1,Mathf.FloorToInt(body.size.x/3.1f));float pitch=body.size.x/columns;
+                for(int floor=0;floor<volumes[volumeIndex].Floors;floor++)for(int column=0;column<columns;column++)
+                {
+                    float windowX=body.center.x+(column-(columns-1)/2f)*pitch,windowY=floor*volumes[volumeIndex].FloorHeight+1.7f;
+                    if(Mathf.Abs(windowX-x)<1.35f&&y-.475f<windowY+.855f&&y+.325f>windowY-.975f)
+                        throw new InvalidOperationException("A condenser or its mounting bracket would overlap a rear window.");
+                }
                 TownArchitectureParts.AirConditioner(geometry, center, Quaternion.Euler(0, 180, 0));
             }
         }
@@ -119,9 +128,23 @@ namespace RetailEmpireTycoon.Editor.TownKit
                     Vector3 center = new Vector3(body.center.x, 0, body.center.z) + rotation * local;
                     if (!TownArchitectureParts.IsExposed(center, outward, volumeIndex, volumes)) continue;
                     if (floor == 0 && front && GroundOpeningAt(volumeIndex, center.x)) continue;
-                    bool hasBalcony = front && floor > 0 && (column + floor + volumeIndex) % balconySpacing == 0;
+                    bool stairBay = front && entrances.Exists(e=>e.VolumeIndex==volumeIndex&&Mathf.Abs(e.Position.x-center.x)<(body.size.x<9?.85f:1.65f));
+                    if(stairBay)continue;
+                    bool hasBalcony = front && floor > 0 && (column + floor + volumeIndex) % balconySpacing == 0
+                        && !entrances.Exists(e=>e.VolumeIndex==volumeIndex&&Mathf.Abs(e.Position.x-center.x)<2.5f);
                     TownArchitectureParts.Window(geometry, center, 1.35f, hasBalcony ? 1.95f : 1.55f, rotation);
                     if (hasBalcony) TownArchitectureParts.Balcony(geometry, center + rotation * new Vector3(0, -1.12f, .04f), balcony, rotation);
+                }
+            }
+            // A separate half-landing rhythm makes the staircase legible; no apartment balconies here.
+            foreach(var entrance in entrances)
+            {
+                if(entrance.VolumeIndex!=volumeIndex)continue;
+                for(int landing=0;landing<volume.Floors-1;landing++)
+                {
+                    var center=new Vector3(entrance.Position.x,3.65f+landing*volume.FloorHeight,body.max.z+.06f);
+                    if(TownArchitectureParts.IsExposed(center,Vector3.forward,volumeIndex,volumes))
+                        TownArchitectureParts.Window(geometry,center,1.0f,1.0f,Quaternion.identity);
                 }
             }
         }

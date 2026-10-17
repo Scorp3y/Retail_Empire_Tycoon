@@ -25,6 +25,7 @@ public sealed class TerritoryPurchaseController : MonoBehaviour
     public void RequestPurchase(TerritoryId id, int price)
     {
         if (_busy || price < 0 || _progression == null || !_progression.IsTerritoryAvailable(id)) return;
+        if (_progression.LandRules != null) price = _progression.LandRules.PriceOf(id);
         _confirm.Show(
             $"Are you sure you will buy this territory? {price}?",
             onYes: () => StartCoroutine(PurchaseRoutine(id, price)),
@@ -37,6 +38,8 @@ public sealed class TerritoryPurchaseController : MonoBehaviour
     {
         if (_busy || price < 0 || _progression == null || !_progression.IsTerritoryAvailable(id))
             yield break;
+
+        if (_progression.LandRules != null) price = _progression.LandRules.PriceOf(id);
 
         _busy = true;
 

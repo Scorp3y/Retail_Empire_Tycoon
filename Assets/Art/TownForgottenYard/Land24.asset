@@ -1,0 +1,237 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1359f592b17c6b24381912fa7eb53cae, type: 3}
+  m_Name: Land24
+  m_EditorClassIdentifier: 
+  initialBounds:
+    serializedVersion: 2
+    x: -0.8335
+    y: -2.8339
+    width: 15.003
+    height: 12.0024
+  parcels:
+  - id: 100
+    legacyRegion: 0
+    bounds:
+      serializedVersion: 2
+      x: 14.1695
+      y: -2.8339
+      width: 5.001
+      height: 12.002401
+    price: 334
+  - id: 101
+    legacyRegion: 0
+    bounds:
+      serializedVersion: 2
+      x: 19.1705
+      y: -2.8339
+      width: 5.001
+      height: 12.002401
+    price: 333
+  - id: 102
+    legacyRegion: 0
+    bounds:
+      serializedVersion: 2
+      x: 24.171501
+      y: -2.8339
+      width: 5.001
+      height: 12.002401
+    price: 333
+  - id: 103
+    legacyRegion: 1
+    bounds:
+      serializedVersion: 2
+      x: -0.8335
+      y: 9.168501
+      width: 15.003
+      height: 10.5021
+    price: 1000
+  - id: 104
+    legacyRegion: 1
+    bounds:
+      serializedVersion: 2
+      x: -0.8335
+      y: 19.6706
+      width: 15.003
+      height: 10.5021
+    price: 1000
+  - id: 105
+    legacyRegion: 2
+    bounds:
+      serializedVersion: 2
+      x: 14.1695
+      y: 9.168501
+      width: 15.003
+      height: 10.5021
+    price: 1500
+  - id: 106
+    legacyRegion: 2
+    bounds:
+      serializedVersion: 2
+      x: 14.1695
+      y: 19.6706
+      width: 15.003
+      height: 10.5021
+    price: 1500
+  - id: 107
+    legacyRegion: 3
+    bounds:
+      serializedVersion: 2
+      x: 29.1725
+      y: 9.168501
+      width: 22.004402
+      height: 7.0014
+    price: 1667
+  - id: 108
+    legacyRegion: 3
+    bounds:
+      serializedVersion: 2
+      x: 29.1725
+      y: 16.1699
+      width: 22.004402
+      height: 7.0014
+    price: 1667
+  - id: 109
+    legacyRegion: 3
+    bounds:
+      serializedVersion: 2
+      x: 29.1725
+      y: 23.1713
+      width: 22.004402
+      height: 7.0014
+    price: 1666
+  - id: 110
+    legacyRegion: 4
+    bounds:
+      serializedVersion: 2
+      x: 29.1725
+      y: -2.8339
+      width: 7.3348007
+      height: 12.002401
+    price: 1334
+  - id: 111
+    legacyRegion: 4
+    bounds:
+      serializedVersion: 2
+      x: 36.5073
+      y: -2.8339
+      width: 7.3348007
+      height: 12.002401
+    price: 1333
+  - id: 112
+    legacyRegion: 4
+    bounds:
+      serializedVersion: 2
+      x: 43.842102
+      y: -2.8339
+      width: 7.3348007
+      height: 12.002401
+    price: 1333
+  - id: 113
+    legacyRegion: 5
+    bounds:
+      serializedVersion: 2
+      x: 51.1769
+      y: -2.8339
+      width: 7.3347993
+      height: 12.002401
+    price: 2167
+  - id: 114
+    legacyRegion: 5
+    bounds:
+      serializedVersion: 2
+      x: 58.5117
+      y: -2.8339
+      width: 7.3347993
+      height: 12.002401
+    price: 2167
+  - id: 115
+    legacyRegion: 5
+    bounds:
+      serializedVersion: 2
+      x: 65.8465
+      y: -2.8339
+      width: 7.3347993
+      height: 12.002401
+    price: 2166
+  - id: 116
+    legacyRegion: 6
+    bounds:
+      serializedVersion: 2
+      x: 51.1769
+      y: 9.168501
+      width: 22.004398
+      height: 7.0014
+    price: 2667
+  - id: 117
+    legacyRegion: 6
+    bounds:
+      serializedVersion: 2
+      x: 51.1769
+      y: 16.1699
+      width: 22.004398
+      height: 7.0014
+    price: 2667
+  - id: 118
+    legacyRegion: 6
+    bounds:
+      serializedVersion: 2
+      x: 51.1769
+      y: 23.1713
+      width: 22.004398
+      height: 7.0014
+    price: 2666
+  - id: 119
+    legacyRegion: 7
+    bounds:
+      serializedVersion: 2
+      x: -0.8335
+      y: 30.1727
+      width: 15.003
+      height: 12.002401
+    price: 4750
+  - id: 120
+    legacyRegion: 7
+    bounds:
+      serializedVersion: 2
+      x: 14.1695
+      y: 30.1727
+      width: 15.003
+      height: 12.002401
+    price: 4750
+  - id: 121
+    legacyRegion: 8
+    bounds:
+      serializedVersion: 2
+      x: 29.1725
+      y: 30.1727
+      width: 14.669601
+      height: 12.002401
+    price: 3667
+  - id: 122
+    legacyRegion: 8
+    bounds:
+      serializedVersion: 2
+      x: 43.842102
+      y: 30.1727
+      width: 14.669601
+      height: 12.002401
+    price: 3667
+  - id: 123
+    legacyRegion: 8
+    bounds:
+      serializedVersion: 2
+      x: 58.511703
+      y: 30.1727
+      width: 14.669601
+      height: 12.002401
+    price: 3666

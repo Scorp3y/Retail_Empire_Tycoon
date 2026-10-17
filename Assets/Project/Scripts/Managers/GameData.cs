@@ -22,6 +22,8 @@ public class GameData
 [Serializable]
 public class TerritorySaveData
 {
+    // Missing in older saves: legacy region ownership must be expanded without taking land away.
+    public int layoutVersion;
     public List<string> purchased = new List<string>();
     public string storeLevel = "Lvl1";
 }

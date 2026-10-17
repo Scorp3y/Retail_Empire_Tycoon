@@ -132,6 +132,11 @@ namespace RetailEmpireTycoon.BuildSystem
                 return;
             if (!AreCellsValid(cells, item)) return;
 
+            ApplyCells(cells, item);
+        }
+
+        private void ApplyCells(List<Vector3Int> cells, BuildItemData item)
+        {
             var dirtyChunks = new HashSet<Vector2Int>();
             foreach (var cell in cells)
             {
@@ -181,11 +186,13 @@ namespace RetailEmpireTycoon.BuildSystem
             foreach (var group in data.GroupBy(d => d.itemId))
             {
                 var item = catalog.GetById(group.Key);
-                if (item == null)
+                if (item == null || item.floorMaterial == null)
                     continue;
                 var cells = group.Select(d => new Vector3Int(d.x, 0, d.z)).ToList();
-                if (AreCellsValid(cells, item)) PaintCells(cells, item);
-                else foreach (var cell in cells) PaintCells(new List<Vector3Int> { cell }, item);
+                // Restoring authored/saved ground is not a request to build. Public starter
+                // paving and older custom floors must survive reduced construction rights,
+                // just as saved furniture does. Interactive PaintCells still checks ownership.
+                if (grid != null) ApplyCells(cells, item);
             }
         }
 

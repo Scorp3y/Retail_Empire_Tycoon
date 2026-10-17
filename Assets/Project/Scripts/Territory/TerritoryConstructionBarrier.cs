@@ -6,12 +6,13 @@ public sealed class TerritoryConstructionBarrier : MonoBehaviour
     [SerializeField] private GameObject _model;
     [SerializeField] private Renderer _fenceRenderer;
     [SerializeField] private TextMesh _priceLabel;
+    [SerializeField] private bool _englishText;
     private MaterialPropertyBlock _properties;
 
     public void SetPrice(int price)
     {
         if (_priceLabel != null)
-            _priceLabel.text = "Расширить\n" + price.ToString("N0").Replace(',', ' ') + " $";
+            _priceLabel.text = (_englishText ? "EXPAND\n" : "Расширить\n") + price.ToString("N0").Replace(',', ' ') + " $";
     }
 
     public void SetVisible(bool visible)

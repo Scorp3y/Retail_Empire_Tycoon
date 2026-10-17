@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
+using RetailEmpireTycoon.Territory;
 
 public sealed class StoreProgression : MonoBehaviour
 {
@@ -8,6 +10,10 @@ public sealed class StoreProgression : MonoBehaviour
 
     public ProgressState State { get; private set; } = new();
     public event Action OnChanged;
+    [SerializeField] private TerritorySubdivisionRules landRules;
+    public TerritorySubdivisionRules LandRules=>landRules;
+    // Sub-parcels and compatibility aliases must not both increase shopper/staff difficulty.
+    public int CompletedRegionCount => State.Purchased.Count(id => (int)id >= 0 && (int)id < 9);
 
     public IReadOnlyCollection<TerritoryId> Purchased => State.Purchased;
 
@@ -31,6 +37,7 @@ public sealed class StoreProgression : MonoBehaviour
 
     public bool IsTerritoryAvailable(TerritoryId id)
     {
+        if(landRules!=null)return landRules.IsAvailable(id,State.Purchased);
         if (State.IsPurchased(id)) return false;
 
         bool purpleBought = State.IsPurchased(TerritoryId.Purple);
@@ -65,11 +72,13 @@ public sealed class StoreProgression : MonoBehaviour
 
     public StoreLevelId PredictLevelAfterPurchase(TerritoryId buyId)
     {
-        bool purple = State.IsPurchased(TerritoryId.Purple) || buyId == TerritoryId.Purple;
-        bool red = State.IsPurchased(TerritoryId.Red) || buyId == TerritoryId.Red;
-        bool green = State.IsPurchased(TerritoryId.Green) || buyId == TerritoryId.Green;
-        bool yellow = State.IsPurchased(TerritoryId.Yellow) || buyId == TerritoryId.Yellow;
-        bool pink = State.IsPurchased(TerritoryId.Pink) || buyId == TerritoryId.Pink;
+        var predicted=new HashSet<TerritoryId>(State.Purchased){buyId};
+        if(landRules!=null)landRules.AddCompletedRegions(predicted);
+        bool purple = predicted.Contains(TerritoryId.Purple);
+        bool red = predicted.Contains(TerritoryId.Red);
+        bool green = predicted.Contains(TerritoryId.Green);
+        bool yellow = predicted.Contains(TerritoryId.Yellow);
+        bool pink = predicted.Contains(TerritoryId.Pink);
 
         if (!purple) return StoreLevelId.Lvl1;
         if (purple && !(red || green)) return StoreLevelId.Lvl2;
@@ -92,17 +101,19 @@ public sealed class StoreProgression : MonoBehaviour
     public void MarkPurchased(TerritoryId id)
     {
         if (State.IsPurchased(id)) return;
+        if (landRules != null && !landRules.IsAvailable(id, State.Purchased)) return;
 
         State.Purchased.Add(id);
+        if(landRules!=null)landRules.AddCompletedRegions(State.Purchased);
         State.CurrentLevel = PredictLevelAfterPurchase(id);
         OnChanged?.Invoke();
     }
 
     public TerritorySaveData BuildSaveData()
     {
-        var d = new TerritorySaveData();
-        foreach (var id in State.Purchased)
-            d.purchased.Add(id.ToString());
+        var d = new TerritorySaveData{layoutVersion=landRules!=null?TerritorySubdivisionRules.CurrentVersion:0};
+        foreach (var id in State.Purchased.OrderBy(id => (int)id))
+            if(landRules==null||landRules.Contains(id))d.purchased.Add(id.ToString());
         d.storeLevel = State.CurrentLevel.ToString();
         return d;
     }
@@ -111,7 +122,9 @@ public sealed class StoreProgression : MonoBehaviour
     {
         State.Purchased.Clear();
 
-        if (d?.purchased != null)
+        if(landRules!=null)State.Purchased.UnionWith(landRules.Restore(d));
+
+        if (landRules==null&&d?.purchased != null)
         {
             foreach (var s in d.purchased)
                 if (Enum.TryParse<TerritoryId>(s, out var id) && Enum.IsDefined(typeof(TerritoryId), id))

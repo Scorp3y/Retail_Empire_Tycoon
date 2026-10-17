@@ -1,0 +1,33 @@
+# Equipment depot — generation prompts
+
+Generated using the built-in image_gen tool with the supplied equipment-building image as an architectural/style reference. Final image: EquipmentPlan-v1.png. This is concept art, not an installed Unity model or a dimensioned engineering plan.
+
+## Initial generation prompt
+
+```text
+Use case: stylized-concept.
+Asset type: landscape game environment concept and build-plan board for Retail Empire Tycoon.
+Input image 1: architectural and low-poly art-style reference, NOT an image to copy verbatim. Expand this design into a coherent multi-view planning sheet.
+Primary request: design ONE consistent retail equipment supplier complex, matching the supplied reference: two-storey warm red-brick street-facing shop with cream masonry trim, four tall upper windows, flat grey roof and continuous cream parapet, a navy blue storefront sign, large ground-floor shop windows. A single-storey charcoal corrugated-metal warehouse stands behind/right of the shop. A simple graphite metal canopy covers a compact equipment display/picking area along the shop's courtyard side.
+
+Composition: wide landscape sheet, crisp 2-by-2 panel grid with thin light dividers and readable English headers. Top left FRONT VIEW, top right SERVICE YARD, bottom left TOP VIEW, bottom right ASSET KIT. Main title RETAIL EQUIPMENT DEPOT. Every building, window, driveway, warehouse and canopy must be the SAME design, orientation and relative arrangement across the three architectural views. This is a practical model-building concept sheet, not a photoreal architectural rendering.
+
+Layout: street along the front boundary. Shop occupies the front-left part of the plot; facade faces street. Three short customer parking spaces in front, two low-poly parked cars and one free space. A clear approximately six-metre-wide side driveway enters from the front-right and reaches the warehouse pickup apron. Warehouse is at the back-right, with a wide ground-level roller door facing toward the street down the driveway. Provide one yellow rectangular loading bay with an orange compact pickup shown reversing toward this roller door, not blocking the entire driveway. Keep a generous clear turning/staging apron in front of the warehouse. Warehouse pedestrian door is offset from the roller door with an unobstructed approach. Equipment display canopy sits against the shop's right wall on the LEFT edge of the driveway, not across the driveway. Store shelves, wrapped equipment, crates and pallet stacks against walls only. Black metal perimeter fence with cream-capped brick piers, an open vehicle gate at the driveway entry; the gate and fence must not cross the parking or loading bay. A handful of low-poly shrubs and small planted boxes strictly inside the fence near corners and the facade, not inside the drive.
+
+Front view: low three-quarter view showing attractive shop windows with commercial display fridges, shelving and checkout counters visible, cream cornices and brickwork, navy sign with exact white word EQUIPMENT. No domestic washing machines or household laundry appliances.
+Service yard: view from the driveway toward warehouse and side canopy, clearly shows ground-level pickup door, a dolly carrying a boxed unit, compact pallet rack, neatly stacked wooden pallets, protected corner bollards, wall lamp, clear pedestrian door and open manoeuvring space. All furniture and equipment rest on the ground, backs aligned close to walls, no floating props.
+Top view: true directly overhead orthographic layout of the same plot, clearly revealing coherent building footprints, canopy, gate, parking and unobstructed six-metre drive to pickup. Optional small clean leader labels only: SHOP, DISPLAY, WAREHOUSE, PARKING, PICKUP. No decorative road arrows, no invented second yard or duplicate buildings.
+Asset kit: on a clean warm-neutral ground, spaced isolated low-poly prop miniatures consistent with props in the other panels: one commercial upright display fridge, one refrigerated counter, one retail shelf, one checkout counter with a terminal, one loaded dolly, one compact pallet rack, wrapped equipment boxes and a wooden pallet stack, one wall lamp, two yellow bollards, and one rectangular planter. A few short labels: FRIDGE, SHELF, COUNTER, DOLLY, PALLETS. These are visual modular asset suggestions, not engineering blueprint dimensions.
+
+Style: attractive simple faceted low-poly Unity city-game art, matte flat colours, chunky readable silhouettes, restrained detail, sparse simple brick seams, no microtexture, no realistic glossy cars. Soft clear daytime light and gentle shadows. Adjacent pastel apartment blocks and faceted trees in the architectural panels establish the game's city scale without hiding the complex. Brick, navy, cream and charcoal reference palette retained; equipment white and metal grey, safety accents yellow.
+Text: ALL text must be English. Render the headers and EQUIPMENT exactly; warehouse may have a small PICKUP stencil directly on its dark wall, not a large white plaque. No Russian, Cyrillic, brands, logos, watermarks, people, bus stops, clutter, impossible intersections, blocked doors, parapet gaps, protruding planters or mismatched designs between views. High readability and enough resolution to see the courtyard layout and asset kit.
+```
+
+## Targeted correction prompt
+
+```text
+Use case: precise-object-edit. Edit the supplied finished concept sheet. Change ONLY the orientation of the orange loading pickup in the three architectural panels, keeping the exact building layouts, cameras, lettering, colours, props, and the entire ASSET KIT panel unchanged.
+The pickup is reversing into the warehouse loading bay. Rotate each orange pickup by 180 degrees around its vertical axis, at its same existing location. Its OPEN REAR CARGO BED / tailgate must point TOWARD the warehouse roller door, while its front hood, front grille, front headlights and windshield point TOWARD the driveway entrance and street, away from the warehouse. In SERVICE YARD, the viewer must clearly see the pickup's FRONT grille and headlights, NOT its rear tailgate. In FRONT VIEW, show the front hood/headlights toward the lower/front street edge and the cargo bed nearer the roller door. In TOP VIEW, put the cargo bed on the upper/back end next to the warehouse, and the cab/windshield/hood on the lower/front end nearer the street. Keep the vehicle a compact orange PICKUP with a cargo bed, not an SUV, sedan, truck box or van. Preserve the yellow bay and all other marks exactly.
+Do not redesign or move any building, canopy, gate, fence, landscape, parking or equipment. All text remains the exact existing English text. No added annotations, no Russian or Cyrillic, no watermark.
+```
+

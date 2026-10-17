@@ -2,7 +2,10 @@ using UnityEngine;
 
 namespace RetailEmpireTycoon.City
 {
-    /// <summary>Arcade pickup controls. Contacts are resolved by physics; no on-foot or interior mode.</summary>
+    /// <summary>
+    /// Accessible four-wheel driving. Wheel contacts provide traction, suspension and chassis
+    /// pitch; keyboard or scripted input supplies the same smoothed throttle and steering.
+    /// </summary>
     [RequireComponent(typeof(Rigidbody))]
     public sealed class PickupDrive : MonoBehaviour
     {
@@ -15,42 +18,107 @@ namespace RetailEmpireTycoon.City
         private Rigidbody body;
         private float throttle, steering;
         private bool handbrake;
+        [System.Serializable]
+        public sealed class Wheel
+        {
+            public WheelCollider contact;
+            public Transform visual;
+            public bool front;
+        }
+        public Wheel[] wheels = System.Array.Empty<Wheel>();
+        private float smoothThrottle, smoothSteering;
+        public float SteeringAngle { get; private set; }
+        public int GroundedWheels { get; private set; }
         public float Speed => body == null ? 0 : body.velocity.magnitude;
         public Rigidbody Body => body;
         private void Awake()
         {
-            body = GetComponent<Rigidbody>(); body.mass = 1400;
-            // Steering owns yaw. Collision impulses may move the car, but must not leave an uncontrolled spin.
-            body.constraints = RigidbodyConstraints.FreezeRotation;
+            body = GetComponent<Rigidbody>();
+            body.mass = 1400;
+            body.constraints = RigidbodyConstraints.None;
             body.interpolation = RigidbodyInterpolation.Interpolate;
             body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-            body.centerOfMass = new Vector3(0, .35f, 0);
+            body.centerOfMass = new Vector3(0, .48f, -.05f);
+            body.angularDrag = 2.5f;
+            body.drag = .04f;
+            body.solverIterations = 12;
+            body.solverVelocityIterations = 4;
+            // Substeps are a runtime physics setting, not a serialized prefab property.
+            foreach (var wheel in wheels)
+                if (wheel.contact != null) wheel.contact.ConfigureVehicleSubsteps(5, 8, 12);
         }
         private void Update()
         {
-            if (InputEnabled && ReadKeyboard) SetInput(Input.GetAxisRaw("Vertical"), Input.GetAxisRaw("Horizontal"), Input.GetKey(KeyCode.Space));
+            if (InputEnabled && ReadKeyboard)
+                SetInput(Input.GetAxisRaw("Vertical"), Input.GetAxisRaw("Horizontal"), Input.GetKey(KeyCode.Space));
         }
+
+        /// <summary>Normalized throttle/steering in [-1, 1]. Brake overrides motor torque.</summary>
         public void SetInput(float forward, float turn, bool brake)
-        { throttle = Mathf.Clamp(forward,-1,1); steering = Mathf.Clamp(turn,-1,1); handbrake = brake; }
+        {
+            throttle = float.IsNaN(forward) ? 0 : Mathf.Clamp(forward, -1, 1);
+            steering = float.IsNaN(turn) ? 0 : Mathf.Clamp(turn, -1, 1);
+            handbrake = brake;
+        }
+
         private void FixedUpdate()
         {
-            body.angularVelocity = Vector3.zero;
-            float forwardSpeed = Vector3.Dot(body.velocity, transform.forward);
-            float desired = InputEnabled && !handbrake ? throttle * (throttle >= 0 ? topSpeed : reverseSpeed) : 0;
-            float rate = handbrake || throttle == 0 || Mathf.Sign(desired) != Mathf.Sign(forwardSpeed) ? braking : acceleration;
-            float speed = Mathf.MoveTowards(forwardSpeed, desired, rate * Time.fixedDeltaTime);
-            bool grounded=false;
-            foreach(var hit in Physics.RaycastAll(transform.position+Vector3.up*1.5f,Vector3.down,3f,~0,QueryTriggerInteraction.Ignore))
-                if(!hit.transform.IsChildOf(transform) && hit.transform!=transform && hit.normal.y>.5f) {grounded=true;break;}
-            if (grounded)
+            if (wheels.Length != 4) return;
+            smoothThrottle = Mathf.MoveTowards(smoothThrottle, InputEnabled ? throttle : 0, 2.2f * Time.fixedDeltaTime);
+            smoothSteering = Mathf.MoveTowards(smoothSteering, InputEnabled ? steering : 0, 2.6f * Time.fixedDeltaTime);
+            float speed = Vector3.Dot(body.velocity, transform.forward);
+            float limit = smoothThrottle >= 0 ? topSpeed : reverseSpeed;
+            float desired = smoothThrottle * limit;
+            bool reversing = speed * smoothThrottle < -.3f;
+            float force = Mathf.Clamp((desired - speed) * 2, -acceleration, acceleration);
+            SteeringAngle = smoothSteering * Mathf.Lerp(42, 15, Mathf.Clamp01(Mathf.Abs(speed) / topSpeed));
+            GroundedWheels = 0;
+
+            foreach (var wheel in wheels)
             {
-                Vector3 planar = transform.forward * speed;
-                body.velocity = new Vector3(planar.x, body.velocity.y, planar.z);
-                float turn = InputEnabled ? steering * Mathf.Clamp01(Mathf.Abs(speed) / 3) * Mathf.Sign(speed) * 55 * Time.fixedDeltaTime : 0;
-                body.MoveRotation(body.rotation * Quaternion.Euler(0, turn, 0));
+                var contact = wheel.contact;
+                if (contact == null) continue;
+                contact.steerAngle = wheel.front ? SteeringAngle : 0;
+                contact.motorTorque = !InputEnabled || handbrake || reversing || Mathf.Abs(smoothThrottle) < .01f
+                    ? 0 : body.mass * force * contact.radius / 4;
+                contact.brakeTorque = BrakeTorque(contact, reversing);
+                if (contact.isGrounded) GroundedWheels++;
             }
         }
+
+        private float BrakeTorque(WheelCollider contact, bool reversing)
+        {
+            if (!InputEnabled || handbrake) return body.mass * braking * contact.radius / 4;
+            if (reversing) return 1600;
+            return Mathf.Abs(smoothThrottle) < .01f ? 45 : 0;
+        }
+
+        private void LateUpdate()
+        {
+            foreach (var wheel in wheels)
+            {
+                if (wheel.contact == null || wheel.visual == null) continue;
+                wheel.contact.GetWorldPose(out var position, out var rotation);
+                wheel.visual.SetPositionAndRotation(position, rotation);
+            }
+        }
+
+        /// <summary>Stops the chassis for parking/relocation and clears stale control input.</summary>
         public void Stop()
-        { throttle = steering = 0; handbrake = true; body.velocity = Vector3.zero; body.angularVelocity = Vector3.zero; }
+        {
+            throttle = steering = smoothThrottle = smoothSteering = 0;
+            handbrake = true;
+            if (body != null)
+            {
+                body.velocity = Vector3.zero;
+                body.angularVelocity = Vector3.zero;
+            }
+            foreach (var wheel in wheels)
+            {
+                if (wheel.contact == null) continue;
+                wheel.contact.motorTorque = 0;
+                wheel.contact.brakeTorque = 4000;
+            }
+        }
     }
 }

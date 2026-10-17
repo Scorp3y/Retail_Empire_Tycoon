@@ -44,7 +44,7 @@ namespace RetailEmpireTycoon.StoreOperations
         public IReadOnlyList<ShopDirtSpot> Dirt => _dirt;
         public bool IsOpen { get; private set; }
         public bool StaffWorking { get; private set; } = true;
-        public int Level => 1 + (progression != null ? progression.Purchased.Count : 0);
+        public int Level => 1 + (progression != null ? progression.CompletedRegionCount : 0);
         public float Rating { get; private set; } = 3;
         public int BeautyPoints {get;private set;}
         public string Notice { get; private set; } = "Магазин закрыт. Заполни полки и открой его.";

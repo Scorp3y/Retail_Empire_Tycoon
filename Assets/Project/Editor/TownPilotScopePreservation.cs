@@ -21,27 +21,31 @@ internal static class TownPilotScopePreservation
         public string ColliderHash { get; }
         public int ColliderCount { get; }
         public string Fingerprint { get; }
+        public string ScopeFingerprint { get; }
 
-        internal Snapshot(string geometryHash, int triangles, string colliderHash, int colliders)
+        internal Snapshot(string geometryHash, int triangles, string colliderHash, int colliders, string scopeFingerprint)
         {
             GeometryHash = geometryHash;
             TriangleCount = triangles;
             ColliderHash = colliderHash;
             ColliderCount = colliders;
+            ScopeFingerprint = scopeFingerprint;
             using (var hash = SHA256.Create())
-                Fingerprint = Hex(hash.ComputeHash(Encoding.UTF8.GetBytes(ToString())));
+                Fingerprint = Hex(hash.ComputeHash(Encoding.UTF8.GetBytes(ScopeFingerprint + "; " + ToString())));
         }
 
         public void RequireUnchanged(Snapshot current)
         {
             if (current == null) throw new ArgumentNullException(nameof(current));
+            if (ScopeFingerprint != current.ScopeFingerprint)
+                throw new InvalidOperationException("Cannot compare preservation snapshots captured with different authorised areas.");
             var changes = new List<string>();
             if (GeometryHash != current.GeometryHash || TriangleCount != current.TriangleCount)
                 changes.Add($"visual geometry/materials: {TriangleCount} -> {current.TriangleCount} protected triangles");
             if (ColliderHash != current.ColliderHash || ColliderCount != current.ColliderCount)
                 changes.Add($"collision geometry/settings: {ColliderCount} -> {current.ColliderCount} protected colliders");
             if (changes.Count != 0)
-                throw new InvalidOperationException("Pilot scope violation outside Rect(-212,-188,88,40): " + string.Join("; ", changes));
+                throw new InvalidOperationException("Scope violation outside the authorised building plots: " + string.Join("; ", changes));
         }
 
         public override string ToString()
@@ -54,8 +58,17 @@ internal static class TownPilotScopePreservation
     /// Only triangles and complete collision volumes contained in AllowedArea are excluded.
     /// Unsupported collision shapes fail closed rather than silently weakening the scope guarantee.
     /// </summary>
-    public static Snapshot Capture()
+    public static Snapshot Capture() => Capture(new[] { AllowedArea });
+
+    /// <summary>
+    /// Protects the saved native town outside explicit parcel rectangles. A triangle or complete collider
+    /// is excluded only when contained in one rectangle; vertices in separate parcels cannot exempt a road seam.
+    /// The input is copied, and comparing snapshots with different scopes is rejected.
+    /// </summary>
+    public static Snapshot Capture(IReadOnlyList<Rect> allowedAreas)
     {
+        var areas = ValidateAreas(allowedAreas);
+        string scopeFingerprint = ScopeSignature(areas);
         var root = PrefabUtility.LoadPrefabContents(TownWorldAssembler.PrefabPath);
         try
         {
@@ -71,21 +84,21 @@ internal static class TownPilotScopePreservation
                 var triangleBuffer = new byte[192];
                 var materialSignatures = new Dictionary<Material, Digest>();
                 foreach (var filter in root.GetComponentsInChildren<MeshFilter>(true))
-                    CaptureMesh(root.transform, filter, geometry, materialSignatures, hash, triangleBuffer);
+                    CaptureMesh(root.transform, filter, geometry, materialSignatures, hash, triangleBuffer, areas);
                 foreach (var collider in root.GetComponentsInChildren<Collider>(true))
                 {
-                    if (Contains(CollisionBounds(collider))) continue;
+                    if (Contains(CollisionBounds(collider), areas)) continue;
                     collision.Add(CaptureCollider(root.transform, collider, hash));
                 }
                 return new Snapshot(HashSorted(geometry, hash), geometry.Count,
-                    HashSorted(collision, hash), collision.Count);
+                    HashSorted(collision, hash), collision.Count, scopeFingerprint);
             }
         }
         finally { PrefabUtility.UnloadPrefabContents(root); }
     }
 
     private static void CaptureMesh(Transform root, MeshFilter filter, List<Digest> protectedTriangles,
-        Dictionary<Material, Digest> materialSignatures, SHA256 hash, byte[] buffer)
+        Dictionary<Material, Digest> materialSignatures, SHA256 hash, byte[] buffer, IReadOnlyList<Rect> areas)
     {
         var mesh = filter.sharedMesh;
         if (mesh == null) throw new InvalidOperationException("Pilot scope audit found a MeshFilter without a mesh.");
@@ -105,7 +118,7 @@ internal static class TownPilotScopePreservation
             var normal = normals.Length == positions.Length ? normalPose.MultiplyVector(normals[i]).normalized : Vector3.zero;
             vertices[i] = new Vertex(point, normal, uv.Length == positions.Length ? uv[i] : Vector2.zero,
                 uv2.Length == positions.Length ? uv2[i] : Vector2.zero,
-                colours.Length == positions.Length ? colours[i] : new Color32(255, 255, 255, 255));
+                colours.Length == positions.Length ? colours[i] : new Color32(255, 255, 255, 255), areas);
         }
         var materials = renderer.sharedMaterials;
         if(materials.Length!=mesh.subMeshCount)
@@ -128,7 +141,7 @@ internal static class TownPilotScopePreservation
                 var a = vertices[indices[i]];
                 var b = vertices[indices[i + 1]];
                 var c = vertices[indices[i + 2]];
-                if (a.InPilot && b.InPilot && c.InPilot) continue;
+                if (SameAllowedArea(a,b,c)) continue;
                 // Cyclic rotation is batching-independent, unlike sorting all three vertices, which loses winding.
                 if (b.CompareTo(a) < 0 && b.CompareTo(c) <= 0) { var original = a; a = b; b = c; c = original; }
                 else if (c.CompareTo(a) < 0 && c.CompareTo(b) < 0) { var original = a; a = c; c = b; b = original; }
@@ -305,9 +318,71 @@ internal static class TownPilotScopePreservation
         return result;
     }
 
-    private static bool Contains(Bounds bounds) => Contains(bounds.min) && Contains(bounds.max);
-    private static bool Contains(Vector3 point) => point.x >= AllowedArea.xMin && point.x <= AllowedArea.xMax
-        && point.z >= AllowedArea.yMin && point.z <= AllowedArea.yMax;
+    private static bool Contains(Bounds bounds, IReadOnlyList<Rect> areas)
+        => areas.Any(area => Contains(bounds.min, area) && Contains(bounds.max, area));
+
+    private static bool Contains(Vector3 point, Rect area) => point.x >= area.xMin && point.x <= area.xMax
+        && point.z >= area.yMin && point.z <= area.yMax;
+
+    private static Rect[] ValidateAreas(IReadOnlyList<Rect> allowedAreas)
+    {
+        if (allowedAreas == null) throw new ArgumentNullException(nameof(allowedAreas));
+        if (allowedAreas.Count > 128) throw new ArgumentException("Scope auditing supports at most 128 explicit parcels.", nameof(allowedAreas));
+        var result = allowedAreas.Distinct().OrderBy(area => area.xMin).ThenBy(area => area.yMin)
+            .ThenBy(area => area.width).ThenBy(area => area.height).ToArray();
+        foreach (var area in result)
+        {
+            Quantize(area.xMin); Quantize(area.yMin); Quantize(area.xMax); Quantize(area.yMax);
+            if (area.width <= 0 || area.height <= 0)
+                throw new ArgumentException("Authorised parcel rectangles must have positive width and height.", nameof(allowedAreas));
+        }
+        return result;
+    }
+
+    private static string ScopeSignature(IReadOnlyList<Rect> areas)
+    {
+        using (var stream = new MemoryStream())
+        using (var writer = new BinaryWriter(stream))
+        using (var hash = SHA256.Create())
+        {
+            writer.Write(areas.Count);
+            foreach (var area in areas)
+            {
+                writer.Write(Quantize(area.xMin)); writer.Write(Quantize(area.yMin));
+                writer.Write(Quantize(area.xMax)); writer.Write(Quantize(area.yMax));
+            }
+            writer.Flush();
+            return Hex(hash.ComputeHash(stream.ToArray()));
+        }
+    }
+
+    internal static void ValidateMultiAreaContracts()
+    {
+        var areas = ValidateAreas(new[] { new Rect(0, 0, 1, 1), new Rect(2, 0, 1, 1) });
+        var a = new Vertex(new Vector3(.1f, 0, .1f), Vector3.up, Vector2.zero, Vector2.zero, Color.white, areas);
+        var b = new Vertex(new Vector3(.9f, 0, .1f), Vector3.up, Vector2.zero, Vector2.zero, Color.white, areas);
+        var c = new Vertex(new Vector3(.1f, 0, .9f), Vector3.up, Vector2.zero, Vector2.zero, Color.white, areas);
+        var separate = new Vertex(new Vector3(2.1f, 0, .1f), Vector3.up, Vector2.zero, Vector2.zero, Color.white, areas);
+        if ((a.AllowedAreaMask & b.AllowedAreaMask & c.AllowedAreaMask) == 0
+            || (a.AllowedAreaMask & b.AllowedAreaMask & separate.AllowedAreaMask) != 0
+            || Contains(new Bounds(new Vector3(1.5f, 1, .5f), new Vector3(2.8f, 2, .8f)), areas))
+            throw new InvalidOperationException("Multi-parcel preservation must exempt complete shapes in one parcel only.");
+        if (ScopeSignature(areas) != ScopeSignature(ValidateAreas(new[] { areas[1], areas[0], areas[0] })))
+            throw new InvalidOperationException("Scope fingerprints must ignore rectangle ordering and duplicate declarations.");
+        // Detail repairs can exceed 64 tiny footprints. Bits must not wrap and exempt a spanning street triangle.
+        var many=Enumerable.Range(0,65).Select(i=>new Rect(i*2,0,1,1)).ToArray();
+        var low=new Vertex(new Vector3(.1f,0,.1f),Vector3.up,Vector2.zero,Vector2.zero,Color.white,many);
+        var high=new Vertex(new Vector3(128.1f,0,.1f),Vector3.up,Vector2.zero,Vector2.zero,Color.white,many);
+        if(SameAllowedArea(low,high,high)||!SameAllowedArea(high,high,high))
+            throw new InvalidOperationException("64-bit boundary must preserve the complete single-area rule.");
+        var snapshot = new Snapshot("geometry", 0, "collision", 0, ScopeSignature(areas));
+        try
+        {
+            snapshot.RequireUnchanged(new Snapshot("geometry", 0, "collision", 0, ScopeSignature(Array.Empty<Rect>())));
+        }
+        catch (InvalidOperationException) { return; }
+        throw new InvalidOperationException("Preservation snapshots with different scopes were incorrectly accepted.");
+    }
     private static int Quantize(float value)
     {
         if (float.IsNaN(value) || float.IsInfinity(value)) throw new InvalidOperationException("Pilot scope audit found a non-finite geometry/material value.");
@@ -322,16 +397,28 @@ internal static class TownPilotScopePreservation
     private static void Point(BinaryWriter writer, Vector3 value) { writer.Write(Quantize(value.x)); writer.Write(Quantize(value.y)); writer.Write(Quantize(value.z)); }
     private static void Point(BinaryWriter writer, Vector4 value) { writer.Write(Quantize(value.x)); writer.Write(Quantize(value.y)); writer.Write(Quantize(value.z)); writer.Write(Quantize(value.w)); }
 
+    private static bool SameAllowedArea(Vertex a,Vertex b,Vertex c)
+        => (a.AllowedAreaMask & b.AllowedAreaMask & c.AllowedAreaMask)!=0
+            || (a.AllowedAreaMaskHigh & b.AllowedAreaMaskHigh & c.AllowedAreaMaskHigh)!=0;
+
     private readonly struct Vertex : IComparable<Vertex>
     {
         private readonly int x, y, z, nx, ny, nz, u, v, u2, v2, colour;
-        public readonly bool InPilot;
-        public Vertex(Vector3 position, Vector3 normal, Vector2 uv, Vector2 uv2, Color32 color)
+        public readonly ulong AllowedAreaMask,AllowedAreaMaskHigh;
+        public Vertex(Vector3 position, Vector3 normal, Vector2 uv, Vector2 uv2, Color32 color, IReadOnlyList<Rect> areas)
         {
             x = Quantize(position.x); y = Quantize(position.y); z = Quantize(position.z);
             nx = Quantize(normal.x); ny = Quantize(normal.y); nz = Quantize(normal.z);
             u = Quantize(uv.x); v = Quantize(uv.y); u2 = Quantize(uv2.x); v2 = Quantize(uv2.y);
-            colour = color.r | color.g << 8 | color.b << 16 | color.a << 24; InPilot = Contains(position);
+            colour = color.r | color.g << 8 | color.b << 16 | color.a << 24;
+            AllowedAreaMask = 0;
+            AllowedAreaMaskHigh = 0;
+            for (int area = 0; area < areas.Count; area++)
+                if (Contains(position, areas[area]))
+                {
+                    if(area<64)AllowedAreaMask |= 1UL << area;
+                    else AllowedAreaMaskHigh |= 1UL << (area-64);
+                }
         }
         public int CompareTo(Vertex other)
         {

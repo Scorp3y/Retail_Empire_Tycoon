@@ -1,0 +1,1191 @@
+{
+  "palette": {
+    "Yellow": [
+      0.93,
+      0.69,
+      0.12
+    ],
+    "Brick": [
+      0.68,
+      0.24,
+      0.16
+    ],
+    "Green": [
+      0.3,
+      0.43,
+      0.24
+    ],
+    "Blue": [
+      0.25,
+      0.43,
+      0.57
+    ],
+    "Beige": [
+      0.77,
+      0.7,
+      0.52
+    ],
+    "Orange": [
+      0.88,
+      0.38,
+      0.12
+    ],
+    "Cream": [
+      0.88,
+      0.83,
+      0.67
+    ],
+    "Teal": [
+      0.16,
+      0.53,
+      0.52
+    ],
+    "White": [
+      0.88,
+      0.88,
+      0.84
+    ],
+    "Olive": [
+      0.43,
+      0.46,
+      0.24
+    ],
+    "Red": [
+      0.72,
+      0.24,
+      0.16
+    ],
+    "Cargo": [
+      0.64,
+      0.66,
+      0.65
+    ],
+    "Sky": [
+      0.43,
+      0.59,
+      0.7
+    ],
+    "Burgundy": [
+      0.39,
+      0.18,
+      0.21
+    ],
+    "Mint": [
+      0.53,
+      0.71,
+      0.59
+    ],
+    "Navy": [
+      0.19,
+      0.29,
+      0.43
+    ],
+    "Terracotta": [
+      0.69,
+      0.34,
+      0.21
+    ],
+    "Silver": [
+      0.61,
+      0.65,
+      0.67
+    ],
+    "Glass": [
+      0.055,
+      0.085,
+      0.115
+    ],
+    "Rubber": [
+      0.085,
+      0.09,
+      0.09
+    ],
+    "Trim": [
+      0.17,
+      0.2,
+      0.2
+    ],
+    "Rim": [
+      0.43,
+      0.47,
+      0.46
+    ],
+    "Lamp": [
+      0.96,
+      0.92,
+      0.71
+    ],
+    "Tail": [
+      0.65,
+      0.08,
+      0.05
+    ],
+    "Indicator": [
+      0.95,
+      0.49,
+      0.08
+    ]
+  },
+  "vehicles": [
+    {
+      "id": "01_Hatchback",
+      "kind": "hatch",
+      "paint": "Yellow",
+      "width": 1.66,
+      "length": 3.65,
+      "height": 1.49,
+      "wheelbase": 2.3,
+      "radius": 0.3,
+      "triangles": 1100,
+      "wheels": [
+        {
+          "name": "FL",
+          "position": [
+            -0.7849999999999999,
+            0.3,
+            1.15
+          ],
+          "radius": 0.3,
+          "front": true
+        },
+        {
+          "name": "FR",
+          "position": [
+            0.7849999999999999,
+            0.3,
+            1.15
+          ],
+          "radius": 0.3,
+          "front": true
+        },
+        {
+          "name": "RL",
+          "position": [
+            -0.7849999999999999,
+            0.3,
+            -1.15
+          ],
+          "radius": 0.3,
+          "front": false
+        },
+        {
+          "name": "RR",
+          "position": [
+            0.7849999999999999,
+            0.3,
+            -1.15
+          ],
+          "radius": 0.3,
+          "front": false
+        }
+      ]
+    },
+    {
+      "id": "02_ClassicSedan",
+      "kind": "sedan",
+      "paint": "Brick",
+      "width": 1.74,
+      "length": 4.4,
+      "height": 1.45,
+      "wheelbase": 2.58,
+      "radius": 0.32,
+      "triangles": 1216,
+      "wheels": [
+        {
+          "name": "FL",
+          "position": [
+            -0.825,
+            0.32,
+            1.29
+          ],
+          "radius": 0.32,
+          "front": true
+        },
+        {
+          "name": "FR",
+          "position": [
+            0.825,
+            0.32,
+            1.29
+          ],
+          "radius": 0.32,
+          "front": true
+        },
+        {
+          "name": "RL",
+          "position": [
+            -0.825,
+            0.32,
+            -1.29
+          ],
+          "radius": 0.32,
+          "front": false
+        },
+        {
+          "name": "RR",
+          "position": [
+            0.825,
+            0.32,
+            -1.29
+          ],
+          "radius": 0.32,
+          "front": false
+        }
+      ]
+    },
+    {
+      "id": "03_StationWagon",
+      "kind": "wagon",
+      "paint": "Green",
+      "width": 1.78,
+      "length": 4.55,
+      "height": 1.58,
+      "wheelbase": 2.62,
+      "radius": 0.32,
+      "triangles": 1292,
+      "wheels": [
+        {
+          "name": "FL",
+          "position": [
+            -0.845,
+            0.32,
+            1.31
+          ],
+          "radius": 0.32,
+          "front": true
+        },
+        {
+          "name": "FR",
+          "position": [
+            0.845,
+            0.32,
+            1.31
+          ],
+          "radius": 0.32,
+          "front": true
+        },
+        {
+          "name": "RL",
+          "position": [
+            -0.845,
+            0.32,
+            -1.31
+          ],
+          "radius": 0.32,
+          "front": false
+        },
+        {
+          "name": "RR",
+          "position": [
+            0.845,
+            0.32,
+            -1.31
+          ],
+          "radius": 0.32,
+          "front": false
+        }
+      ]
+    },
+    {
+      "id": "04_Coupe",
+      "kind": "coupe",
+      "paint": "Blue",
+      "width": 1.77,
+      "length": 4.32,
+      "height": 1.32,
+      "wheelbase": 2.53,
+      "radius": 0.31,
+      "triangles": 1144,
+      "wheels": [
+        {
+          "name": "FL",
+          "position": [
+            -0.84,
+            0.31,
+            1.265
+          ],
+          "radius": 0.31,
+          "front": true
+        },
+        {
+          "name": "FR",
+          "position": [
+            0.84,
+            0.31,
+            1.265
+          ],
+          "radius": 0.31,
+          "front": true
+        },
+        {
+          "name": "RL",
+          "position": [
+            -0.84,
+            0.31,
+            -1.265
+          ],
+          "radius": 0.31,
+          "front": false
+        },
+        {
+          "name": "RR",
+          "position": [
+            0.84,
+            0.31,
+            -1.265
+          ],
+          "radius": 0.31,
+          "front": false
+        }
+      ]
+    },
+    {
+      "id": "05_BoxSUV",
+      "kind": "suv",
+      "paint": "Beige",
+      "width": 1.86,
+      "length": 4.12,
+      "height": 1.96,
+      "wheelbase": 2.48,
+      "radius": 0.39,
+      "triangles": 1208,
+      "wheels": [
+        {
+          "name": "FL",
+          "position": [
+            -0.885,
+            0.39,
+            1.24
+          ],
+          "radius": 0.39,
+          "front": true
+        },
+        {
+          "name": "FR",
+          "position": [
+            0.885,
+            0.39,
+            1.24
+          ],
+          "radius": 0.39,
+          "front": true
+        },
+        {
+          "name": "RL",
+          "position": [
+            -0.885,
+            0.39,
+            -1.24
+          ],
+          "radius": 0.39,
+          "front": false
+        },
+        {
+          "name": "RR",
+          "position": [
+            0.885,
+            0.39,
+            -1.24
+          ],
+          "radius": 0.39,
+          "front": false
+        }
+      ]
+    },
+    {
+      "id": "06_Pickup",
+      "kind": "pickup",
+      "paint": "Orange",
+      "width": 1.84,
+      "length": 4.75,
+      "height": 1.66,
+      "wheelbase": 2.85,
+      "radius": 0.35,
+      "triangles": 1200,
+      "wheels": [
+        {
+          "name": "FL",
+          "position": [
+            -0.875,
+            0.35,
+            1.425
+          ],
+          "radius": 0.35,
+          "front": true
+        },
+        {
+          "name": "FR",
+          "position": [
+            0.875,
+            0.35,
+            1.425
+          ],
+          "radius": 0.35,
+          "front": true
+        },
+        {
+          "name": "RL",
+          "position": [
+            -0.875,
+            0.35,
+            -1.425
+          ],
+          "radius": 0.35,
+          "front": false
+        },
+        {
+          "name": "RR",
+          "position": [
+            0.875,
+            0.35,
+            -1.425
+          ],
+          "radius": 0.35,
+          "front": false
+        }
+      ]
+    },
+    {
+      "id": "07_Minivan",
+      "kind": "minivan",
+      "paint": "Cream",
+      "width": 1.85,
+      "length": 4.65,
+      "height": 1.93,
+      "wheelbase": 2.78,
+      "radius": 0.33,
+      "triangles": 1224,
+      "wheels": [
+        {
+          "name": "FL",
+          "position": [
+            -0.88,
+            0.33,
+            1.39
+          ],
+          "radius": 0.33,
+          "front": true
+        },
+        {
+          "name": "FR",
+          "position": [
+            0.88,
+            0.33,
+            1.39
+          ],
+          "radius": 0.33,
+          "front": true
+        },
+        {
+          "name": "RL",
+          "position": [
+            -0.88,
+            0.33,
+            -1.39
+          ],
+          "radius": 0.33,
+          "front": false
+        },
+        {
+          "name": "RR",
+          "position": [
+            0.88,
+            0.33,
+            -1.39
+          ],
+          "radius": 0.33,
+          "front": false
+        }
+      ]
+    },
+    {
+      "id": "08_PanelVan",
+      "kind": "van",
+      "paint": "Teal",
+      "width": 1.94,
+      "length": 4.95,
+      "height": 2.16,
+      "wheelbase": 2.97,
+      "radius": 0.35,
+      "triangles": 1092,
+      "wheels": [
+        {
+          "name": "FL",
+          "position": [
+            -0.9249999999999999,
+            0.35,
+            1.485
+          ],
+          "radius": 0.35,
+          "front": true
+        },
+        {
+          "name": "FR",
+          "position": [
+            0.9249999999999999,
+            0.35,
+            1.485
+          ],
+          "radius": 0.35,
+          "front": true
+        },
+        {
+          "name": "RL",
+          "position": [
+            -0.9249999999999999,
+            0.35,
+            -1.485
+          ],
+          "radius": 0.35,
+          "front": false
+        },
+        {
+          "name": "RR",
+          "position": [
+            0.9249999999999999,
+            0.35,
+            -1.485
+          ],
+          "radius": 0.35,
+          "front": false
+        }
+      ]
+    },
+    {
+      "id": "09_DeliveryVan",
+      "kind": "delivery",
+      "paint": "White",
+      "width": 2.06,
+      "length": 5.5,
+      "height": 2.82,
+      "wheelbase": 3.24,
+      "radius": 0.37,
+      "triangles": 1148,
+      "wheels": [
+        {
+          "name": "FL",
+          "position": [
+            -0.985,
+            0.37,
+            1.62
+          ],
+          "radius": 0.37,
+          "front": true
+        },
+        {
+          "name": "FR",
+          "position": [
+            0.985,
+            0.37,
+            1.62
+          ],
+          "radius": 0.37,
+          "front": true
+        },
+        {
+          "name": "RL",
+          "position": [
+            -0.985,
+            0.37,
+            -1.62
+          ],
+          "radius": 0.37,
+          "front": false
+        },
+        {
+          "name": "RR",
+          "position": [
+            0.985,
+            0.37,
+            -1.62
+          ],
+          "radius": 0.37,
+          "front": false
+        }
+      ]
+    },
+    {
+      "id": "10_Taxi",
+      "kind": "taxi",
+      "paint": "Yellow",
+      "width": 1.83,
+      "length": 4.85,
+      "height": 1.55,
+      "wheelbase": 2.91,
+      "radius": 0.33,
+      "triangles": 1289,
+      "wheels": [
+        {
+          "name": "FL",
+          "position": [
+            -0.87,
+            0.33,
+            1.455
+          ],
+          "radius": 0.33,
+          "front": true
+        },
+        {
+          "name": "FR",
+          "position": [
+            0.87,
+            0.33,
+            1.455
+          ],
+          "radius": 0.33,
+          "front": true
+        },
+        {
+          "name": "RL",
+          "position": [
+            -0.87,
+            0.33,
+            -1.455
+          ],
+          "radius": 0.33,
+          "front": false
+        },
+        {
+          "name": "RR",
+          "position": [
+            0.87,
+            0.33,
+            -1.455
+          ],
+          "radius": 0.33,
+          "front": false
+        }
+      ]
+    },
+    {
+      "id": "11_Minibus",
+      "kind": "minibus",
+      "paint": "Yellow",
+      "width": 2.03,
+      "length": 5.7,
+      "height": 2.49,
+      "wheelbase": 3.45,
+      "radius": 0.37,
+      "triangles": 1296,
+      "wheels": [
+        {
+          "name": "FL",
+          "position": [
+            -0.9699999999999999,
+            0.37,
+            1.725
+          ],
+          "radius": 0.37,
+          "front": true
+        },
+        {
+          "name": "FR",
+          "position": [
+            0.9699999999999999,
+            0.37,
+            1.725
+          ],
+          "radius": 0.37,
+          "front": true
+        },
+        {
+          "name": "RL",
+          "position": [
+            -0.9699999999999999,
+            0.37,
+            -1.725
+          ],
+          "radius": 0.37,
+          "front": false
+        },
+        {
+          "name": "RR",
+          "position": [
+            0.9699999999999999,
+            0.37,
+            -1.725
+          ],
+          "radius": 0.37,
+          "front": false
+        }
+      ]
+    },
+    {
+      "id": "12_FlatbedTruck",
+      "kind": "flatbed",
+      "paint": "Olive",
+      "width": 2.22,
+      "length": 6.1,
+      "height": 2.57,
+      "wheelbase": 3.6,
+      "radius": 0.43,
+      "triangles": 1224,
+      "wheels": [
+        {
+          "name": "FL",
+          "position": [
+            -1.0650000000000002,
+            0.43,
+            1.8
+          ],
+          "radius": 0.43,
+          "front": true
+        },
+        {
+          "name": "FR",
+          "position": [
+            1.0650000000000002,
+            0.43,
+            1.8
+          ],
+          "radius": 0.43,
+          "front": true
+        },
+        {
+          "name": "RL",
+          "position": [
+            -1.0650000000000002,
+            0.43,
+            -1.8
+          ],
+          "radius": 0.43,
+          "front": false
+        },
+        {
+          "name": "RR",
+          "position": [
+            1.0650000000000002,
+            0.43,
+            -1.8
+          ],
+          "radius": 0.43,
+          "front": false
+        }
+      ]
+    },
+    {
+      "id": "13_BoxTruck",
+      "kind": "boxtruck",
+      "paint": "Red",
+      "width": 2.27,
+      "length": 6.55,
+      "height": 3.22,
+      "wheelbase": 3.91,
+      "radius": 0.44,
+      "triangles": 1148,
+      "wheels": [
+        {
+          "name": "FL",
+          "position": [
+            -1.09,
+            0.44,
+            1.955
+          ],
+          "radius": 0.44,
+          "front": true
+        },
+        {
+          "name": "FR",
+          "position": [
+            1.09,
+            0.44,
+            1.955
+          ],
+          "radius": 0.44,
+          "front": true
+        },
+        {
+          "name": "RL",
+          "position": [
+            -1.09,
+            0.44,
+            -1.955
+          ],
+          "radius": 0.44,
+          "front": false
+        },
+        {
+          "name": "RR",
+          "position": [
+            1.09,
+            0.44,
+            -1.955
+          ],
+          "radius": 0.44,
+          "front": false
+        }
+      ]
+    },
+    {
+      "id": "14_Crossover",
+      "kind": "crossover",
+      "paint": "Sky",
+      "width": 1.86,
+      "length": 4.43,
+      "height": 1.77,
+      "wheelbase": 2.67,
+      "radius": 0.36,
+      "triangles": 1220,
+      "wheels": [
+        {
+          "name": "FL",
+          "position": [
+            -0.885,
+            0.36,
+            1.335
+          ],
+          "radius": 0.36,
+          "front": true
+        },
+        {
+          "name": "FR",
+          "position": [
+            0.885,
+            0.36,
+            1.335
+          ],
+          "radius": 0.36,
+          "front": true
+        },
+        {
+          "name": "RL",
+          "position": [
+            -0.885,
+            0.36,
+            -1.335
+          ],
+          "radius": 0.36,
+          "front": false
+        },
+        {
+          "name": "RR",
+          "position": [
+            0.885,
+            0.36,
+            -1.335
+          ],
+          "radius": 0.36,
+          "front": false
+        }
+      ]
+    },
+    {
+      "id": "15_ExecutiveSedan",
+      "kind": "executive",
+      "paint": "Burgundy",
+      "width": 1.89,
+      "length": 5.04,
+      "height": 1.48,
+      "wheelbase": 3.0,
+      "radius": 0.34,
+      "triangles": 1216,
+      "wheels": [
+        {
+          "name": "FL",
+          "position": [
+            -0.8999999999999999,
+            0.34,
+            1.5
+          ],
+          "radius": 0.34,
+          "front": true
+        },
+        {
+          "name": "FR",
+          "position": [
+            0.8999999999999999,
+            0.34,
+            1.5
+          ],
+          "radius": 0.34,
+          "front": true
+        },
+        {
+          "name": "RL",
+          "position": [
+            -0.8999999999999999,
+            0.34,
+            -1.5
+          ],
+          "radius": 0.34,
+          "front": false
+        },
+        {
+          "name": "RR",
+          "position": [
+            0.8999999999999999,
+            0.34,
+            -1.5
+          ],
+          "radius": 0.34,
+          "front": false
+        }
+      ]
+    },
+    {
+      "id": "16_Microcar",
+      "kind": "micro",
+      "paint": "Mint",
+      "width": 1.53,
+      "length": 2.96,
+      "height": 1.59,
+      "wheelbase": 1.91,
+      "radius": 0.28,
+      "triangles": 1100,
+      "wheels": [
+        {
+          "name": "FL",
+          "position": [
+            -0.72,
+            0.28,
+            0.955
+          ],
+          "radius": 0.28,
+          "front": true
+        },
+        {
+          "name": "FR",
+          "position": [
+            0.72,
+            0.28,
+            0.955
+          ],
+          "radius": 0.28,
+          "front": true
+        },
+        {
+          "name": "RL",
+          "position": [
+            -0.72,
+            0.28,
+            -0.955
+          ],
+          "radius": 0.28,
+          "front": false
+        },
+        {
+          "name": "RR",
+          "position": [
+            0.72,
+            0.28,
+            -0.955
+          ],
+          "radius": 0.28,
+          "front": false
+        }
+      ]
+    },
+    {
+      "id": "17_CompactCargoVan",
+      "kind": "compactvan",
+      "paint": "Cream",
+      "width": 1.73,
+      "length": 4.03,
+      "height": 1.94,
+      "wheelbase": 2.46,
+      "radius": 0.31,
+      "triangles": 1068,
+      "wheels": [
+        {
+          "name": "FL",
+          "position": [
+            -0.82,
+            0.31,
+            1.23
+          ],
+          "radius": 0.31,
+          "front": true
+        },
+        {
+          "name": "FR",
+          "position": [
+            0.82,
+            0.31,
+            1.23
+          ],
+          "radius": 0.31,
+          "front": true
+        },
+        {
+          "name": "RL",
+          "position": [
+            -0.82,
+            0.31,
+            -1.23
+          ],
+          "radius": 0.31,
+          "front": false
+        },
+        {
+          "name": "RR",
+          "position": [
+            0.82,
+            0.31,
+            -1.23
+          ],
+          "radius": 0.31,
+          "front": false
+        }
+      ]
+    },
+    {
+      "id": "18_DoubleCabPickup",
+      "kind": "doublepickup",
+      "paint": "Navy",
+      "width": 1.94,
+      "length": 5.24,
+      "height": 1.82,
+      "wheelbase": 3.16,
+      "radius": 0.37,
+      "triangles": 1272,
+      "wheels": [
+        {
+          "name": "FL",
+          "position": [
+            -0.9249999999999999,
+            0.37,
+            1.58
+          ],
+          "radius": 0.37,
+          "front": true
+        },
+        {
+          "name": "FR",
+          "position": [
+            0.9249999999999999,
+            0.37,
+            1.58
+          ],
+          "radius": 0.37,
+          "front": true
+        },
+        {
+          "name": "RL",
+          "position": [
+            -0.9249999999999999,
+            0.37,
+            -1.58
+          ],
+          "radius": 0.37,
+          "front": false
+        },
+        {
+          "name": "RR",
+          "position": [
+            0.9249999999999999,
+            0.37,
+            -1.58
+          ],
+          "radius": 0.37,
+          "front": false
+        }
+      ]
+    },
+    {
+      "id": "19_SmallCamper",
+      "kind": "camper",
+      "paint": "Terracotta",
+      "width": 2.11,
+      "length": 5.73,
+      "height": 2.95,
+      "wheelbase": 3.38,
+      "radius": 0.38,
+      "triangles": 1228,
+      "wheels": [
+        {
+          "name": "FL",
+          "position": [
+            -1.01,
+            0.38,
+            1.69
+          ],
+          "radius": 0.38,
+          "front": true
+        },
+        {
+          "name": "FR",
+          "position": [
+            1.01,
+            0.38,
+            1.69
+          ],
+          "radius": 0.38,
+          "front": true
+        },
+        {
+          "name": "RL",
+          "position": [
+            -1.01,
+            0.38,
+            -1.69
+          ],
+          "radius": 0.38,
+          "front": false
+        },
+        {
+          "name": "RR",
+          "position": [
+            1.01,
+            0.38,
+            -1.69
+          ],
+          "radius": 0.38,
+          "front": false
+        }
+      ]
+    },
+    {
+      "id": "20_Fastback",
+      "kind": "fastback",
+      "paint": "Silver",
+      "width": 1.83,
+      "length": 4.67,
+      "height": 1.49,
+      "wheelbase": 2.77,
+      "radius": 0.33,
+      "triangles": 1172,
+      "wheels": [
+        {
+          "name": "FL",
+          "position": [
+            -0.87,
+            0.33,
+            1.385
+          ],
+          "radius": 0.33,
+          "front": true
+        },
+        {
+          "name": "FR",
+          "position": [
+            0.87,
+            0.33,
+            1.385
+          ],
+          "radius": 0.33,
+          "front": true
+        },
+        {
+          "name": "RL",
+          "position": [
+            -0.87,
+            0.33,
+            -1.385
+          ],
+          "radius": 0.33,
+          "front": false
+        },
+        {
+          "name": "RR",
+          "position": [
+            0.87,
+            0.33,
+            -1.385
+          ],
+          "radius": 0.33,
+          "front": false
+        }
+      ]
+    }
+  ]
+}

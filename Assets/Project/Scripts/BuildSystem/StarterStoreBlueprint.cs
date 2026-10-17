@@ -16,6 +16,45 @@ namespace RetailEmpireTycoon.BuildSystem
         public PlacedBuildSaveData legacyPlayerParking;
         public int proportionsVersion;
         public List<PlacedBuildSaveData> previousStarterStructure = new List<PlacedBuildSaveData>();
+        public List<FloorTileSaveData> previousAccessAsphalt = new List<FloorTileSaveData>();
+        public List<PlacedBuildSaveData> previousAccessParking = new List<PlacedBuildSaveData>();
+        public bool hasStraightStreetAccess;
+        public Vector3 streetEntry;
+        public Vector3 drivewayEntry;
+
+        /// <summary>Moves only the exact default forecourt. User-painted floors and moved/added bays
+        /// opt out; saved buildings, inventory, money and purchased plots are never removed.</summary>
+        public bool TryUpgradeUnmodifiedAccess(GameData data,GridSystem grid,BuildItemCatalog catalog)
+        {
+            if(data==null||!data.usesModularStore||grid==null||catalog==null||previousAccessAsphalt.Count==0||previousAccessParking.Count!=3)return false;
+            string FloorKey(FloorTileSaveData f)=>$"{f.itemId}:{f.x}:{f.z}";
+            string BayKey(PlacedBuildSaveData p)=>$"{p.x}:{p.z}:{p.facing}:{p.rotated}:{p.playerParking}";
+            var asphalt=data.floorTiles.Where(f=>f.itemId=="asphalt_01").ToArray();
+            var bays=data.placedObjects.Where(p=>p.itemId=="parking_01").ToArray();
+            if(!asphalt.Select(FloorKey).OrderBy(k=>k).SequenceEqual(previousAccessAsphalt.Select(FloorKey).OrderBy(k=>k))
+                ||!bays.Select(BayKey).OrderBy(k=>k).SequenceEqual(previousAccessParking.Select(BayKey).OrderBy(k=>k)))return false;
+            var oldCells=new HashSet<Vector3Int>(asphalt.Select(f=>new Vector3Int(f.x,0,f.z)));
+            var newFloors=initialState.floorTiles.Where(f=>f.itemId=="asphalt_01").ToArray();
+            var newCells=new HashSet<Vector3Int>(newFloors.Select(f=>new Vector3Int(f.x,0,f.z)));
+            var changed=new HashSet<Vector3Int>(oldCells);changed.SymmetricExceptWith(newCells);
+            // A player's prop on the retained asphalt can still collide with a shifted bay.
+            foreach(var bay in initialState.placedObjects.Where(p=>p.itemId=="parking_01"))
+            {
+                var item=catalog.GetById(bay.itemId);if(item==null)return false;
+                changed.UnionWith(grid.GetFootprintCells(new Vector3Int(bay.x,0,bay.z),item.footprint,bay.rotated,item.pivotOffset));
+            }
+            if(data.floorTiles.Any(f=>f.itemId!="asphalt_01"&&newCells.Contains(new Vector3Int(f.x,0,f.z))))return false;
+            foreach(var placed in data.placedObjects.Where(p=>p.itemId!="parking_01"))
+            {
+                var item=catalog.GetById(placed.itemId);if(item==null)return false;
+                if(grid.GetFootprintCells(new Vector3Int(placed.x,0,placed.z),item.footprint,placed.rotated,item.pivotOffset).Any(changed.Contains))return false;
+            }
+            data.floorTiles.RemoveAll(f=>f.itemId=="asphalt_01");
+            data.floorTiles.AddRange(newFloors.Select(f=>new FloorTileSaveData{itemId=f.itemId,x=f.x,z=f.z}));
+            data.placedObjects.RemoveAll(p=>p.itemId=="parking_01");
+            data.placedObjects.AddRange(initialState.placedObjects.Where(p=>p.itemId=="parking_01").Select(p=>JsonUtility.FromJson<PlacedBuildSaveData>(JsonUtility.ToJson(p))));
+            return true;
+        }
 
         public bool TryUpgradeUnmodifiedStructure(GameData data,GridSystem grid,BuildItemCatalog catalog)
         {

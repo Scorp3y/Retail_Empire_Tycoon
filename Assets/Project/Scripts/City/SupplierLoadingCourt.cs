@@ -10,5 +10,9 @@ namespace RetailEmpireTycoon.City
         public Vector3 entrance;
         public Vector3 staging;
         public DeliveryCheckpoint checkpoint;
+        [Tooltip("Intermediate vehicle approach points; empty keeps the original direct entrance-to-staging route.")]
+        public Vector3[] approachWaypoints = System.Array.Empty<Vector3>();
+        [Tooltip("Maximum design vehicle length in native town metres; compact city bakeries are pickup-only.")]
+        [Min(5)] public float designVehicleLength = 20;
     }
 }

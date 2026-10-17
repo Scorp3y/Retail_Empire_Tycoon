@@ -30,11 +30,23 @@ namespace RetailEmpireTycoon.BuildSystem
                 Debug.Log("Unmodified starter structure upgraded to two-cell wall thickness; custom construction preserved.");
             if(blueprint!=null&&building!=null&&blueprint.TryUpgradeUnmodifiedFrontage(data,building.grid,catalog))
                 Debug.Log("Starter forecourt upgraded: two customer bays and one private bay; interior and inventories preserved.");
+            if(blueprint!=null&&building!=null&&blueprint.TryUpgradeUnmodifiedAccess(data,building.grid,catalog))
+                Debug.Log("Unmodified store access moved to the straight entrance; customized sites preserved.");
         }
         public void ConfigureSite(bool modularStore)
         {
             modular = modularStore;
             land.SetInitialServiceYard(modularStore ? blueprint.serviceYard : default);
+            if(modularStore&&blueprint.hasStraightStreetAccess&&cityTrip!=null)
+            {
+                // Traffic belongs to the same trip controller; no scene-wide lookup is needed.
+                var traffic=cityTrip.GetComponent<RetailEmpireTycoon.Parking.ParkingTraffic>();
+                if(traffic!=null)
+                {
+                    if(traffic.roadEntry!=null)traffic.roadEntry.SetPositionAndRotation(blueprint.streetEntry,Quaternion.identity);
+                    if(traffic.drivewayEntry!=null)traffic.drivewayEntry.position=blueprint.drivewayEntry;
+                }
+            }
             if (modularStore && cameraInput != null)
             {
                 var position = blueprint.cameraFocus + new Vector3(-8, 12, -14);
