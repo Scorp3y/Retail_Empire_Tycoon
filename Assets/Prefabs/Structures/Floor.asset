@@ -14,8 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   legacyWallDepth: 0
   wallCellSize: 0
+  wallGeometryVersion: 0
+  previousWallPrefab: {fileID: 0}
+  previousWallBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
+  previousWallAlignmentOffset: {x: 0, y: 0, z: 0}
+  decorationProportionsVersion: 0
   id: floor_01
-  displayName: Floor
+  displayName: Floor tile
   description: 
   icon: {fileID: 21300000, guid: 694294511e886524698eebecde29b0a5, type: 3}
   price: 10
@@ -24,6 +31,12 @@ MonoBehaviour:
   cargoVolumeM3: 0.012
   isAsphalt: 0
   isParkingSpace: 0
+  parkingGeometryVersion: 0
+  previousParkingPrefab: {fileID: 0}
+  previousParkingFootprint: {x: 0, y: 0}
+  previousParkingBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   isUnloadingGate: 0
   isWall: 0
   beautyPoints: 0
@@ -47,6 +60,7 @@ MonoBehaviour:
   twoSidedAccess: 0
   isDoorway: 0
   isCheckout: 0
+  storeyConnection: 0
   prefab: {fileID: 0}
   previewValidMaterial: {fileID: 2100000, guid: b737f1f25c90f1842999d06f57aa1608, type: 2}
   previewInvalidMaterial: {fileID: 2100000, guid: cd8bbf8a301d0664386b1c15cc42650f, type: 2}

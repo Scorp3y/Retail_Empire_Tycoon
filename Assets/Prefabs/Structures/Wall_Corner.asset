@@ -12,17 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d6abad8a36b0794996f8dedd8a8e734, type: 3}
   m_Name: Wall_Corner
   m_EditorClassIdentifier: 
-  legacyWallDepth: 0.24000001
-  wallCellSize: 0.1667
+  legacyWallDepth: 0.39600003
+  wallCellSize: 0.27505502
   wallGeometryVersion: 3
-  previousWallPrefab: {fileID: 8423254778264359252, guid: a7044044876ea2547adea1f1384e060b, type: 3}
+  previousWallPrefab: {fileID: 9235490375232064, guid: 6420c17d40f531a45bfb548f82f1d57c, type: 3}
   previousWallBounds:
-    m_Center: {x: 0.01667, y: 0.5, z: 0.01667}
-    m_Extent: {x: 0.06668001, y: 0.5, z: 0.06668001}
-  previousWallAlignmentOffset: {x: 0.01667, y: 0, z: 0.01667}
+    m_Center: {x: 0.0275055, y: 0.82500005, z: 0.0275055}
+    m_Extent: {x: 0.11002201, y: 0.82500005, z: 0.11002201}
+  previousWallAlignmentOffset: {x: 0.0275055, y: 0, z: 0.0275055}
   decorationProportionsVersion: 0
   id: wallcorner_01
-  displayName: Wall_Corner
+  displayName: Corner wall
   description: 
   icon: {fileID: 21300000, guid: 2b8eab3a12995ff4d86bb3be687dc85d, type: 3}
   price: 100
@@ -31,6 +31,12 @@ MonoBehaviour:
   cargoVolumeM3: 0.3
   isAsphalt: 0
   isParkingSpace: 0
+  parkingGeometryVersion: 0
+  previousParkingPrefab: {fileID: 0}
+  previousParkingFootprint: {x: 0, y: 0}
+  previousParkingBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   isUnloadingGate: 0
   isWall: 1
   beautyPoints: 0
@@ -47,14 +53,15 @@ MonoBehaviour:
   pivotOffset: {x: 0, y: 0}
   alignModelToFootprint: 1
   placementBounds:
-    m_Center: {x: 0, y: 0.5, z: 0}
-    m_Extent: {x: 0.1667, y: 0.5, z: 0.1667}
+    m_Center: {x: 0, y: 0.82500005, z: 0}
+    m_Extent: {x: 0.27505502, y: 0.82500005, z: 0.27505502}
   placementAlignmentOffset: {x: 0, y: 0, z: 0}
   frontFacing: 0
   twoSidedAccess: 0
   isDoorway: 0
   isCheckout: 0
-  prefab: {fileID: 8423254778264359252, guid: 8a51f29ddce2c8c4e82e61f69f92c0cc, type: 3}
+  storeyConnection: 0
+  prefab: {fileID: 1864016352684603986, guid: bcce3dfa4ae1ec748a3b59701ea500de, type: 3}
   previewValidMaterial: {fileID: 2100000, guid: b737f1f25c90f1842999d06f57aa1608, type: 2}
   previewInvalidMaterial: {fileID: 2100000, guid: cd8bbf8a301d0664386b1c15cc42650f, type: 2}
   shelfData: {fileID: 0}

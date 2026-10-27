@@ -12,15 +12,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d6abad8a36b0794996f8dedd8a8e734, type: 3}
   m_Name: unloading_gate_01
   m_EditorClassIdentifier: 
+  legacyWallDepth: 0
+  wallCellSize: 0
+  wallGeometryVersion: 0
+  previousWallPrefab: {fileID: 0}
+  previousWallBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
+  previousWallAlignmentOffset: {x: 0, y: 0, z: 0}
+  decorationProportionsVersion: 0
   id: unloading_gate_01
-  displayName: "\u0412\u043E\u0440\u043E\u0442\u0430 \u0440\u0430\u0437\u0433\u0440\u0443\u0437\u043A\u0438"
+  displayName: Unloading gate
   description: 
   icon: {fileID: 21300000, guid: dd5a4ba29358d574bbab5c4612c910d8, type: 3}
   price: 180
+  hiddenFromShop: 0
   weightKg: 70
   cargoVolumeM3: 0.5
   isAsphalt: 0
   isParkingSpace: 0
+  parkingGeometryVersion: 0
+  previousParkingPrefab: {fileID: 0}
+  previousParkingFootprint: {x: 0, y: 0}
+  previousParkingBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   isUnloadingGate: 1
   isWall: 0
   beautyPoints: 0
@@ -37,13 +53,15 @@ MonoBehaviour:
   pivotOffset: {x: 0, y: 0}
   alignModelToFootprint: 1
   placementBounds:
-    m_Center: {x: 0, y: 0.43249997, z: 0.2175}
-    m_Extent: {x: 0.5, y: 0.43249997, z: 0.2775}
+    m_Center: {x: 0, y: 0.82500005, z: 0}
+    m_Extent: {x: 0.82500005, y: 0.82500005, z: 0.275}
+  placementAlignmentOffset: {x: 0, y: 0, z: 0}
   frontFacing: 0
   twoSidedAccess: 0
   isDoorway: 0
   isCheckout: 0
-  prefab: {fileID: 108178403608874474, guid: deac98191308fe54f95c386bc944460a, type: 3}
+  storeyConnection: 0
+  prefab: {fileID: 6606011814999625194, guid: 62e127dc142c48e429b55c6014d6bd36, type: 3}
   previewValidMaterial: {fileID: 2100000, guid: b737f1f25c90f1842999d06f57aa1608, type: 2}
   previewInvalidMaterial: {fileID: 2100000, guid: cd8bbf8a301d0664386b1c15cc42650f, type: 2}
   shelfData: {fileID: 0}

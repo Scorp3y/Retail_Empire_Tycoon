@@ -174,7 +174,7 @@ namespace RetailEmpireTycoon.StoreOperations
         {
             ShopAction[] actions = { ShopAction.Inventory, ShopAction.Warehouse, ShopAction.Catalog, ShopAction.Territory, ShopAction.Staff, ShopAction.OpenStore, ShopAction.Checkout };
             string[] names = { "Инвентарь", "Склад", "Закупки", "Участки", "Персонал", "Магазин", "Касса" };
-            string[] english = { "Inventory", "Warehouse", "Orders", "Territories", "Staff", "Store", "Checkout" };
+            string[] english = { "Construction", "Warehouse", "Orders", "Territories", "Staff", "Store", "Checkout" };
             for (int i = 0; i < actions.Length; i++)
             {
                 _shortcutKeys[i].text = controls.Key(actions[i]).ToString();
@@ -214,7 +214,7 @@ namespace RetailEmpireTycoon.StoreOperations
                 rect.gameObject.SetActive(visible && screen.z > 0);
                 RectTransformUtility.ScreenPointToLocalPointInRectangle((RectTransform)canvas.transform, screen, null, out var point);
                 rect.localPosition = point;
-                rect.GetComponentInChildren<TMP_Text>().text = "ВОР  " + visit.RemainingCatchClicks + " / " + shop.Balance.thiefClicks;
+                rect.GetComponentInChildren<TMP_Text>().text = "THIEF  " + visit.RemainingCatchClicks + " / " + shop.Balance.thiefClicks;
             }
         }
 

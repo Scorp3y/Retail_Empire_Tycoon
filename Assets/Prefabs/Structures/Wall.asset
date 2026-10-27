@@ -12,13 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d6abad8a36b0794996f8dedd8a8e734, type: 3}
   m_Name: Wall
   m_EditorClassIdentifier: 
-  legacyWallDepth: 0.18
-  wallCellSize: 0.1667
+  legacyWallDepth: 0.29700002
+  wallCellSize: 0.27505502
   wallGeometryVersion: 3
-  previousWallPrefab: {fileID: 6960668006808431264, guid: 4d15501ec42d84942a6a846edf306872, type: 3}
+  previousWallPrefab: {fileID: 8957701694068448530, guid: 6230986a8f6e79040a84c3ad327b26ef, type: 3}
   previousWallBounds:
-    m_Center: {x: 0, y: 0.5, z: 0}
-    m_Extent: {x: 0.08335, y: 0.5, z: 0.050010003}
+    m_Center: {x: 0, y: 0.82500005, z: 0}
+    m_Extent: {x: 0.13752751, y: 0.82500005, z: 0.082516514}
   previousWallAlignmentOffset: {x: 0, y: 0, z: 0}
   decorationProportionsVersion: 0
   id: wall_01
@@ -31,6 +31,12 @@ MonoBehaviour:
   cargoVolumeM3: 0.3
   isAsphalt: 0
   isParkingSpace: 0
+  parkingGeometryVersion: 0
+  previousParkingPrefab: {fileID: 0}
+  previousParkingFootprint: {x: 0, y: 0}
+  previousParkingBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   isUnloadingGate: 0
   isWall: 1
   beautyPoints: 0
@@ -47,14 +53,15 @@ MonoBehaviour:
   pivotOffset: {x: 0, y: 0}
   alignModelToFootprint: 1
   placementBounds:
-    m_Center: {x: 0, y: 0.5, z: 0}
-    m_Extent: {x: 0.08335, y: 0.5, z: 0.1667}
+    m_Center: {x: 0, y: 0.82500005, z: 0}
+    m_Extent: {x: 0.13752751, y: 0.82500005, z: 0.27505502}
   placementAlignmentOffset: {x: 0, y: 0, z: 0}
   frontFacing: 0
   twoSidedAccess: 0
   isDoorway: 0
   isCheckout: 0
-  prefab: {fileID: 6960668006808431264, guid: 7589057082ecc0f4d948bf7b833fea23, type: 3}
+  storeyConnection: 0
+  prefab: {fileID: 72506641940154176, guid: e9e355cbff8a7ba4d9bd95f2df50070f, type: 3}
   previewValidMaterial: {fileID: 2100000, guid: b737f1f25c90f1842999d06f57aa1608, type: 2}
   previewInvalidMaterial: {fileID: 2100000, guid: cd8bbf8a301d0664386b1c15cc42650f, type: 2}
   shelfData: {fileID: 0}

@@ -52,6 +52,10 @@ namespace RetailEmpireTycoon.Core
         [Min(.001f)] public float cargoVolumeM3 = .25f;
         public bool isAsphalt;
         public bool isParkingSpace;
+        [HideInInspector] public int parkingGeometryVersion;
+        [HideInInspector] public GameObject previousParkingPrefab;
+        [HideInInspector] public Vector2Int previousParkingFootprint;
+        [HideInInspector] public Bounds previousParkingBounds;
         public bool isUnloadingGate;
         public bool isWall;
         [Min(0)] public int beautyPoints;
@@ -92,6 +96,7 @@ namespace RetailEmpireTycoon.Core
         public bool isDoorway;
         [Tooltip("Customers use the accessible front of this placed object for checkout.")]
         public bool isCheckout;
+        public StoreyConnectionKind storeyConnection;
 
         [Header("Prefab")]
         public GameObject prefab;

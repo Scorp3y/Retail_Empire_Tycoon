@@ -20,9 +20,6 @@ public class LocalizedFontControl : MonoBehaviour
     {
         if (excludeFromFontChange || text == null) return;
 
-        string lang = PlayerPrefs.GetString("lang", "en");
-        float size = lang == "ru" ? sizeRussian : sizeEnglish;
-
-        text.fontSize = size;
+        text.fontSize = sizeEnglish;
     }
 }

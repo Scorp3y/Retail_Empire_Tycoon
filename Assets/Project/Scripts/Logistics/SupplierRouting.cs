@@ -27,14 +27,14 @@ namespace RetailEmpireTycoon.Logistics
         {
             switch(supplier)
             {
-                case SupplierKind.Wholesale:return "Продуктовая база";
-                case SupplierKind.Farmers:return "Фермерский рынок";
-                case SupplierKind.Bakery:return "Пекарня";
-                case SupplierKind.Equipment:return "Торговое оборудование";
-                case SupplierKind.Construction:return "Строймаркет";
-                case SupplierKind.Decoration:return "Цветы и декор";
-                case SupplierKind.Showroom:return "Автосалон";
-                default:return "Поставщик";
+                case SupplierKind.Wholesale:return "Wholesale depot";
+                case SupplierKind.Farmers:return "Farmers market";
+                case SupplierKind.Bakery:return "Bakery";
+                case SupplierKind.Equipment:return "Equipment supplier";
+                case SupplierKind.Construction:return "Construction supplier";
+                case SupplierKind.Decoration:return "Flowers and decoration";
+                case SupplierKind.Showroom:return "Vehicle showroom";
+                default:return "Supplier";
             }
         }
     }

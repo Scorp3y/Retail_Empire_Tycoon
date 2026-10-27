@@ -32,7 +32,9 @@ public sealed class StoreWallVisibility : MonoBehaviour
             var editing = buildController != null ? buildController.GetComponent<RetailEmpireTycoon.BuildSystem.BuildEditingController>() : null;
             if (editing != null && editing.Selected != null && wall.GetComponentInParent<RetailEmpireTycoon.BuildSystem.PlacedObject>() == editing.Selected)
             { wall.SetHidden(true); continue; }
-            if (building && ShouldHide(wall.WorldBounds, transform.position, focus)) _candidates.Add(wall);
+            var placed=wall.GetComponentInParent<PlacedObject>();
+            bool sameFloor=placed==null || buildController!=null && placed.anchorCell.y==buildController.Storeys.ActiveFloor;
+            if (building && sameFloor && ShouldHide(wall.WorldBounds, transform.position, focus)) _candidates.Add(wall);
         }
         // Prefer the wall sections crossing the line of sight to the placement cursor.
         Vector3 direction = (transform.position - focus).normalized;

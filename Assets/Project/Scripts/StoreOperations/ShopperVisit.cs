@@ -16,9 +16,16 @@ namespace RetailEmpireTycoon.StoreOperations
         public bool IsThief { get; }
         public VisitStage Stage { get; private set; }
         public float WaitingSeconds { get; private set; }
+        public float BrowsingSeconds { get; private set; }
         public int RemainingCatchClicks { get; private set; }
         public bool Claimed { get; private set; }
         public bool Restrained { get; private set; }
+        public Vector3 ExitPosition { get; private set; }
+        public bool ArrivedByCar { get; private set; }
+        public bool IsFinished { get; private set; }
+        public bool ReturnedToCar { get; private set; }
+        public void SetExit(Vector3 position, bool byCar) { ExitPosition=position; ArrivedByCar=byCar; }
+        public void Finish(bool returned) { IsFinished=true; ReturnedToCar=ArrivedByCar && returned; }
 
         public ShopperVisit(ShopCharacter character, PlacedShelfStock shelf, int quantity, bool thief, int catchClicks)
         {
@@ -27,6 +34,11 @@ namespace RetailEmpireTycoon.StoreOperations
         }
         public void ChangeStage(VisitStage stage) { Stage = stage; WaitingSeconds = 0; }
         public void Wait(float seconds) { WaitingSeconds += seconds; }
+        public void Browse(float seconds)
+        {
+            if (Stage == VisitStage.Shopping && Character != null && Character.Arrived)
+                BrowsingSeconds += Mathf.Max(0, seconds);
+        }
         public bool TryClaim() { if (Claimed || Stage != VisitStage.Waiting) return false; Claimed = true; return true; }
         public void Release() { Claimed = false; Restrained = false; }
         public bool TryClaimThreat() { if (Claimed || Stage != VisitStage.Escaping) return false; Claimed = true; return true; }

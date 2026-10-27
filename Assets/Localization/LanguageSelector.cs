@@ -24,25 +24,17 @@ public class LanguageSelector : MonoBehaviour
     void Start()
     {
 
-        string savedLang = PlayerPrefs.GetString("lang", "");
-        if (string.IsNullOrEmpty(savedLang))
-        {
-            string systemLang = Application.systemLanguage.ToString().ToLower();
-            savedLang = systemLang.StartsWith("ru") ? "ru" : "en";
-            PlayerPrefs.SetString("lang", savedLang);
-        }
-
-        SetLanguageByCode(savedLang);
+        SetLanguageByCode("en");
     }
 
     public void SetLanguageByCode(string code)
     {
+        code="en";
         var locale = LocalizationSettings.AvailableLocales.Locales
             .Find(x => x.Identifier.Code == code);
 
         if (locale != null)
         {
-            PlayerPrefs.SetString("lang", code);
             LocalizationSettings.SelectedLocale = locale;
             ApplyFontSettings(code);
         }
@@ -50,7 +42,7 @@ public class LanguageSelector : MonoBehaviour
 
     public void ApplyFontSettings(string code)
     {
-        TMP_FontAsset font = code == "ru" ? russianFont : englishFont;
+        TMP_FontAsset font = englishFont;
 
         TMP_Text[] allTexts = FindObjectsOfType<TMP_Text>(true);
         foreach (var text in allTexts)
@@ -59,7 +51,7 @@ public class LanguageSelector : MonoBehaviour
             if (control != null && control.excludeFromFontChange)
                 continue;
 
-            text.font = font;
+            if(font!=null)text.font = font;
         }
 
         var fontControls = FindObjectsOfType<LocalizedFontControl>(true);
@@ -73,7 +65,7 @@ public class LanguageSelector : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        string currentLang = PlayerPrefs.GetString("lang", "en");
-        ApplyFontSettings(currentLang);
+        ApplyFontSettings("en");
     }
+    private void OnDestroy(){SceneManager.sceneLoaded-=OnSceneLoaded;}
 }

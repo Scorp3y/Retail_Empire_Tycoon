@@ -23,6 +23,7 @@ namespace RetailEmpireTycoon.StoreOperations
         [SerializeField] private WorkMinigame work;
         [SerializeField] private StoreOperations shop;
         [SerializeField] private ShopOperationsHud operationsHud;
+        [SerializeField] private BuildEditorHud construction;
         private readonly KeyCode[] _keys = { KeyCode.E, KeyCode.U, KeyCode.B, KeyCode.M, KeyCode.N, KeyCode.O, KeyCode.F, KeyCode.V, KeyCode.Home, KeyCode.R, KeyCode.Q, KeyCode.Space };
         private readonly KeyCode[] _defaults = { KeyCode.E, KeyCode.U, KeyCode.B, KeyCode.M, KeyCode.N, KeyCode.O, KeyCode.F, KeyCode.V, KeyCode.Home, KeyCode.R, KeyCode.Q, KeyCode.Space };
         public ShopAction? Capturing { get; private set; }
@@ -32,6 +33,7 @@ namespace RetailEmpireTycoon.StoreOperations
         public bool LegacyWindowVisible => hud.shopWindow.activeInHierarchy || hud.buildInventoryWindow.activeInHierarchy
             || settings != null && settings.settingPanel.activeInHierarchy;
         public bool IsConstructionActive => building.mode != BuildMode.Normal || territoryMode.IsActive;
+        public bool IsFloorNavigationActive => building.mode != BuildMode.Normal;
         public event Action Changed;
         public KeyCode Key(ShopAction action) => _keys[(int)action];
         public bool Pressed(ShopAction action) => !Capturing.HasValue && Input.GetKeyDown(Key(action));
@@ -39,7 +41,7 @@ namespace RetailEmpireTycoon.StoreOperations
         {
             switch (action)
             {
-                case ShopAction.Inventory: return ShopText.Get("Инвентарь", "Inventory");
+                case ShopAction.Inventory: return "Construction";
                 case ShopAction.Warehouse: return ShopText.Get("Склад товаров", "Warehouse");
                 case ShopAction.Catalog: return ShopText.Get("Закупки", "Store catalog");
                 case ShopAction.Territory: return ShopText.Get("Участки", "Territories");
@@ -92,7 +94,7 @@ namespace RetailEmpireTycoon.StoreOperations
             }
             if (Pressed(ShopAction.Territory)) { bool wasActive = territoryMode.IsActive; CloseWindows(); if (wasActive) territoryMode.Exit(); else territoryMode.Enter(); return; }
             if (territoryMode.IsActive) return;
-            if (Pressed(ShopAction.Inventory)) ToggleInventory(false);
+            if (Pressed(ShopAction.Inventory)){construction?.Toggle();return;}
             if (Pressed(ShopAction.Warehouse)) ToggleInventory(true);
             if (Pressed(ShopAction.Catalog)) { hud.buildInventoryWindow.SetActive(false); hud.ToggleShop(); }
             if (Pressed(ShopAction.Staff)) operationsHud.ToggleStaff();
@@ -105,8 +107,9 @@ namespace RetailEmpireTycoon.StoreOperations
             CloseWindows(); inventoryWindow.gameObject.SetActive(!visible);
             if (products) inventoryWindow.ShowProducts(); else inventoryWindow.ShowFurniture();
         }
-        public void CloseWindows()
+        public void CloseWindows(bool includeConstruction=true)
         {
+            if(includeConstruction)construction?.Close();
             hud.shopWindow.SetActive(false); hud.buildInventoryWindow.SetActive(false); settings?.ExitSetting(); operationsHud.CloseStaff();
         }
         public void Capture(ShopAction action) { Capturing = action; BindingNotice = ShopText.Get("Нажми новую клавишу. Esc — отмена.", "Press a new key. Esc cancels."); Changed?.Invoke(); }

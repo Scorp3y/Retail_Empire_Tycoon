@@ -57,6 +57,14 @@ namespace RetailEmpireTycoon.City
         }
         public void ChooseDeparture(int lane) => nextLane=lane;
 
+        /// <summary>Wheel visuals for the separate low-speed parking controller; does not advance a road lane.</summary>
+        public void AnimateParkingWheels(float signedMetres,float steerDegrees,float seconds)
+        {
+            wheelRoll=Mathf.Repeat(wheelRoll+signedMetres/wheelRadius*Mathf.Rad2Deg,360);
+            steering=Mathf.MoveTowards(steering,Mathf.Clamp(steerDegrees,-32,32),90*seconds);
+            foreach(var wheel in wheels)wheel.visual.localRotation=Quaternion.Euler(0,wheel.front?steering:0,0)*Quaternion.Euler(wheelRoll,0,0);
+        }
+
         /// <summary>allowedMetres is front-bumper clearance after all road rules; movement never exceeds it.</summary>
         public void Advance(float seconds, float allowedMetres)
         {

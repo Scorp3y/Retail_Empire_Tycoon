@@ -58,7 +58,7 @@ namespace RetailEmpireTycoon.Logistics
         public bool LoadFrom(DeliveryEntry entry,SupplierKind supplier)
         {
             if(entry==null)return false;
-            if(SupplierFor(entry)!=supplier)return Reject("Этот заказ находится у поставщика «"+SupplierRouting.Name(SupplierFor(entry))+"».");
+            if(SupplierFor(entry)!=supplier)return Reject("Collect this order from "+SupplierRouting.Name(SupplierFor(entry))+".");
             return Load(entry);
         }
 
@@ -66,26 +66,26 @@ namespace RetailEmpireTycoon.Logistics
         public bool Order(BuildItemData item)
         {
             if (item == null) return false;
-            if (item.hiddenFromShop) return Reject("Этот предмет больше не продаётся.");
+            if (item.hiddenFromShop) return Reject("This item is no longer for sale.");
             return Purchase(item.id, DeliveryItemKind.Building, 1, item.price, item.weightKg);
         }
         private bool Purchase(string id, DeliveryItemKind kind, int quantity, int price, float unitWeight)
         {
             var supplier=SupplierFor(new DeliveryEntry{itemId=id,kind=kind});
-            if (WaitingWeightAt(supplier) + unitWeight * quantity > depotCapacityKg) return Reject("Склад этого поставщика заполнен — заберите предыдущие заказы.");
-            if (!money.CanSpend(price)) return Reject("Недостаточно денег.");
+            if (WaitingWeightAt(supplier) + unitWeight * quantity > depotCapacityKg) return Reject("This supplier depot is full. Collect your previous orders.");
+            if (!money.CanSpend(price)) return Reject("Insufficient funds.");
             var before = Ledger.Capture(); int oldMoney = money.Money;
             try
             {
                 if (!money.TrySpend(price)) return false;
                 Ledger.Order(id, kind, quantity); Persist();
                 var ordered=new DeliveryEntry {itemId=id,kind=kind};
-                Notice = "Заказ оплачен. Выдача: «"+SupplierRouting.Name(SupplierFor(ordered))+"»."; NoticeIsError=false; Notify(); return true;
+                Notice = "Order paid. Pickup at: "+SupplierRouting.Name(SupplierFor(ordered))+"."; NoticeIsError=false; Notify(); return true;
             }
             catch (Exception error)
             {
                 Ledger.Restore(before); money.SetMoney(oldMoney);
-                Debug.LogException(error, this); return Reject("Не удалось сохранить заказ. Деньги возвращены.");
+                Debug.LogException(error, this); return Reject("The order could not be saved. Payment refunded.");
             }
         }
 
@@ -95,21 +95,21 @@ namespace RetailEmpireTycoon.Logistics
             int quantity = Mathf.Min(PackageQuantity(entry), Ledger.Count(entry.itemId, entry.kind, DeliveryLocation.Depot));
             if (quantity <= 0) return false;
             if (!new CargoCapacity(pickupCapacityKg,pickupCapacityM3).Fits(PickupWeightKg,PickupVolumeM3,UnitWeight(entry)*quantity,UnitVolume(entry)*quantity))
-                return Reject("В пикапе недостаточно места или превышен допустимый вес.");
+                return Reject("The pickup has insufficient space or its weight limit would be exceeded.");
             var before = Ledger.Capture();
             try
             {
                 if (!Ledger.Transfer(entry.itemId, entry.kind, DeliveryLocation.Depot, DeliveryLocation.Pickup, quantity)) return false;
-                Persist(); Notice = "Груз загружен в пикап."; NoticeIsError=false; Notify(); return true;
+                Persist(); Notice = "Cargo loaded into the pickup."; NoticeIsError=false; Notify(); return true;
             }
-            catch (Exception error) { Ledger.Restore(before); Debug.LogException(error, this); return Reject("Загрузка отменена: не удалось сохранить груз."); }
+            catch (Exception error) { Ledger.Restore(before); Debug.LogException(error, this); return Reject("Loading cancelled: cargo could not be saved."); }
         }
 
         public bool Unload()
         {
             var cargo = Ledger.Entries.Where(e => e.location == DeliveryLocation.Pickup).ToArray();
-            if (cargo.Length == 0) return Reject("В пикапе нет груза.");
-            if (ShopWeightKg + PickupWeightKg > shopCapacityKg + .001f) return Reject("Склад магазина заполнен. Освободите место перед разгрузкой.");
+            if (cargo.Length == 0) return Reject("The pickup is empty.");
+            if (ShopWeightKg + PickupWeightKg > shopCapacityKg + .001f) return Reject("The store warehouse is full. Free some space before unloading.");
             var before = Ledger.Capture(); var productStock = products.BuildSaveData(); var buildStock = buildings.BuildSaveData();
             try
             {
@@ -121,12 +121,12 @@ namespace RetailEmpireTycoon.Logistics
                     else buildings.Add(buildCatalog.GetById(entry.itemId), entry.quantity);
                     if (!Ledger.Deliver(entry.itemId, entry.kind, entry.quantity)) throw new InvalidOperationException("Cargo changed during unload.");
                 }
-                Persist(); Notice = "Груз доставлен на склад магазина."; NoticeIsError=false; Notify(); return true;
+                Persist(); Notice = "Cargo delivered to the store warehouse."; NoticeIsError=false; Notify(); return true;
             }
             catch (Exception error)
             {
                 products.ApplySaveData(productStock, productCatalog); buildings.ApplySaveData(buildStock, buildCatalog);
-                Ledger.Restore(before); Debug.LogException(error, this); return Reject("Разгрузка отменена: не удалось сохранить доставку.");
+                Ledger.Restore(before); Debug.LogException(error, this); return Reject("Unloading cancelled: the delivery could not be saved.");
             }
         }
         private float Weight(DeliveryLocation location) => Ledger.Entries.Where(e => e.location == location).Sum(e => UnitWeight(e) * e.quantity);

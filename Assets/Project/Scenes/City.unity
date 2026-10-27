@@ -233,7 +233,7 @@ MonoBehaviour:
   kind: 2
   radius: 4
   supplier: 0
-  displayName: "\u041C\u043E\u0439 \u043C\u0430\u0433\u0430\u0437\u0438\u043D"
+  displayName: My store
   requiresRearDocking: 0
   dockingAngleTolerance: 22
 --- !u!4 &458313978
@@ -248,8 +248,7 @@ Transform:
   m_LocalPosition: {x: -67, y: 0.05, z: -104}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1367121322}
+  m_Children: []
   m_Father: {fileID: 317232761}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &659341399
@@ -409,7 +408,7 @@ MonoBehaviour:
   kind: 1
   radius: 4
   supplier: 0
-  displayName: "\u0420\u0430\u0437\u0433\u0440\u0443\u0437\u043A\u0430 \u043C\u0430\u0433\u0430\u0437\u0438\u043D\u0430"
+  displayName: Wholesale depot
   requiresRearDocking: 0
   dockingAngleTolerance: 22
 --- !u!4 &812761854
@@ -539,68 +538,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &1367121321
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 458313978}
-    m_Modifications:
-    - target: {fileID: 3714564178324441136, guid: e4cb18c1b503be044b0677b39b5eca63, type: 3}
-      propertyPath: m_Name
-      value: PickupStopZone
-      objectReference: {fileID: 0}
-    - target: {fileID: 6837436722007735462, guid: e4cb18c1b503be044b0677b39b5eca63, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6837436722007735462, guid: e4cb18c1b503be044b0677b39b5eca63, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6837436722007735462, guid: e4cb18c1b503be044b0677b39b5eca63, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6837436722007735462, guid: e4cb18c1b503be044b0677b39b5eca63, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6837436722007735462, guid: e4cb18c1b503be044b0677b39b5eca63, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6837436722007735462, guid: e4cb18c1b503be044b0677b39b5eca63, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6837436722007735462, guid: e4cb18c1b503be044b0677b39b5eca63, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6837436722007735462, guid: e4cb18c1b503be044b0677b39b5eca63, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6837436722007735462, guid: e4cb18c1b503be044b0677b39b5eca63, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6837436722007735462, guid: e4cb18c1b503be044b0677b39b5eca63, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: e4cb18c1b503be044b0677b39b5eca63, type: 3}
---- !u!4 &1367121322 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 6837436722007735462, guid: e4cb18c1b503be044b0677b39b5eca63, type: 3}
-  m_PrefabInstance: {fileID: 1367121321}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1644995381
 PrefabInstance:
   m_ObjectHideFlags: 0

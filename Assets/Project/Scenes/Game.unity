@@ -2887,7 +2887,7 @@ MonoBehaviour:
   territory: {fileID: 3000000004}
   floorTilePrefab: {fileID: 3067662116102974990, guid: 6e934902aeeab8448b7dc052ae38a8bf, type: 3}
   floorRoot: {fileID: 1703997780}
-  surfaceHeight: 0.096
+  surfaceHeight: 0.1584
   previewRoot: {fileID: 1286073787}
   previewValidMaterial: {fileID: 2100000, guid: b737f1f25c90f1842999d06f57aa1608, type: 2}
   previewInvalidMaterial: {fileID: 2100000, guid: cd8bbf8a301d0664386b1c15cc42650f, type: 2}
@@ -18206,6 +18206,8 @@ MonoBehaviour:
   grid: {fileID: 3000000005}
   asphalt: {fileID: 71558338}
   carPrefab: {fileID: 5665923853863300553, guid: 2e1ac1a182ee69041a930a44cf983a8f, type: 3}
+  store: {fileID: 1669881618}
+  streetTraffic: {fileID: 1557235801}
   roadEntry: {fileID: 523022485}
   drivewayEntry: {fileID: 1413986273}
   arrivalInterval: 12
@@ -18275,7 +18277,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 405377431}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 18e8576ecd8604946979005df6c98a46, type: 3}
   m_Name: 
@@ -30652,15 +30654,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 833188359758560248, guid: cdb0525c894e3c1488341b823a338665, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.26533896
+      value: 0.49999925
       objectReference: {fileID: 0}
     - target: {fileID: 833188359758560248, guid: cdb0525c894e3c1488341b823a338665, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.26533896
+      value: 0.49999925
       objectReference: {fileID: 0}
     - target: {fileID: 833188359758560248, guid: cdb0525c894e3c1488341b823a338665, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.26533896
+      value: 0.49999925
       objectReference: {fileID: 0}
     - target: {fileID: 833188359758560248, guid: cdb0525c894e3c1488341b823a338665, type: 3}
       propertyPath: m_LocalPosition.x
@@ -58009,10 +58011,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   grid: {fileID: 3000000005}
   territory: {fileID: 3000000004}
+  floors: {fileID: 71558338}
   overlayMaterialTemplate: {fileID: 2100000, guid: 452437f07bb21864d9098d709f5aa1a6, type: 2}
-  yOffset: 0.11
-  lineWidth: 0.006
-  gridColor: {r: 0, g: 0, b: 0, a: 0.75}
+  yOffset: 0.002
+  lineWidth: 0.008
+  gridColor: {r: 0.17, g: 0.29, b: 0.23, a: 0.38}
   fillColor: {r: 0, g: 0, b: 0, a: 0}
 --- !u!23 &1478877839
 MeshRenderer:
@@ -60407,6 +60410,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 03d7041345f08de4dbbe6cbc20c438d7, type: 3}
+--- !u!114 &1557235801 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4770104255476192435, guid: 03d7041345f08de4dbbe6cbc20c438d7, type: 3}
+  m_PrefabInstance: {fileID: 1557235800}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4826d653a4422a43823e7c3dbcecc0d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &1558043171 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: d372dbc1acdf2b14fb741024354ef278, type: 3}
@@ -63443,6 +63457,7 @@ MonoBehaviour:
   work: {fileID: 1669881617}
   shop: {fileID: 1669881618}
   operationsHud: {fileID: 1669881615}
+  construction: {fileID: 405377438}
 --- !u!114 &1669881617
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -63529,6 +63544,7 @@ MonoBehaviour:
   settings: {fileID: 3628695595048538931}
   work: {fileID: 1669881617}
   pause: {fileID: 982185993}
+  construction: {fileID: 405377438}
 --- !u!1 &1669961916
 GameObject:
   m_ObjectHideFlags: 0
@@ -76376,7 +76392,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2b1e0376d23748e429f0ca6eec800b33, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cellSize: 0.1667
+  cellSize: 0.275055
   origin: {x: 0, y: 0, z: 0}
 --- !u!114 &3000000006
 MonoBehaviour:
@@ -76435,179 +76451,179 @@ MonoBehaviour:
   progression: {fileID: 33217803}
   initialBounds:
     serializedVersion: 2
-    x: -0.8335
-    y: -2.8339
-    width: 15.003
-    height: 12.0024
+    x: -1.3752751
+    y: -5.2260447
+    width: 26.95539
+    height: 22.554512
   plots:
   - id: 100
     bounds:
       serializedVersion: 2
-      x: 14.1695
-      y: -2.8339
-      width: 5.001
-      height: 12.002401
+      x: 23.379675
+      y: -4.675935
+      width: 8.25165
+      height: 19.80396
   - id: 101
     bounds:
       serializedVersion: 2
-      x: 19.1705
-      y: -2.8339
-      width: 5.001
-      height: 12.002401
+      x: 31.631325
+      y: -4.675935
+      width: 8.25165
+      height: 19.80396
   - id: 102
     bounds:
       serializedVersion: 2
-      x: 24.171501
-      y: -2.8339
-      width: 5.001
-      height: 12.002401
+      x: 39.882977
+      y: -4.675935
+      width: 8.25165
+      height: 19.80396
   - id: 103
     bounds:
       serializedVersion: 2
-      x: -0.8335
-      y: 9.168501
-      width: 15.003
-      height: 10.5021
+      x: -1.3752751
+      y: 15.128027
+      width: 24.754951
+      height: 17.328465
   - id: 104
     bounds:
       serializedVersion: 2
-      x: -0.8335
-      y: 19.6706
-      width: 15.003
-      height: 10.5021
+      x: -1.3752751
+      y: 32.456493
+      width: 24.754951
+      height: 17.328465
   - id: 105
     bounds:
       serializedVersion: 2
-      x: 14.1695
-      y: 9.168501
-      width: 15.003
-      height: 10.5021
+      x: 23.379675
+      y: 15.128027
+      width: 24.754951
+      height: 17.328465
   - id: 106
     bounds:
       serializedVersion: 2
-      x: 14.1695
-      y: 19.6706
-      width: 15.003
-      height: 10.5021
+      x: 23.379675
+      y: 32.456493
+      width: 24.754951
+      height: 17.328465
   - id: 107
     bounds:
       serializedVersion: 2
-      x: 29.1725
-      y: 9.168501
-      width: 22.004402
-      height: 7.0014
+      x: 48.13463
+      y: 15.128027
+      width: 36.307266
+      height: 11.55231
   - id: 108
     bounds:
       serializedVersion: 2
-      x: 29.1725
-      y: 16.1699
-      width: 22.004402
-      height: 7.0014
+      x: 48.13463
+      y: 26.680338
+      width: 36.307266
+      height: 11.55231
   - id: 109
     bounds:
       serializedVersion: 2
-      x: 29.1725
-      y: 23.1713
-      width: 22.004402
-      height: 7.0014
+      x: 48.13463
+      y: 38.232647
+      width: 36.307266
+      height: 11.55231
   - id: 110
     bounds:
       serializedVersion: 2
-      x: 29.1725
-      y: -2.8339
-      width: 7.3348007
-      height: 12.002401
+      x: 48.13463
+      y: -4.675935
+      width: 12.102422
+      height: 19.80396
   - id: 111
     bounds:
       serializedVersion: 2
-      x: 36.5073
-      y: -2.8339
-      width: 7.3348007
-      height: 12.002401
+      x: 60.23705
+      y: -4.675935
+      width: 12.102422
+      height: 19.80396
   - id: 112
     bounds:
       serializedVersion: 2
-      x: 43.842102
-      y: -2.8339
-      width: 7.3348007
-      height: 12.002401
+      x: 72.33947
+      y: -4.675935
+      width: 12.102422
+      height: 19.80396
   - id: 113
     bounds:
       serializedVersion: 2
-      x: 51.1769
-      y: -2.8339
-      width: 7.3347993
-      height: 12.002401
+      x: 84.44189
+      y: -4.675935
+      width: 12.102419
+      height: 19.80396
   - id: 114
     bounds:
       serializedVersion: 2
-      x: 58.5117
-      y: -2.8339
-      width: 7.3347993
-      height: 12.002401
+      x: 96.544304
+      y: -4.675935
+      width: 12.102419
+      height: 19.80396
   - id: 115
     bounds:
       serializedVersion: 2
-      x: 65.8465
-      y: -2.8339
-      width: 7.3347993
-      height: 12.002401
+      x: 108.64672
+      y: -4.675935
+      width: 12.102419
+      height: 19.80396
   - id: 116
     bounds:
       serializedVersion: 2
-      x: 51.1769
-      y: 9.168501
-      width: 22.004398
-      height: 7.0014
+      x: 84.44189
+      y: 15.128027
+      width: 36.30726
+      height: 11.55231
   - id: 117
     bounds:
       serializedVersion: 2
-      x: 51.1769
-      y: 16.1699
-      width: 22.004398
-      height: 7.0014
+      x: 84.44189
+      y: 26.680338
+      width: 36.30726
+      height: 11.55231
   - id: 118
     bounds:
       serializedVersion: 2
-      x: 51.1769
-      y: 23.1713
-      width: 22.004398
-      height: 7.0014
+      x: 84.44189
+      y: 38.232647
+      width: 36.30726
+      height: 11.55231
   - id: 119
     bounds:
       serializedVersion: 2
-      x: -0.8335
-      y: 30.1727
-      width: 15.003
-      height: 12.002401
+      x: -1.3752751
+      y: 49.784958
+      width: 24.754951
+      height: 19.80396
   - id: 120
     bounds:
       serializedVersion: 2
-      x: 14.1695
-      y: 30.1727
-      width: 15.003
-      height: 12.002401
+      x: 23.379675
+      y: 49.784958
+      width: 24.754951
+      height: 19.80396
   - id: 121
     bounds:
       serializedVersion: 2
-      x: 29.1725
-      y: 30.1727
-      width: 14.669601
-      height: 12.002401
+      x: 48.13463
+      y: 49.784958
+      width: 24.204844
+      height: 19.80396
   - id: 122
     bounds:
       serializedVersion: 2
-      x: 43.842102
-      y: 30.1727
-      width: 14.669601
-      height: 12.002401
+      x: 72.33947
+      y: 49.784958
+      width: 24.204844
+      height: 19.80396
   - id: 123
     bounds:
       serializedVersion: 2
-      x: 58.511703
-      y: 30.1727
-      width: 14.669601
-      height: 12.002401
+      x: 96.54431
+      y: 49.784958
+      width: 24.204844
+      height: 19.80396
   layoutVersion: 2
 --- !u!114 &3000000008
 MonoBehaviour:

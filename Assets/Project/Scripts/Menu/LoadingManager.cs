@@ -43,11 +43,10 @@ public class LoadingManager : MonoBehaviour
             loadingBar.interactable=false;
             if(loadingBar.fillRect!=null) {var image=loadingBar.fillRect.GetComponent<Image>();if(image!=null) {image.sprite=null;image.color=ShopUiTheme.Green;}}
         }
-        var langCode = PlayerPrefs.GetString("lang", "en");
         var selector = FindObjectOfType<LanguageSelector>();
         if (selector != null)
         {
-            selector.ApplyFontSettings(langCode);
+            selector.ApplyFontSettings("en");
         }
 
         RandomFact();

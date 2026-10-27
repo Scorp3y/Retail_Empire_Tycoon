@@ -12,15 +12,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d6abad8a36b0794996f8dedd8a8e734, type: 3}
   m_Name: ColdPantry_BuildItem
   m_EditorClassIdentifier: 
+  legacyWallDepth: 0
+  wallCellSize: 0
+  wallGeometryVersion: 0
+  previousWallPrefab: {fileID: 0}
+  previousWallBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
+  previousWallAlignmentOffset: {x: 0, y: 0, z: 0}
+  decorationProportionsVersion: 0
   id: shelf_cold_01
-  displayName: Cold Pantry
+  displayName: Freezer display
   description: For frozen and meat products
   icon: {fileID: 21300000, guid: c4bfbd5ce56dfde419267aa50fb6b550, type: 3}
   price: 500
+  hiddenFromShop: 0
   weightKg: 60
   cargoVolumeM3: 0.6
   isAsphalt: 0
   isParkingSpace: 0
+  parkingGeometryVersion: 0
+  previousParkingPrefab: {fileID: 0}
+  previousParkingFootprint: {x: 0, y: 0}
+  previousParkingBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   isUnloadingGate: 0
   isWall: 0
   beautyPoints: 0
@@ -37,13 +53,15 @@ MonoBehaviour:
   pivotOffset: {x: 0, y: 0}
   alignModelToFootprint: 1
   placementBounds:
-    m_Center: {x: 0.000000029802322, y: 0.12183519, z: 0}
-    m_Extent: {x: 0.28000015, y: 0.1218352, z: 0.21000022}
+    m_Center: {x: 0.000000049173835, y: 0.20102806, z: 0}
+    m_Extent: {x: 0.46200025, y: 0.2010281, z: 0.34650037}
+  placementAlignmentOffset: {x: 0, y: 0, z: 0}
   frontFacing: 0
   twoSidedAccess: 0
   isDoorway: 0
   isCheckout: 0
-  prefab: {fileID: 8528977818215784841, guid: 870a9705e9d7c3449a970bc911d145d7, type: 3}
+  storeyConnection: 0
+  prefab: {fileID: 7929902543869874658, guid: 0385cb15a7845bf4ab597ad81611e086, type: 3}
   previewValidMaterial: {fileID: 2100000, guid: b737f1f25c90f1842999d06f57aa1608, type: 2}
   previewInvalidMaterial: {fileID: 2100000, guid: cd8bbf8a301d0664386b1c15cc42650f, type: 2}
   shelfData: {fileID: 0}

@@ -53,12 +53,12 @@ namespace RetailEmpireTycoon.City
         public void ConfirmDeparture()
         {
             if (Transitioning || InCity || confirmation != null) return;
-            confirmation = ui.Modal("Поездка в город", uiRoot, new Vector2(480,240));
-            ui.Heading(confirmation,"Поехать в город?","Drive to the city?",new Vector2(22,-18),new Vector2(430,40),26);
-            ui.Copy(confirmation,"Посетите поставщиков в разных районах и заберите свои заказы. Магазин будет приостановлен до возвращения.",
+            confirmation = ui.Modal("Drive into town", uiRoot, new Vector2(480,240));
+            ui.Heading(confirmation,"Drive into town?","Drive to the city?",new Vector2(22,-18),new Vector2(430,40),26);
+            ui.Copy(confirmation,"Visit suppliers around town and collect your orders. The store will be paused until you return.",
                 "Visit district suppliers and collect your orders. The store pauses until you return.",new Vector2(22,-68),new Vector2(430,80));
-            ui.Button(confirmation,"Отмена","Cancel",new Vector2(22,-177),new Vector2(200,40),CloseConfirmation);
-            ui.Button(confirmation,"Поехать","Drive",new Vector2(250,-177),new Vector2(208,40),Begin);
+            ui.Button(confirmation,"Cancel","Cancel",new Vector2(22,-177),new Vector2(200,40),CloseConfirmation);
+            ui.Button(confirmation,"Drive","Drive",new Vector2(250,-177),new Vector2(208,40),Begin);
         }
         private void CloseConfirmation() { ui.CloseModal(confirmation); confirmation = null; }
         public void Begin()
@@ -104,7 +104,7 @@ namespace RetailEmpireTycoon.City
             foreach(var pair in shopRoots) if(pair.Key!=null) pair.Key.SetActive(pair.Value);
             InCity=false;Transitioning=false;Time.timeScale=shopTimeScale;
             var traffic=GetComponent<RetailEmpireTycoon.Parking.ParkingTraffic>();if(traffic!=null) traffic.enabled=trafficEnabled;
-            Debug.LogError("Поездка не удалась. Магазин восстановлен, оплаченные заказы и груз сохранены.",this);
+            Debug.LogError("The trip failed. The store was restored; paid orders and cargo are safe.",this);
         }
         private IEnumerator Travel(bool outbound)
         {

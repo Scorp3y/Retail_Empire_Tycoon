@@ -20,14 +20,14 @@ namespace RetailEmpireTycoon.BuildSystem
                 var existing=new PlacementRequest(placed.item,placed.anchorCell,placed.rotated,placed.facing);
                 for(int side=0;side<(placed.item.twoSidedAccess?2:1);side++)
                     if(ShelfAccessArea.Cells(grid,existing,side).Any(footprint.Contains))
-                        return PlacementResult.Fail(PlaceFailReason.NoAccess,"Этот предмет перекроет подход покупателей к стеллажу.");
+                        return PlacementResult.Fail(PlaceFailReason.NoAccess,"This item would block customer access to a shelf.");
             }
             if(request.item.category!=BuildCategory.Shelf)return PlacementResult.Success();
             var wallBounds=Object.FindObjectsOfType<StoreWallOccluder>().Where(w=>request.ignoredObject==null||w.GetComponentInParent<PlacedObject>()!=request.ignoredObject).Select(w=>w.WorldBounds).ToArray();
             for(int side=0;side<(request.item.twoSidedAccess?2:1);side++)
                 foreach(var cell in ShelfAccessArea.Cells(grid,request,side))
                     if(grid.IsOccupied(cell)&&(request.ignoredObject==null||!request.ignoredObject.occupiedCells.Contains(cell))||territory!=null&&!territory.IsCellPurchased(cell)||WallBlocks(cell,wallBounds))
-                        return PlacementResult.Fail(PlaceFailReason.NoAccess,"Перед стеллажом нужен свободный проход глубиной 2 клетки.");
+                        return PlacementResult.Fail(PlaceFailReason.NoAccess,"Leave a two-cell customer aisle in front of this shelf.");
             return PlacementResult.Success();
         }
         private bool WallBlocks(Vector3Int cell,Bounds[] walls)

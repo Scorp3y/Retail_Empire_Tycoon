@@ -3,7 +3,8 @@ using UnityEngine.UI;
 
 namespace RetailEmpireTycoon.UI.Shop
 {
-    public enum ShopIcon { Cart, Warehouse, Settings, Territory, OpenLock, ClosedLock, Staff, Equipment, Products, Back, Close, Check, Sound, Save, Exit, Cashier, Guard, Stocker, Cleaner, Star, Coin, Pause, Play, Pickup, Decoration }
+    public enum ShopIcon { Cart, Warehouse, Settings, Territory, OpenLock, ClosedLock, Staff, Equipment, Products, Back, Close, Check, Sound, Save, Exit, Cashier, Guard, Stocker, Cleaner, Star, Coin, Pause, Play, Pickup, Decoration,
+        Hammer, Move, RotateLeft, RotateRight, ArrowUp, ArrowDown, Floor, Ceiling, Erase, Parking }
 
     /// <summary>Navigation symbols share a normalized silhouette and scale without blurry bitmap resizing.</summary>
     [RequireComponent(typeof(CanvasRenderer))]
@@ -24,6 +25,33 @@ namespace RetailEmpireTycoon.UI.Shop
             mesh.Clear(); _mesh = mesh; _rect = GetPixelAdjustedRect();
             switch (icon)
             {
+                case ShopIcon.Hammer:
+                    ConstructionHammer();break;
+                case ShopIcon.Move:
+                    Line(.15f,.5f,.85f,.5f);Line(.5f,.15f,.5f,.85f);
+                    Line(.15f,.5f,.30f,.65f);Line(.15f,.5f,.30f,.35f);Line(.85f,.5f,.70f,.65f);Line(.85f,.5f,.70f,.35f);
+                    Line(.5f,.85f,.35f,.70f);Line(.5f,.85f,.65f,.70f);Line(.5f,.15f,.35f,.30f);Line(.5f,.15f,.65f,.30f);break;
+                case ShopIcon.RotateLeft: case ShopIcon.RotateRight:
+                    float flip=icon==ShopIcon.RotateLeft?1:-1;
+                    for(int i=0;i<24;i++)
+                    {
+                        float a=(40+i*260/24f)*Mathf.Deg2Rad,b=(40+(i+1)*260/24f)*Mathf.Deg2Rad;
+                        Line(.5f+flip*Mathf.Cos(a)*.31f,.5f+Mathf.Sin(a)*.31f,.5f+flip*Mathf.Cos(b)*.31f,.5f+Mathf.Sin(b)*.31f,.065f);
+                    }
+                    Polygon(new Vector2(.5f+flip*.20f,.83f),new Vector2(.5f+flip*.37f,.59f),new Vector2(.5f+flip*.05f,.65f));break;
+                case ShopIcon.ArrowUp: case ShopIcon.ArrowDown:
+                    float direction=icon==ShopIcon.ArrowUp?1:-1;
+                    Line(.24f,.5f-direction*.12f,.5f,.5f+direction*.14f,.09f);Line(.5f,.5f+direction*.14f,.76f,.5f-direction*.12f,.09f);break;
+                case ShopIcon.Floor: case ShopIcon.Ceiling:
+                    Polygon(new Vector2(.12f,.42f),new Vector2(.5f,.19f),new Vector2(.88f,.42f),new Vector2(.5f,.65f));
+                    Line(.29f,.32f,.67f,.55f,.026f,ShopUiTheme.Paper);Line(.31f,.54f,.69f,.31f,.026f,ShopUiTheme.Paper);
+                    if(icon==ShopIcon.Ceiling){Line(.18f,.81f,.82f,.81f,.065f);Line(.22f,.81f,.22f,.62f,.05f);Line(.78f,.81f,.78f,.62f,.05f);}break;
+                case ShopIcon.Erase:
+                    Polygon(new Vector2(.14f,.37f),new Vector2(.55f,.84f),new Vector2(.87f,.56f),new Vector2(.49f,.16f),new Vector2(.35f,.16f));
+                    Line(.3f,.37f,.51f,.18f,.035f,ShopUiTheme.Paper);Line(.34f,.12f,.85f,.12f,.045f);break;
+                case ShopIcon.Parking:
+                    Line(.2f,.17f,.2f,.84f,.065f);Line(.2f,.84f,.82f,.84f,.065f);Line(.82f,.84f,.82f,.17f,.065f);
+                    Box(.39f,.28f,.065f,.4f);Box(.43f,.62f,.21f,.065f);Box(.59f,.48f,.065f,.18f);Box(.43f,.46f,.21f,.065f);break;
                 case ShopIcon.Pickup:
                     Box(.08f,.32f,.84f,.24f);
                     Polygon(new Vector2(.48f,.56f),new Vector2(.48f,.77f),new Vector2(.7f,.77f),new Vector2(.84f,.56f));
@@ -56,10 +84,9 @@ namespace RetailEmpireTycoon.UI.Shop
                 case ShopIcon.Staff:
                     Circle(.43f,.71f,.16f); Circle(.72f,.65f,.12f); Box(.59f,.21f,.3f,.28f); Polygon(new Vector2(.16f,.18f),new Vector2(.2f,.5f),new Vector2(.43f,.58f),new Vector2(.67f,.5f),new Vector2(.72f,.18f)); break;
                 case ShopIcon.Equipment:
-                    Line(.24f,.2f,.65f,.62f,.13f); Polygon(new Vector2(.37f,.81f),new Vector2(.53f,.94f),new Vector2(.83f,.68f),new Vector2(.7f,.53f)); break;
+                    EquipmentShelving(); break;
                 case ShopIcon.Products:
-                    Polygon(new Vector2(.18f,.23f),new Vector2(.82f,.23f),new Vector2(.88f,.54f),new Vector2(.12f,.54f)); Line(.28f,.49f,.42f,.76f,.08f); Line(.72f,.49f,.58f,.76f,.08f);
-                    Line(.36f,.28f,.36f,.48f,.035f,ShopUiTheme.Paper); Line(.5f,.28f,.5f,.48f,.035f,ShopUiTheme.Paper); Line(.64f,.28f,.64f,.48f,.035f,ShopUiTheme.Paper); break;
+                    ProductBasket(); break;
                 case ShopIcon.Back: Line(.69f,.5f,.27f,.5f); Line(.27f,.5f,.49f,.72f); Line(.27f,.5f,.49f,.28f); break;
                 case ShopIcon.Close: Line(.24f,.24f,.76f,.76f); Line(.24f,.76f,.76f,.24f); break;
                 case ShopIcon.Check: Line(.17f,.48f,.4f,.25f); Line(.4f,.25f,.84f,.77f); break;
@@ -78,6 +105,47 @@ namespace RetailEmpireTycoon.UI.Shop
                 case ShopIcon.Pause: Box(.27f,.2f,.16f,.6f); Box(.57f,.2f,.16f,.6f); break;
                 case ShopIcon.Play: Polygon(new Vector2(.29f,.18f),new Vector2(.29f,.82f),new Vector2(.82f,.5f)); break;
             }
+        }
+        private void ConstructionHammer()
+        {
+            Vector2 P(float x,float y)
+            {
+                float a=-38*Mathf.Deg2Rad;var d=new Vector2(x-.5f,y-.5f)*.9f;
+                return new Vector2(.5f+d.x*Mathf.Cos(a)-d.y*Mathf.Sin(a),.5f+d.x*Mathf.Sin(a)+d.y*Mathf.Cos(a));
+            }
+            // Thick handle, a flat striking face and two open claw tines remain legible at HUD size.
+            Polygon(P(.435f,.10f),P(.565f,.10f),P(.565f,.69f),P(.435f,.69f));
+            Polygon(P(.32f,.62f),P(.75f,.62f),P(.75f,.82f),P(.32f,.82f));
+            Polygon(P(.73f,.57f),P(.90f,.57f),P(.90f,.86f),P(.73f,.86f));
+            Polygon(P(.33f,.82f),P(.19f,.77f),P(.13f,.56f),P(.25f,.66f),P(.39f,.69f));
+            Polygon(P(.35f,.71f),P(.27f,.61f),P(.24f,.49f),P(.39f,.60f),P(.45f,.70f));
+        }
+        private void EquipmentShelving()
+        {
+            // Stocked shelves describe the whole equipment category, not just construction tools.
+            Box(.14f, .14f, .075f, .72f);
+            Box(.785f, .14f, .075f, .72f);
+            Box(.14f, .19f, .72f, .075f);
+            Box(.14f, .48f, .72f, .075f);
+            Box(.14f, .785f, .72f, .075f);
+            Box(.275f, .555f, .18f, .17f);
+            Box(.52f, .555f, .2f, .12f);
+            Box(.275f, .265f, .15f, .15f);
+            Box(.49f, .265f, .23f, .15f);
+        }
+
+        private void ProductBasket()
+        {
+            Line(.28f, .57f, .42f, .82f, .075f);
+            Line(.72f, .57f, .58f, .82f, .075f);
+            Box(.12f, .53f, .76f, .08f);
+            Line(.17f, .54f, .24f, .22f, .075f);
+            Line(.83f, .54f, .76f, .22f, .075f);
+            Box(.24f, .18f, .52f, .075f);
+            // Real gaps keep the basket monochrome on normal, hover and selected backgrounds.
+            Box(.335f, .245f, .065f, .29f);
+            Box(.4675f, .245f, .065f, .29f);
+            Box(.60f, .245f, .065f, .29f);
         }
         private Vector2 Point(Vector2 p) { float size=Mathf.Min(_rect.width,_rect.height); return _rect.center+(p-Vector2.one*.5f)*size; }
         private void Shackle(float progress)

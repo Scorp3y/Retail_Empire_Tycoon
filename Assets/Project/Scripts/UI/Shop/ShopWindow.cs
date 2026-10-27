@@ -90,6 +90,8 @@ namespace RetailEmpireTycoon.UI.Shop
 
         private void Awake()
         {
+            foreach(var item in Resources.LoadAll<BuildItemData>("MultiStorey"))
+                if(!buildCatalog.Any(existing=>existing!=null&&existing.id==item.id))buildCatalog.Add(item);
             FindMissingRefs();
             PrepareCameraLock();
         }

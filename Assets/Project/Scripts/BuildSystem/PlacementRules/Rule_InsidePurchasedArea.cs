@@ -27,7 +27,7 @@ namespace RetailEmpireTycoon.BuildSystem
             var cells = _grid.GetFootprintCells(req.anchorCell, req.item.footprint, req.rotated, req.item.pivotOffset);
             foreach (var c in cells)
             {
-                if (_territory.IsCellPurchased(c))
+                if (_territory.IsCellPurchased(c) || req.item.isParkingSpace && _territory is TerritoryManager land && land.IsParkingCellAllowed(c))
                     continue;
 
                 return PlacementResult.Fail(PlaceFailReason.NotPurchased, "Not purchased");

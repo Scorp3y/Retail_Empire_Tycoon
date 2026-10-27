@@ -24,7 +24,7 @@ namespace RetailEmpireTycoon.City
         public CityMapHud(ShopUi ui,RectTransform canvas,TownWorldPlaces town,PickupDrive pickup,DeliveryCheckpoint home,PickupCamera camera,Func<bool> mayOpen)
         {
             this.ui=ui;this.canvas=canvas;this.town=town;this.pickup=pickup;this.home=home;this.camera=camera;this.mayOpen=mayOpen;
-            var button=ui.Button(canvas,"M — Карта города",new Vector2(-220,-24),new Vector2(196,44),Toggle);
+            var button=ui.Button(canvas,"M — Town map",new Vector2(-220,-24),new Vector2(196,44),Toggle);
             var rect=(RectTransform)button.transform;rect.anchorMin=rect.anchorMax=new Vector2(1,1);
             guidance=ui.Label(canvas,"",new Vector2(-430,-79),new Vector2(406,55),18);
             guidance.rectTransform.anchorMin=guidance.rectTransform.anchorMax=new Vector2(1,1);
@@ -34,14 +34,14 @@ namespace RetailEmpireTycoon.City
             if(Input.GetKeyDown(KeyCode.M))Toggle();
             if(IsOpen&&Input.GetKeyDown(KeyCode.Escape))Close();
             if(graphic!=null)graphic.SetVerticesDirty();
-            guidance.text=destination==null?"Выберите поставщика на карте":$"{destination.displayName} • {Vector3.Distance(pickup.transform.position,destination.transform.position):0} м";
+            guidance.text=destination==null?"Select a supplier on the map":$"{destination.displayName} • {Vector3.Distance(pickup.transform.position,destination.transform.position):0} m";
         }
         public void Toggle()
         {
             if(IsOpen){Close();return;}if(!mayOpen())return;
             pickup.Stop();pickup.InputEnabled=false;camera.SetInteractionBlocked(true);
-            panel=ui.Modal("Карта города",canvas,new Vector2(1070,720));
-            ui.Heading(panel,"Карта города","Town map",new Vector2(24,-18),new Vector2(850,48));
+            panel=ui.Modal("Town map",canvas,new Vector2(1070,720));
+            ui.Heading(panel,"Town map","Town map",new Vector2(24,-18),new Vector2(850,48));
             ui.Button(panel,"×",new Vector2(1000,-18),new Vector2(44,44),Close);
             var mapRect=ui.Rect("Road network",panel,new Vector2(0,1),new Vector2(0,1),new Vector2(24,-92),new Vector2(700,555));
             graphic=mapRect.gameObject.AddComponent<CityMapGraphic>();graphic.raycastTarget=false;
@@ -52,8 +52,8 @@ namespace RetailEmpireTycoon.City
                 var selected=checkpoint;
                 ui.Button(panel,SupplierRouting.Name(selected.supplier),new Vector2(746,-92-row*57),new Vector2(298,46),()=>Select(selected));row++;
             }
-            ui.Button(panel,"Мой магазин",new Vector2(746,-92-row*57),new Vector2(298,46),()=>Select(home));
-            ui.Label(panel,"Синий — вы · Жёлтый — поставщики · Красный — магазин.\nКлик по поставщику выбирает ориентир. Управление только из машины.",new Vector2(24,-664),new Vector2(1020,42),16);
+            ui.Button(panel,"My store",new Vector2(746,-92-row*57),new Vector2(298,46),()=>Select(home));
+            ui.Label(panel,"Blue — you · Yellow — suppliers · Red — store.\nSelect a supplier to set a waypoint. Driving controls stay with the pickup.",new Vector2(24,-664),new Vector2(1020,42),16);
         }
         private void Select(DeliveryCheckpoint checkpoint) {destination=checkpoint;Close();}
         private void Close()

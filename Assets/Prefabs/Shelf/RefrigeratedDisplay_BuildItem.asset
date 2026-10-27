@@ -12,15 +12,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d6abad8a36b0794996f8dedd8a8e734, type: 3}
   m_Name: RefrigeratedDisplay_BuildItem
   m_EditorClassIdentifier: 
+  legacyWallDepth: 0
+  wallCellSize: 0
+  wallGeometryVersion: 0
+  previousWallPrefab: {fileID: 0}
+  previousWallBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
+  previousWallAlignmentOffset: {x: 0, y: 0, z: 0}
+  decorationProportionsVersion: 0
   id: shelf_refrigerated_01
-  displayName: Refrigerated Display
+  displayName: Refrigerated display
   description: For dairy products
   icon: {fileID: 21300000, guid: 9c539d9bf38a6aa45a05d8608a7bca41, type: 3}
   price: 500
+  hiddenFromShop: 0
   weightKg: 60
   cargoVolumeM3: 0.6
   isAsphalt: 0
   isParkingSpace: 0
+  parkingGeometryVersion: 0
+  previousParkingPrefab: {fileID: 0}
+  previousParkingFootprint: {x: 0, y: 0}
+  previousParkingBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   isUnloadingGate: 0
   isWall: 0
   beautyPoints: 0
@@ -37,13 +53,15 @@ MonoBehaviour:
   pivotOffset: {x: 0, y: 0}
   alignModelToFootprint: 1
   placementBounds:
-    m_Center: {x: 0, y: 0.3285403, z: -0.18219967}
-    m_Extent: {x: 0.3650448, y: 0.32854033, z: 0.18284519}
+    m_Center: {x: 0, y: 0.5420915, z: -0.30062947}
+    m_Extent: {x: 0.60232395, y: 0.54209155, z: 0.30169457}
+  placementAlignmentOffset: {x: 0, y: 0, z: 0}
   frontFacing: 0
   twoSidedAccess: 0
   isDoorway: 0
   isCheckout: 0
-  prefab: {fileID: 8256072556386676897, guid: 182f989a1adcdb140a78f27d77b1edbb, type: 3}
+  storeyConnection: 0
+  prefab: {fileID: 725374987542139136, guid: 44d00637c311b5f4b8ca73879c9919fb, type: 3}
   previewValidMaterial: {fileID: 2100000, guid: b737f1f25c90f1842999d06f57aa1608, type: 2}
   previewInvalidMaterial: {fileID: 2100000, guid: cd8bbf8a301d0664386b1c15cc42650f, type: 2}
   shelfData: {fileID: 0}

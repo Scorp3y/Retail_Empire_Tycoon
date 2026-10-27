@@ -180,11 +180,11 @@ namespace RetailEmpireTycoon.BuildSystem
         {
             switch (result.reason)
             {
-                case PlaceFailReason.NotPurchased: return "За пределами доступной площади";
-                case PlaceFailReason.Overlap: return "Место занято";
-                case PlaceFailReason.NoAccess: return string.IsNullOrEmpty(result.message) ? "Оставьте проход перед стеллажом" : result.message;
-                case PlaceFailReason.InsufficientInventory: return string.IsNullOrEmpty(result.message) ? "Нет предмета на складе" : result.message;
-                default: return string.IsNullOrWhiteSpace(result.message) ? "Нельзя поставить здесь" : result.message;
+                case PlaceFailReason.NotPurchased: return "Outside your available building area";
+                case PlaceFailReason.Overlap: return "This space is occupied";
+                case PlaceFailReason.NoAccess: return string.IsNullOrEmpty(result.message) ? "Leave a clear aisle in front of the shelf" : result.message;
+                case PlaceFailReason.InsufficientInventory: return string.IsNullOrEmpty(result.message) ? "This item is not in storage" : result.message;
+                default: return string.IsNullOrWhiteSpace(result.message) ? "Cannot place here" : result.message;
             }
         }
 

@@ -31,6 +31,12 @@ MonoBehaviour:
   cargoVolumeM3: 0.08
   isAsphalt: 0
   isParkingSpace: 0
+  parkingGeometryVersion: 0
+  previousParkingPrefab: {fileID: 0}
+  previousParkingFootprint: {x: 0, y: 0}
+  previousParkingBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   isUnloadingGate: 0
   isWall: 0
   beautyPoints: 4
@@ -47,14 +53,15 @@ MonoBehaviour:
   pivotOffset: {x: 0, y: 0}
   alignModelToFootprint: 1
   placementBounds:
-    m_Center: {x: 0.000000014901161, y: 0.4113846, z: -0.000000022351742}
-    m_Extent: {x: 0.10769232, y: 0.31538463, z: 0.10769233}
+    m_Center: {x: 0.000000024586917, y: 0.67878467, z: -0.000000036880376}
+    m_Extent: {x: 0.17769234, y: 0.52038467, z: 0.17769235}
   placementAlignmentOffset: {x: 0, y: 0, z: 0}
   frontFacing: 0
   twoSidedAccess: 0
   isDoorway: 0
   isCheckout: 0
-  prefab: {fileID: 8739109768194244197, guid: f2690f5eb8529c94ea42becf43abb7e1, type: 3}
+  storeyConnection: 0
+  prefab: {fileID: 6185336876664447165, guid: 35eb429e55b550c48ae20c1d7765d534, type: 3}
   previewValidMaterial: {fileID: 0}
   previewInvalidMaterial: {fileID: 0}
   shelfData: {fileID: 0}

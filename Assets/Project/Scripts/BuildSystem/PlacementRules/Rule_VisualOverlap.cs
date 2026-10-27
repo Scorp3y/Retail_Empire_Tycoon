@@ -23,7 +23,7 @@ namespace RetailEmpireTycoon.BuildSystem
                 var other=wall.WorldBounds;
                 var overlap=Vector3.Min(bounds.max,other.max)-Vector3.Max(bounds.min,other.min);
                 if(overlap.x>.012f&&overlap.z>.012f&&overlap.y>.1f)
-                    return PlacementResult.Fail(PlaceFailReason.Overlap,"Предмет пересекает существующую стену.");
+                    return PlacementResult.Fail(PlaceFailReason.Overlap,"This item intersects an existing wall.");
             }
             return PlacementResult.Success();
         }

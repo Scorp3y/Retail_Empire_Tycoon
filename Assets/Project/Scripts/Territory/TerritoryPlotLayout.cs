@@ -20,6 +20,8 @@ namespace RetailEmpireTycoon.Territory
         public List<Plot> plots = new List<Plot>();
         [HideInInspector] public int layoutVersion;
         private Rect initialServiceYard;
+        public bool IsServiceYardCell(Vector3Int cell) => grid != null && cell.y == 0
+            && initialServiceYard.Contains(new Vector2(grid.CellToWorld(cell).x, grid.CellToWorld(cell).z));
         public void SetInitialServiceYard(Rect bounds) { initialServiceYard = bounds; Apply(); }
 
         private void OnEnable()

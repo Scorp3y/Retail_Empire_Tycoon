@@ -22,7 +22,7 @@ namespace RetailEmpireTycoon.UI.Windows
         private BuildController _controller;
         private Action _onPlace;
 
-        public void Bind(BuildItemData item, int count, BuildController controller, Action onPlace)
+        public void Bind(BuildItemData item, int count, BuildController controller, Action onPlace,bool canPlace=true)
         {
             _item = item;
             _controller = controller;
@@ -31,6 +31,7 @@ namespace RetailEmpireTycoon.UI.Windows
             ApplyTexts(count);
             ApplyIcon();
             HookButton();
+            if(placeButton!=null)placeButton.gameObject.SetActive(canPlace);
         }
 
         private void ApplyTexts(int count)

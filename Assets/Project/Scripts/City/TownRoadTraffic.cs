@@ -13,10 +13,11 @@ namespace RetailEmpireTycoon.City
         [SerializeField] private TrafficVehicle[] fleet = Array.Empty<TrafficVehicle>();
         [SerializeField] private TownJunctionSignals[] signals = Array.Empty<TownJunctionSignals>();
         [SerializeField] private TownLevelCrossing crossing;
-        [SerializeField] private int maximumCars = 48;
+        [SerializeField] private int maximumCars = 29;
         [SerializeField] private float chunkSize = 96;
         private readonly List<TrafficVehicle> pool = new();
         private readonly List<TrafficVehicle> active = new();
+        private readonly HashSet<TrafficVehicle> parkingArrivals = new();
         private readonly Dictionary<Vector2Int,List<Spawn>> spawnChunks = new();
         private readonly List<Spawn> candidates = new();
         private readonly Dictionary<int,TrafficVehicle> reservations = new();
@@ -45,7 +46,7 @@ namespace RetailEmpireTycoon.City
             public Spawn(int lane,float distance,Vector3 position) { Lane=lane;Distance=distance;Position=position; }
         }
 
-        public void Configure(TrafficRoadNetwork roads, TrafficVehicle[] designs, TownJunctionSignals[] junctionSignals, TownLevelCrossing railCrossing, int capacity=48)
+        public void Configure(TrafficRoadNetwork roads, TrafficVehicle[] designs, TownJunctionSignals[] junctionSignals, TownLevelCrossing railCrossing, int capacity=29)
         {
             if (roads == null || designs == null || designs.Length != 20) throw new ArgumentException("The approved twenty-car fleet and road network are required.");
             if(capacity<1 || capacity>96)throw new ArgumentOutOfRangeException(nameof(capacity));
@@ -53,6 +54,45 @@ namespace RetailEmpireTycoon.City
             network=roads;fleet=(TrafficVehicle[])designs.Clone();signals=junctionSignals;crossing=railCrossing;maximumCars=capacity;
         }
         public void SetObserver(Transform target) { observer=target;hasObserverChunk=false; }
+        /// <summary>Transfers a parking car to the road simulation without a visual replacement.
+        /// Capacity is preserved; only an off-screen pool slot may be displaced.</summary>
+        public bool TryJoinTraffic(TrafficVehicle car,int lane,float metres,bool reservedForParking=false)
+        {
+            Initialize();
+            if(car==null || lane<0 || lane>=network.Lanes.Count || metres<0 || metres>=network.Lanes[lane].Path.Length)
+                throw new ArgumentException("A departing car must join an existing road lane.");
+            var position=network.Lanes[lane].Path.Sample(metres,out _);
+            foreach(var other in active)
+                if(Vector3.Distance(other.LocalPosition,position)<(other.Length+car.Length)*.5f+1)return false;
+            if(pool.Count>=maximumCars)
+            {
+                TrafficVehicle reusable=null;
+                foreach(var candidate in pool)
+                {
+                    if(parkingArrivals.Contains(candidate))continue;
+                    if(!candidate.gameObject.activeSelf){reusable=candidate;break;}
+                    if(observer!=null && Vector3.Distance(candidate.transform.position,observer.position)<30)continue;
+                    var camera=Camera.main;
+                    var bounds=new Bounds(candidate.transform.position+Vector3.up,Vector3.one*(candidate.Length+2)*transform.lossyScale.x);
+                    if(camera!=null && GeometryUtility.TestPlanesAABB(GeometryUtility.CalculateFrustumPlanes(camera),bounds))continue;
+                    reusable=candidate;break;
+                }
+                if(reusable==null)return false;
+                Recycle(reusable);pool.Remove(reusable);Destroy(reusable.gameObject);
+            }
+            car.transform.SetParent(transform,true);car.enabled=true;
+            car.Place(network,lane,metres,ChooseDeparture(lane));
+            pool.Add(car);active.Add(car);
+            if(reservedForParking)parkingArrivals.Add(car);
+            return true;
+        }
+        /// <summary>Transfers ownership back to parking (or cancels its road journey). Does not destroy the car.</summary>
+        public void WithdrawParkingCar(TrafficVehicle car)
+        {
+            if(car==null)return;
+            if(car.ReservedJunction>=0)reservations.Remove(car.ReservedJunction);
+            car.ReservedJunction=-1;active.Remove(car);pool.Remove(car);parkingArrivals.Remove(car);car.enabled=false;
+        }
         private void Start() { Initialize(); }
         private void OnDisable()
         {
@@ -118,7 +158,7 @@ namespace RetailEmpireTycoon.City
             for (int i=active.Count-1;i>=0;i--)
             {
                 var car=active[i];var at=Cell(car.LocalPosition);
-                if (Mathf.Abs(at.x-cell.x)>2 || Mathf.Abs(at.y-cell.y)>2 || (car.HoldSeconds>90 && Vector3.Distance(car.LocalPosition,localObserver)>95)) Recycle(car);
+                if(!parkingArrivals.Contains(car) && (Mathf.Abs(at.x-cell.x)>2 || Mathf.Abs(at.y-cell.y)>2 || (car.HoldSeconds>90 && Vector3.Distance(car.LocalPosition,localObserver)>95))) Recycle(car);
             }
             nextSpawn-=seconds;
             if (initial || nextSpawn<=0)
@@ -137,15 +177,22 @@ namespace RetailEmpireTycoon.City
                     float beforeLine=car.Remaining-7-car.Length*.5f;
                     // A reservation is not permission to pass a newly red signal. Cars that
                     // already crossed the line must clear the junction rather than stop in it.
-                    if(beforeLine>.05f && !SignalAllows(network.Lanes[car.LaneIndex],clock))
+                    // A follower must not keep a junction lease while its leader is waiting
+                    // for that same lease: iteration order otherwise deadlocks a green queue.
+                    bool blockedByQueue=clearance+.01f<Mathf.Max(0,beforeLine);
+                    if(beforeLine>=-.001f && (!SignalAllows(network.Lanes[car.LaneIndex],clock)||blockedByQueue||!ExitClear(car)))
                     {reservations.Remove(car.ReservedJunction);car.ReservedJunction=-1;}
                 }
                 if (!car.IsTurning && car.ReservedJunction<0)
                 {
                     var lane=network.Lanes[car.LaneIndex];
                     float toStop=car.Remaining-7-car.Length*.5f;
+                    // These ambient drivers have no fixed destination. A full exit must not
+                    // trap an otherwise clear junction indefinitely when another legal exit is free.
+                    if(!parkingArrivals.Contains(car) && toStop<.15f && car.HoldSeconds>2 && !ExitClear(car))ChooseClearDeparture(car);
                     bool canEnter=SignalAllows(lane,clock) && ExitClear(car);
-                    if (canEnter && toStop<Mathf.Max(2,car.Speed*2) && !reservations.ContainsKey(lane.to))
+                    bool approachClear=clearance+.01f>=Mathf.Max(0,toStop);
+                    if (canEnter && approachClear && toStop<=.1f && !reservations.ContainsKey(lane.to))
                     { reservations.Add(lane.to,car);car.ReservedJunction=lane.to; }
                     if (car.ReservedJunction<0) clearance=Mathf.Min(clearance,Mathf.Max(0,toStop));
                 }
@@ -170,19 +217,38 @@ namespace RetailEmpireTycoon.City
         {
             int binding=network.Junctions[lane.to].signalIndex;
             if(binding<0)return true;
+            if(signals==null || binding>=signals.Length || signals[binding]==null)return false;
             var signal=signals[binding];
             // Read the existing deterministic clock, never tick or mutate distant lamp objects.
-            var state=TownJunctionSignals.Evaluate(clock+signal.PhaseOffset);
             lane.Path.Sample(lane.Path.Length,out var direction);
-            return (Mathf.Abs(direction.z)>Mathf.Abs(direction.x) ? state.NorthSouth : state.EastWest)==JunctionSignalAspect.Green;
+            return signal.AllowsVehicle(direction,clock);
         }
         private bool ExitClear(TrafficVehicle car)
+            => ExitClear(car,car.NextLane);
+        private bool ExitClear(TrafficVehicle car,int departure)
         {
-            var exit=network.Lanes[car.NextLane].Path.Sample(0,out _);
+            var exit=network.Lanes[departure].Path.Sample(0,out var direction);
+            var side=Vector3.Cross(Vector3.up,direction);
             foreach(var other in active)
-                if(other!=car && Vector3.Distance(other.LocalPosition,exit)<(car.Length+other.Length)*.5f+3)return false;
+            {
+                if(other==car)continue;
+                var offset=other.LocalPosition-exit;
+                float along=Vector3.Dot(offset,direction);
+                float across=Mathf.Abs(Vector3.Dot(offset,side));
+                float halfLength=ProjectedHalfSize(other,direction),halfWidth=ProjectedHalfSize(other,side);
+                if(across<car.Width*.5f+halfWidth+.2f && along+halfLength>-.2f && along-halfLength<car.Length+2)return false;
+            }
             return true;
         }
+        private void ChooseClearDeparture(TrafficVehicle car)
+        {
+            var incoming=network.Lanes[car.LaneIndex];
+            foreach(int index in network.Departures(incoming.to))
+                if(network.Lanes[index].to!=incoming.from && ExitClear(car,index)){car.ChooseDeparture(index);return;}
+        }
+        private static float ProjectedHalfSize(TrafficVehicle car,Vector3 axis)
+            => Mathf.Abs(Vector3.Dot(car.Forward,axis))*car.Length*.5f
+                +Mathf.Abs(Vector3.Dot(Vector3.Cross(Vector3.up,car.Forward),axis))*car.Width*.5f;
         private void ReleaseClearedReservation(TrafficVehicle car)
         {
             if(car.ReservedJunction<0 || car.IsTurning)return;
@@ -199,8 +265,9 @@ namespace RetailEmpireTycoon.City
                 float ahead=Vector3.Dot(offset,car.Forward);
                 if(ahead<=0 || ahead>40)continue;
                 float lateral=Mathf.Abs(Vector3.Dot(offset,Vector3.Cross(Vector3.up,car.Forward).normalized));
-                if(lateral<(car.Width+other.Width)*.5f+.22f && Mathf.Abs(offset.y)<2)
-                    result=Mathf.Min(result,Mathf.Max(0,ahead-(car.Length+other.Length)*.5f-2));
+                var side=Vector3.Cross(Vector3.up,car.Forward).normalized;
+                if(lateral<car.Width*.5f+ProjectedHalfSize(other,side)+.22f && Mathf.Abs(offset.y)<2)
+                    result=Mathf.Min(result,Mathf.Max(0,ahead-car.Length*.5f-ProjectedHalfSize(other,car.Forward)-2));
             }
             return result;
         }
@@ -225,7 +292,10 @@ namespace RetailEmpireTycoon.City
             for(int i=0;i<count;i++)
             {
                 var hit=hits[i];
-                if(hit.collider.transform.IsChildOf(car.transform) || hit.collider.GetComponentInParent<TrafficVehicle>()!=null || hit.normal.y>.65f)continue;
+                var roadVehicle=hit.collider.GetComponentInParent<TrafficVehicle>();
+                // Parking visitors reuse the same meshes/wheel component, but their road driver
+                // is disabled. They must remain physical obstacles to public traffic.
+                if(hit.collider.transform.IsChildOf(car.transform) || roadVehicle!=null&&roadVehicle.enabled || hit.normal.y>.65f)continue;
                 result=Mathf.Min(result,Mathf.Max(0,hit.distance/scale-1));
             }
             return result;

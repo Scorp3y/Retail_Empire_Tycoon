@@ -12,15 +12,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d6abad8a36b0794996f8dedd8a8e734, type: 3}
   m_Name: floor_wood
   m_EditorClassIdentifier: 
+  legacyWallDepth: 0
+  wallCellSize: 0
+  wallGeometryVersion: 0
+  previousWallPrefab: {fileID: 0}
+  previousWallBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
+  previousWallAlignmentOffset: {x: 0, y: 0, z: 0}
+  decorationProportionsVersion: 0
   id: floor_wood
   displayName: Wooden floor
   description: 
   icon: {fileID: 21300000, guid: 769b4b126d4774a4d9273ffa1b4acf2c, type: 3}
   price: 15
+  hiddenFromShop: 0
   weightKg: 2
   cargoVolumeM3: 0.01
   isAsphalt: 0
   isParkingSpace: 0
+  parkingGeometryVersion: 0
+  previousParkingPrefab: {fileID: 0}
+  previousParkingFootprint: {x: 0, y: 0}
+  previousParkingBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   isUnloadingGate: 0
   isWall: 0
   beautyPoints: 0
@@ -38,12 +54,14 @@ MonoBehaviour:
   alignModelToFootprint: 1
   placementBounds:
     m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0.5, y: 0.0125, z: 0.5}
+    m_Extent: {x: 0.82500005, y: 0.020625, z: 0.82500005}
+  placementAlignmentOffset: {x: 0, y: 0, z: 0}
   frontFacing: 0
   twoSidedAccess: 0
   isDoorway: 0
   isCheckout: 0
-  prefab: {fileID: 1907290044639367142, guid: dcd736287125546448e42d1ca8cd35da, type: 3}
+  storeyConnection: 0
+  prefab: {fileID: 4963092796255848870, guid: df69ef0ccb2114248917a3cab8cd9d4c, type: 3}
   previewValidMaterial: {fileID: 2100000, guid: b737f1f25c90f1842999d06f57aa1608, type: 2}
   previewInvalidMaterial: {fileID: 2100000, guid: cd8bbf8a301d0664386b1c15cc42650f, type: 2}
   shelfData: {fileID: 0}

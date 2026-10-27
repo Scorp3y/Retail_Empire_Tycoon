@@ -8,6 +8,11 @@ namespace RetailEmpireTycoon.BuildSystem
     {
         [SerializeField] private List<BuildItemData> items = new();
         public IReadOnlyList<BuildItemData> Items => items;
+        private void Awake()
+        {
+            foreach(var item in Resources.LoadAll<BuildItemData>("MultiStorey"))
+                if(!items.Exists(existing=>existing!=null&&existing.id==item.id))items.Add(item);
+        }
 
         public BuildItemData GetById(string id)
         {
@@ -21,6 +26,8 @@ namespace RetailEmpireTycoon.BuildSystem
                     return item;
             }
 
+            var extension=Resources.Load<BuildItemData>("MultiStorey/"+id);
+            if(extension!=null)return extension;
             Debug.LogWarning("[BuildItemCatalog] Item not found: " + id);
             return null;
         }

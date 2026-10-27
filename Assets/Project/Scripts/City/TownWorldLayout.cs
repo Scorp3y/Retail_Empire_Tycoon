@@ -53,7 +53,9 @@ namespace RetailEmpireTycoon.City
         public TownTransportPath railway=new TownTransportPath();
         public TownTransportPath freightSiding=new TownTransportPath();
         public float stationDistance;
-        public Vector3 MapShopPoint(Vector3 point) => cityShopOrigin+(point-sourceShopOrigin)*shopToCityScale;
+        // Game and City use different world units, but the building must keep the same proportions.
+        public Vector3 ShopVisualScale=>Vector3.one*shopToCityScale;
+        public Vector3 MapShopPoint(Vector3 point) => cityShopOrigin+Vector3.Scale(point-sourceShopOrigin,ShopVisualScale);
 
         // Compact customer apron; the city street remains outside the purchasable store plots.
         public Rect StoreForecourt => new Rect(cityShopOrigin.x,cityShopOrigin.z-16,30,16);

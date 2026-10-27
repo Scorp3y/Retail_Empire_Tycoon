@@ -11,16 +11,18 @@ namespace RetailEmpireTycoon.BuildSystem
         [Header("Refs")]
         public GridSystem grid;
         public TerritoryManager territory;
+        public FloorPainter floors;
 
         [Header("Material")]
         public Material overlayMaterialTemplate;
 
         [Header("Visual")]
-        // The existing shop mesh has its floor at 0.096; the logical grid remains at zero.
-        [Range(0.001f, 0.2f)] public float yOffset = 0.11f;
+        // A tiny depth bias prevents flicker; surface elevation comes from the actual floor data.
+        [Range(0.001f, 0.2f)] public float yOffset = 0.002f;
         [Range(0.001f, 0.2f)] public float lineWidth = 0.03f;
         public Color gridColor = new Color(0f, 0f, 0f, 0.75f);
         public Color fillColor = Color.clear;
+        public int ActiveFloor { get; set; }
 
         private MeshFilter _meshFilter;
         private MeshRenderer _meshRenderer;
@@ -37,6 +39,7 @@ namespace RetailEmpireTycoon.BuildSystem
         {
             _meshFilter = GetComponent<MeshFilter>();
             _meshRenderer = GetComponent<MeshRenderer>();
+            if(floors!=null)floors.Changed+=RefreshVisibleMesh;
 
             if (overlayMaterialTemplate != null)
             {
@@ -72,6 +75,7 @@ namespace RetailEmpireTycoon.BuildSystem
         {
             gameObject.SetActive(false);
         }
+        private void RefreshVisibleMesh(){if(isActiveAndEnabled)RebuildMesh();}
 
         private void RebuildMesh()
         {
@@ -93,37 +97,43 @@ namespace RetailEmpireTycoon.BuildSystem
             {
                 if (rect == null)
                     continue;
+                for(int x=rect.min.x;x<=rect.max.x;x++)
+                for(int z=rect.min.z;z<=rect.max.z;z++)
+                {
+                    var cell=new Vector3Int(x,ActiveFloor,z);
+                    float height=(floors!=null?floors.SurfaceElevation(cell):grid.FloorElevation(ActiveFloor))+yOffset;
 
-                Vector3 minWorld = new Vector3(
-                    grid.origin.x + rect.min.x * grid.cellSize,
-                    grid.origin.y + yOffset,
-                    grid.origin.z + rect.min.z * grid.cellSize
-                );
+                    Vector3 minWorld = new Vector3(
+                        grid.origin.x + x * grid.cellSize,
+                        height,
+                        grid.origin.z + z * grid.cellSize
+                    );
 
-                Vector3 maxWorld = new Vector3(
-                    grid.origin.x + (rect.max.x + 1) * grid.cellSize,
-                    grid.origin.y + yOffset,
-                    grid.origin.z + (rect.max.z + 1) * grid.cellSize
-                );
+                    Vector3 maxWorld = new Vector3(
+                        grid.origin.x + (x + 1) * grid.cellSize,
+                        height,
+                        grid.origin.z + (z + 1) * grid.cellSize
+                    );
 
-                int index = vertices.Count;
+                    int index = vertices.Count;
 
-                vertices.Add(transform.InverseTransformPoint(new Vector3(minWorld.x, minWorld.y, minWorld.z)));
-                vertices.Add(transform.InverseTransformPoint(new Vector3(minWorld.x, minWorld.y, maxWorld.z)));
-                vertices.Add(transform.InverseTransformPoint(new Vector3(maxWorld.x, maxWorld.y, maxWorld.z)));
-                vertices.Add(transform.InverseTransformPoint(new Vector3(maxWorld.x, maxWorld.y, minWorld.z)));
+                    vertices.Add(transform.InverseTransformPoint(new Vector3(minWorld.x, minWorld.y, minWorld.z)));
+                    vertices.Add(transform.InverseTransformPoint(new Vector3(minWorld.x, minWorld.y, maxWorld.z)));
+                    vertices.Add(transform.InverseTransformPoint(new Vector3(maxWorld.x, maxWorld.y, maxWorld.z)));
+                    vertices.Add(transform.InverseTransformPoint(new Vector3(maxWorld.x, maxWorld.y, minWorld.z)));
 
-                triangles.Add(index + 0);
-                triangles.Add(index + 1);
-                triangles.Add(index + 2);
-                triangles.Add(index + 0);
-                triangles.Add(index + 2);
-                triangles.Add(index + 3);
+                    triangles.Add(index + 0);
+                    triangles.Add(index + 1);
+                    triangles.Add(index + 2);
+                    triangles.Add(index + 0);
+                    triangles.Add(index + 2);
+                    triangles.Add(index + 3);
 
-                uvs.Add(new Vector2(0f, 0f));
-                uvs.Add(new Vector2(0f, 1f));
-                uvs.Add(new Vector2(1f, 1f));
-                uvs.Add(new Vector2(1f, 0f));
+                    uvs.Add(new Vector2(0f, 0f));
+                    uvs.Add(new Vector2(0f, 1f));
+                    uvs.Add(new Vector2(1f, 1f));
+                    uvs.Add(new Vector2(1f, 0f));
+                }
             }
 
             _mesh.SetVertices(vertices);
@@ -137,6 +147,7 @@ namespace RetailEmpireTycoon.BuildSystem
 
         private void OnDestroy()
         {
+            if(floors!=null)floors.Changed-=RefreshVisibleMesh;
             if (_runtimeMaterial != null) Destroy(_runtimeMaterial);
             if (_mesh != null) Destroy(_mesh);
         }

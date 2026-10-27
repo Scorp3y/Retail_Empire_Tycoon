@@ -30,6 +30,14 @@ public sealed class MainCamera : MonoBehaviour
     private Vector2 _lastPointer;
     public Vector3 FocusPoint => _focus;
     public bool IsTopView => _topView;
+    public void SetConstructionElevation(float height)
+    {
+        float delta = height - groundHeight;
+        groundHeight = height;
+        _focus.y += delta; _targetFocus.y += delta;
+        minY += delta; maxY += delta;
+        transform.position += Vector3.up * delta;
+    }
     public void SetHomeView(Vector3 position, Quaternion rotation)
     {
         _homePosition = position;
@@ -71,8 +79,9 @@ public sealed class MainCamera : MonoBehaviour
             if (Mathf.Abs(scroll) > 0.001f) ZoomAtScreenPoint(scroll, pointer);
             float horizontal = (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow) ? 1f : 0f)
                 - (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow) ? 1f : 0f);
-            float vertical = (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow) ? 1f : 0f)
-                - (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow) ? 1f : 0f);
+            bool floorArrows=gameplayControls!=null && gameplayControls.IsFloorNavigationActive;
+            float vertical = (Input.GetKey(KeyCode.W) || !floorArrows && Input.GetKey(KeyCode.UpArrow) ? 1f : 0f)
+                - (Input.GetKey(KeyCode.S) || !floorArrows && Input.GetKey(KeyCode.DownArrow) ? 1f : 0f);
             Vector3 localMove = Vector3.ClampMagnitude(new Vector3(horizontal, 0f, vertical), 1f);
             float speed = moveSpeed * 15f * Mathf.Clamp(_targetDistance / 10f, 0.35f, 2.5f);
             if (Input.GetKey(KeyCode.LeftShift)) speed *= 2f;

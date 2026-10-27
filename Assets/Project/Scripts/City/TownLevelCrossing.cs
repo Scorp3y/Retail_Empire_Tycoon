@@ -32,7 +32,7 @@ namespace RetailEmpireTycoon.City
             if(train==null||seconds<=0||float.IsNaN(seconds)||float.IsInfinity(seconds))return;
             IsWarning=RequiresClosure(train.TravelDistance,trackDistance,train.cars.Length,train.carSpacing);
             IsOccupied=false;
-            int count=Physics.OverlapBoxNonAlloc(transform.TransformPoint(deckCenter),occupancyHalfSize,occupants,transform.rotation,~0,QueryTriggerInteraction.Ignore);
+            int count=Physics.OverlapBoxNonAlloc(transform.TransformPoint(deckCenter),Vector3.Scale(occupancyHalfSize,transform.lossyScale),occupants,transform.rotation,~0,QueryTriggerInteraction.Ignore);
             // A full buffer is treated as occupied: never release the train on incomplete evidence.
             if(count==occupants.Length)IsOccupied=true;
             for(int i=0;i<count;i++)

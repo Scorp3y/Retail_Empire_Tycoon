@@ -51,7 +51,7 @@ namespace RetailEmpireTycoon.UI.Shop
         private void SetEffects(float value) { if (sound != null) sound.SaveSoundVolume(value); }
         private void ChangeLanguage()
         {
-            if (language != null) language.SetLanguageByCode(ShopText.Russian ? "en" : "ru");
+            if (language != null) language.SetLanguageByCode("en");
             RefreshLanguage();
             RefreshHints();
         }
@@ -64,7 +64,8 @@ namespace RetailEmpireTycoon.UI.Shop
         }
         private void RefreshLanguage()
         {
-            languageButton.GetComponentInChildren<TMPro.TMP_Text>().text = ShopText.Russian ? "Русский   ›" : "English   ›";
+            languageButton.GetComponentInChildren<TMPro.TMP_Text>().text = "English · current build";
+            languageButton.interactable=false;
         }
         private void AskMainMenu() { Confirm(ShopText.Get("Вернуться в главное меню?", "Return to main menu?"), controlPanel.BackMenu); }
         private void AskExit() { Confirm(ShopText.Get("Выйти из игры?", "Exit the game?"), controlPanel.ExitGame); }

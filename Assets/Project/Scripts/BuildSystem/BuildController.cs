@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 using RetailEmpireTycoon.Core;
 using RetailEmpireTycoon.Territory;
 using UnityEngine.Scripting.APIUpdating;
@@ -20,6 +21,7 @@ namespace RetailEmpireTycoon.BuildSystem
         public event System.Action<BuildItemData> OnPlacedSuccessfully;
         public BuildGridOverlay gridOverlay;
         public FloorPainter floorPainter;
+        public StoreyConstruction Storeys { get; private set; }
         [SerializeField] private RetailEmpireTycoon.StoreOperations.GameplayControls gameplayControls;
 
         [Header("State")]
@@ -56,10 +58,13 @@ namespace RetailEmpireTycoon.BuildSystem
             preview ??= GetComponentInChildren<BuildPreview>(true);
             gridOverlay ??= FindObjectOfType<BuildGridOverlay>(true);
             floorPainter ??= FindObjectOfType<FloorPainter>(true);
+            Storeys = GetComponent<StoreyConstruction>() ?? gameObject.AddComponent<StoreyConstruction>();
+            Storeys.Initialize(this);
 
             var rules = new List<IPlacementRule>
             {
                 new Rule_InsidePurchasedArea(territory, grid),
+                new Rule_StoreySupport(grid, floorPainter),
                 new Rule_NoOverlap(grid, grid),
                 new Rule_Accessibility(grid, grid),
                 new Rule_ShelfApproach(grid,territory),
@@ -75,6 +80,27 @@ namespace RetailEmpireTycoon.BuildSystem
         private bool _isPaintingFloor;
         private Vector3Int _floorStartCell;
         private List<Vector3Int> _floorPreviewCells = new();
+        public void CancelFloorStroke()
+        {
+            _isPaintingFloor=false; _floorPreviewCells.Clear(); FloorStrokeCellCount=0; HasPlacementPreview=false;
+            floorPainter?.ClearPreview(); preview?.SetVisible(false);
+        }
+
+        public bool TryPaintCells(List<Vector3Int> cells)
+        {
+            if(_selected==null||_selected.placementKind!=PlacementKind.Floor||floorPainter==null||inventory==null)return false;
+            if(!Storeys.EraseSurface && _selected.floorMaterial==null)return false;
+            if(Storeys.EraseSurface)
+            {
+                if(!floorPainter.RemoveCells(cells,inventory))return false;
+            }
+            else
+            {
+                if(!floorPainter.AreCellsValid(cells,_selected)||inventory.GetCount(_selected)<cells.Count)return false;
+                floorPainter.PaintCells(cells,_selected);inventory.TryConsume(_selected,cells.Count);
+            }
+            NotifyLayoutChanged();return true;
+        }
 
         private void Update()
         {
@@ -198,11 +224,11 @@ namespace RetailEmpireTycoon.BuildSystem
         public PlacementResult CanPlaceAt(Vector3Int cell)
         {
             if (_selected == null || _selected.prefab == null || grid == null || _validator == null)
-                return PlacementResult.Fail(PlaceFailReason.RuleFailed, "Предмет не готов к установке");
+                return PlacementResult.Fail(PlaceFailReason.RuleFailed, "This item is not ready for placement");
             if (inventory == null || inventory.GetCount(_selected) < 1)
-                return PlacementResult.Fail(PlaceFailReason.InsufficientInventory, "Нет предмета на складе");
-            if (territory == null || !territory.IsCellPurchased(cell))
-                return PlacementResult.Fail(PlaceFailReason.NotPurchased, "За пределами доступной площади");
+                return PlacementResult.Fail(PlaceFailReason.InsufficientInventory, "This item is not in storage");
+            if (territory == null || !(_selected.isParkingSpace ? territory.IsParkingCellAllowed(cell) : territory.IsCellPurchased(cell)))
+                return PlacementResult.Fail(PlaceFailReason.NotPurchased, "Outside your available building area");
             return _validator.CanPlace(new PlacementRequest(_selected, cell, _rotated, _facing));
         }
 
@@ -244,7 +270,7 @@ namespace RetailEmpireTycoon.BuildSystem
             var res = CanPlaceAt(cell);
             if (!res.ok) return false;
 
-            if (territory != null && !territory.IsCellPurchased(cell))
+            if (territory != null && !(_selected.isParkingSpace ? territory.IsParkingCellAllowed(cell) : territory.IsCellPurchased(cell)))
                 return false;
 
             if (!SpawnPlaced(req)) return false;
@@ -274,8 +300,9 @@ namespace RetailEmpireTycoon.BuildSystem
             placed.rotated = req.rotated;
             placed.facing = req.facing;
             placed.wallModuleVersion = req.item.isWall ? BuildItemData.CurrentWallModuleVersion : 0;
+            placed.parkingModuleVersion=req.item.parkingGeometryVersion;
 
-            var cells = new List<Vector3Int>(grid.GetFootprintCells(req.anchorCell, req.item.footprint, req.rotated, req.item.pivotOffset));
+            var cells = new List<Vector3Int>(StoreyLink.OccupiedCells(grid, req.item, req.anchorCell, req.rotated));
             placed.occupiedCells = cells;
 
             grid.Occupy(cells);
@@ -296,12 +323,13 @@ namespace RetailEmpireTycoon.BuildSystem
             if (grid == null) return false;
 
             var ray = worldCamera.ScreenPointToRay(Input.mousePosition);
-            var plane = new Plane(Vector3.up, grid.origin);
+            int level = Storeys.ActiveFloor + (_selected != null && _selected.placementKind == PlacementKind.Floor && Storeys.PaintCeiling ? 1 : 0);
+            var plane = new Plane(Vector3.up, new Vector3(0, grid.FloorElevation(level), 0));
             if (!plane.Raycast(ray, out float distance) || distance > 2000f)
                 return false;
 
             hitPos = ray.GetPoint(distance);
-            cell = grid.WorldToCell(hitPos);
+            cell = grid.WorldToCell(hitPos); cell.y = level;
             return true;
         }
 
@@ -315,7 +343,7 @@ namespace RetailEmpireTycoon.BuildSystem
                     var cells = new List<Vector3Int> { hoverCell };
 
                     bool validArea = floorPainter.AreCellsValid(cells, _selected);
-                    bool enoughItems = inventory.GetCount(_selected) >= 1;
+                    bool enoughItems = Storeys.EraseSurface || inventory.GetCount(_selected) >= 1;
                     UpdateFloorFeedback(1, validArea, enoughItems);
 
                     floorPainter.ShowPreview(cells, validArea && enoughItems);
@@ -341,7 +369,7 @@ namespace RetailEmpireTycoon.BuildSystem
                 _floorPreviewCells = floorPainter.GetRectCells(_floorStartCell, currentCell);
 
                 bool validArea = floorPainter.AreCellsValid(_floorPreviewCells, _selected);
-                bool enoughItems = inventory.GetCount(_selected) >= _floorPreviewCells.Count;
+                bool enoughItems = Storeys.EraseSurface || inventory.GetCount(_selected) >= _floorPreviewCells.Count;
                 UpdateFloorFeedback(_floorPreviewCells.Count, validArea, enoughItems);
 
                 floorPainter.ShowPreview(_floorPreviewCells, validArea && enoughItems);
@@ -358,14 +386,13 @@ namespace RetailEmpireTycoon.BuildSystem
                 }
 
                 bool validArea = floorPainter.AreCellsValid(_floorPreviewCells, _selected);
-                bool enoughItems = inventory.GetCount(_selected) >= _floorPreviewCells.Count;
+                bool enoughItems = Storeys.EraseSurface || inventory.GetCount(_selected) >= _floorPreviewCells.Count;
 
                 if (validArea && enoughItems)
                 {
-                    floorPainter.PaintCells(_floorPreviewCells, _selected);
-                    inventory.TryConsume(_selected, _floorPreviewCells.Count);
-
-                    if (inventory.GetCount(_selected) <= 0)
+                    bool applied=TryPaintCells(_floorPreviewCells);
+                    if(!applied) PreviewResult=PlacementResult.Fail(PlaceFailReason.NoAccess,"Move the furniture or floor connection before removing its supporting floor.");
+                    if (!Storeys.EraseSurface && inventory.GetCount(_selected) <= 0)
                         ExitBuildMode();
                 }
 
@@ -378,9 +405,9 @@ namespace RetailEmpireTycoon.BuildSystem
             FloorStrokeCellCount = count;
             HasPlacementPreview = true;
             PreviewResult = !enoughItems
-                ? PlacementResult.Fail(PlaceFailReason.InsufficientInventory, "Недостаточно плиток на складе")
+                ? PlacementResult.Fail(PlaceFailReason.InsufficientInventory, "Not enough tiles in storage")
                 : !validArea
-                    ? PlacementResult.Fail(PlaceFailReason.RuleFailed, "Проверьте границы участка. На парковке и подъезде нужен асфальт.")
+                    ? PlacementResult.Fail(PlaceFailReason.RuleFailed, "Choose tiles on your land and keep entrances and floor openings clear.")
                     : PlacementResult.Success();
         }
 
@@ -399,11 +426,13 @@ namespace RetailEmpireTycoon.BuildSystem
                 {
                     itemId = placed.item.id,
                     x = placed.anchorCell.x,
+                    floor = placed.anchorCell.y,
                     z = placed.anchorCell.z,
                     rotated = placed.rotated,
                     facing = placed.facing,
                     wallModuleVersion = placed.wallModuleVersion,
-                    playerParking = placed.playerParking
+                    playerParking = placed.playerParking,
+                    parkingModuleVersion = placed.parkingModuleVersion
                 });
             }
 
@@ -427,11 +456,30 @@ namespace RetailEmpireTycoon.BuildSystem
                 if (item == null || item.prefab == null)
                     continue;
 
-                var cell = new Vector3Int(d.x, 0, d.z);
+                if (d.floor < 0 || d.floor > GridSystem.TopFloor) continue;
+                var cell = new Vector3Int(d.x, d.floor, d.z);
                 var req = new PlacementRequest(item, cell, d.rotated, d.facing);
 
-                var placed = SpawnPlacedFromSave(req, d.wallModuleVersion);
-                if (placed != null) placed.playerParking = d.playerParking;
+                var placed = SpawnPlacedFromSave(req, d.wallModuleVersion, d.parkingModuleVersion);
+                if (placed != null)
+                {
+                    placed.playerParking = d.playerParking;
+                    placed.GetComponent<RetailEmpireTycoon.Parking.ParkingBay>()?.ApplyPaint(d.playerParking);
+                }
+            }
+            // Upgrade a small historical bay only when its larger footprint and approach remain
+            // on asphalt and do not intersect the user's other construction. Never move the anchor.
+            foreach(var placed in FindObjectsOfType<PlacedObject>().Where(p=>p.item!=null && p.item.isParkingSpace
+                && p.parkingModuleVersion<p.item.parkingGeometryVersion && p.GetComponentInParent<BuildPreview>()==null))
+            {
+                var request=new PlacementRequest(placed.item,placed.anchorCell,placed.rotated,placed.facing,placed);
+                if(!ValidateExistingPlacement(request).ok)continue;
+                var bay=placed.GetComponent<RetailEmpireTycoon.Parking.ParkingBay>();
+                bay.Resize(placed.item.placementBounds.size.x,placed.item.placementBounds.size.z,placed.item.previousParkingBounds);
+                grid.Release(placed.occupiedCells);
+                placed.occupiedCells=StoreyLink.OccupiedCells(grid,placed.item,placed.anchorCell,placed.rotated).ToList();
+                grid.Occupy(placed.occupiedCells);placed.parkingModuleVersion=placed.item.parkingGeometryVersion;
+                placed.transform.position=BuildPlacementPose.Position(grid,placed.item,placed.anchorCell,placed.rotated,placed.facing);
             }
             NotifyLayoutChanged();
         }
@@ -450,7 +498,7 @@ namespace RetailEmpireTycoon.BuildSystem
             }
         }
 
-        private PlacedObject SpawnPlacedFromSave(PlacementRequest req, int wallModuleVersion)
+        private PlacedObject SpawnPlacedFromSave(PlacementRequest req, int wallModuleVersion, int parkingModuleVersion)
         {
             if (req.item == null || req.item.prefab == null || grid == null) return null;
 
@@ -460,6 +508,12 @@ namespace RetailEmpireTycoon.BuildSystem
             var bounds = req.item.placementBounds;
             var prefab = req.item.prefab;
             bool legacyWall = req.item.isWall && wallModuleVersion < BuildItemData.CurrentWallModuleVersion;
+            bool legacyParking=req.item.isParkingSpace && parkingModuleVersion<req.item.parkingGeometryVersion && req.item.previousParkingPrefab!=null;
+            if(legacyParking)
+            {
+                footprint=req.item.previousParkingFootprint; bounds=req.item.previousParkingBounds;
+                prefab=req.item.previousParkingPrefab;
+            }
             if (legacyWall)
             {
                 // Both historical wall formats retain their original dimensions and anchors.
@@ -470,7 +524,7 @@ namespace RetailEmpireTycoon.BuildSystem
                 bounds = req.item.WallBounds(wallModuleVersion);
                 bounds = new Bounds(Vector3.Scale(bounds.center, modelScale), Vector3.Scale(bounds.size, modelScale));
             }
-            var worldPos = legacyWall
+            var worldPos = legacyWall || legacyParking
                 ? BuildPlacementPose.AlignedPosition(grid, req.anchorCell, req.rotated, req.facing, footprint, pivotOffset, bounds)
                     + (wallModuleVersion==2?Quaternion.Euler(0,req.facing*90,0)*req.item.previousWallAlignmentOffset:Vector3.zero)
                 : BuildPlacementPose.Position(grid, req.item, req.anchorCell, req.rotated, req.facing);
@@ -485,9 +539,11 @@ namespace RetailEmpireTycoon.BuildSystem
             placed.rotated = req.rotated;
             placed.facing = req.facing;
             placed.wallModuleVersion = wallModuleVersion;
+            placed.parkingModuleVersion=parkingModuleVersion;
 
             var cells = new List<Vector3Int>(
-                grid.GetFootprintCells(req.anchorCell, footprint, req.rotated, pivotOffset)
+                legacyWall || legacyParking ? grid.GetFootprintCells(req.anchorCell, footprint, req.rotated, pivotOffset)
+                    : StoreyLink.OccupiedCells(grid, req.item, req.anchorCell, req.rotated)
             );
 
             placed.occupiedCells = cells;

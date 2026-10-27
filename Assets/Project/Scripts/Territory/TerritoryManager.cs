@@ -22,6 +22,8 @@ namespace RetailEmpireTycoon.Territory
 
         public IReadOnlyList<PurchasedRect> PurchasedRects => purchased;
         public TerritoryPlotLayout plotLayout;
+        // Service-yard permission is only for parking/asphalt, not ordinary store construction.
+        public bool IsParkingCellAllowed(Vector3Int cell) => IsCellPurchased(cell) || plotLayout != null && plotLayout.IsServiceYardCell(cell);
 
         public void ClearPurchased()
         {

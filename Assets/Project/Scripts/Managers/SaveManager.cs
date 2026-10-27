@@ -10,6 +10,7 @@ public class SaveManager : MonoBehaviour
 {
     private string saveFilePath;
     private GameData gameData;
+    private bool worldRestored;
 
     public static SaveManager Instance;
 
@@ -99,6 +100,7 @@ public class SaveManager : MonoBehaviour
 
     public void SaveGame()
     {
+        if(!worldRestored){Debug.LogWarning("[SaveManager] Save blocked until the complete world and stock have been restored.");return;}
         FindRefs();
 
         gameData ??= new GameData();
@@ -139,6 +141,7 @@ public class SaveManager : MonoBehaviour
 
     public void LoadGame()
     {
+        worldRestored=false;
         FindRefs();
 
         if (!File.Exists(saveFilePath))
@@ -146,6 +149,9 @@ public class SaveManager : MonoBehaviour
             if (starterStore != null) gameData = starterStore.CreateNewGame(_money != null ? _money.Money : gameData.playerMoney);
             SpawnStoreFromProgressOrDefault();
             if (starterStore != null) starterStore.ApplyNewGameBuildings(gameData);
+            // The new-game branch returns before the ordinary load path restores construction inventory.
+            if (_buildInventory != null && _buildCatalog != null)
+                _buildInventory.ApplySaveData(gameData.buildInventory, _buildCatalog);
             StartCoroutine(LoadProductsAfterWorldLoaded(gameData));
             return;
         }
@@ -166,11 +172,11 @@ public class SaveManager : MonoBehaviour
         if (_buildInventory != null && _buildCatalog != null)
             _buildInventory.ApplySaveData(gameData.buildInventory, _buildCatalog);
 
-        if (_buildController != null && _buildCatalog != null)
-            _buildController.ApplyPlacedSaveData(gameData.placedObjects, _buildCatalog);
-
         if (_floorPainter != null && _buildCatalog != null)
             _floorPainter.ApplySaveData(gameData.floorTiles, _buildCatalog);
+        // Parking migration validates the saved asphalt. It must exist before bays are restored.
+        if (_buildController != null && _buildCatalog != null)
+            _buildController.ApplyPlacedSaveData(gameData.placedObjects, _buildCatalog);
         starterStore?.RefreshPickupParking();
 
         StartCoroutine(LoadProductsAfterWorldLoaded(gameData));
@@ -217,6 +223,7 @@ public class SaveManager : MonoBehaviour
         productSaveService.ApplyWarehouseSaveData(loadedData.productInventory);
         productSaveService.ApplyShelfSaveData(loadedData.shelfStocks);
         if (shopOperations != null) shopOperations.ApplySaveData(loadedData.shopOperations);
+        worldRestored=true;
 
         Debug.Log("[SaveManager] Products loaded.");
     }

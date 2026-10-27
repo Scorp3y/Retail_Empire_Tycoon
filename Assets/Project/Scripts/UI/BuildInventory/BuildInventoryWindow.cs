@@ -132,7 +132,7 @@ namespace RetailEmpireTycoon.UI.Windows
                     entry.item,
                     entry.count,
                     buildController,
-                    onPlace: () => gameObject.SetActive(false)
+                    onPlace: () => gameObject.SetActive(false), canPlace:false
                 );
 
                 _spawnedRows.Add(row.gameObject);

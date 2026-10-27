@@ -18,14 +18,14 @@ namespace RetailEmpireTycoon.City
                 new Vector2(transform.position.x,transform.position.z));
         public string UnavailableReason(PickupDrive pickup)
         {
-            if (pickup == null || DistanceTo(pickup) > radius) return "Подъедьте к зоне погрузки";
-            if (pickup.Speed >= .5f) return "Остановите машину в зоне погрузки";
+            if (pickup == null || DistanceTo(pickup) > radius) return "Drive to the loading zone";
+            if (pickup.Speed >= .5f) return "Stop the pickup in the loading zone";
             if (requiresRearDocking)
             {
                 var heading=Vector3.ProjectOnPlane(pickup.transform.forward,Vector3.up);
                 var bayHeading=Vector3.ProjectOnPlane(transform.forward,Vector3.up);
                 if (Vector3.Angle(heading,bayHeading)>dockingAngleTolerance)
-                    return "Поставьте машину задом к воротам по стрелке";
+                    return "Reverse towards the gate, following the docking arrow";
             }
             return string.Empty;
         }

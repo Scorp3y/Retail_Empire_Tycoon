@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using RetailEmpireTycoon.BuildSystem;
 using RetailEmpireTycoon.Territory;
 using UnityEngine;
@@ -12,18 +13,25 @@ namespace RetailEmpireTycoon.StoreOperations
         private readonly TerritoryManager _territory;
         private readonly Dictionary<Vector3Int, PlacedObject> _doorways = new Dictionary<Vector3Int, PlacedObject>();
         private readonly List<StoreDoorway> _doors = new List<StoreDoorway>();
+        private readonly List<StoreyLink> links = new();
+        private FloorPainter floors;
         private static readonly Vector3Int[] Directions = { Vector3Int.left, Vector3Int.right, new Vector3Int(0, 0, 1), new Vector3Int(0, 0, -1) };
-        public const float FloorHeight = 0.105f;
-        public const float BodyRadius = .075f;
-        private static readonly Vector3 BodyBottom = Vector3.up * (FloorHeight + .1f + BodyRadius);
-        private static readonly Vector3 BodyTop = Vector3.up * (FloorHeight + .48f - BodyRadius);
+        public const float FloorHeight = 0.105f*ShopProportions.Scale;
+        public static float FloorOffset(int floor)=>floor>0?.013f:FloorHeight;
+        private float SurfaceHeight(Vector3Int cell) => cell.y>0?FloorOffset(cell.y):floors!=null && floors.IsAsphalt(cell) || !_territory.IsCellPurchased(cell) ? .025f : FloorHeight;
+        public const float BodyRadius = ShopperDimensions.ShopRadius;
+        private static readonly Vector3 BodyBottom = Vector3.up * (.1f + BodyRadius);
+        private static readonly Vector3 BodyTop = Vector3.up * (ShopperDimensions.ShopHeight - BodyRadius);
         public StoreNavigation(GridSystem grid, TerritoryManager territory) { _grid = grid; _territory = territory; }
         public void RefreshDoorways(IEnumerable<PlacedObject> objects)
         {
             _doorways.Clear();
             _doors.Clear();
+            links.Clear(); floors = _grid.GetComponent<BuildController>()?.floorPainter;
             foreach (var placed in objects)
             {
+                if (placed != null && placed.item != null && placed.item.storeyConnection != Core.StoreyConnectionKind.None)
+                    links.Add(new StoreyLink(_grid,placed));
                 if (placed == null || placed.item == null || !placed.item.isDoorway) continue;
                 var door = placed.GetComponent<StoreDoorway>() ?? placed.gameObject.AddComponent<StoreDoorway>();
                 _doors.Add(door);
@@ -33,6 +41,8 @@ namespace RetailEmpireTycoon.StoreOperations
 
         public bool IsWalkable(Vector3Int cell, bool allowOutside = false)
         {
+            if(cell.y<0||cell.y>GridSystem.TopFloor)return false;
+            if(cell.y>0 && (floors==null || !floors.HasSurface(cell)))return false;
             if (!allowOutside && !_territory.IsCellPurchased(cell)) return false;
             if (_grid.IsOccupied(cell))
             {
@@ -45,12 +55,15 @@ namespace RetailEmpireTycoon.StoreOperations
             }
             return IsBodyClear(_grid.CellToWorld(cell));
         }
-        public bool IsWalkable(Vector3 position, bool allowOutside = false) => IsWalkable(_grid.WorldToCell(position), allowOutside);
+        public bool IsWalkable(Vector3 position, bool allowOutside = false) => links.Any(l=>l.IsUsable(floors)&&l.Contains(position)) || IsWalkable(_grid.WorldToCell(position), allowOutside);
 
         public bool CanTraverse(Vector3 start, Vector3 end)
         {
+            if(links.Any(l=>l.IsUsable(floors)&&l.Contains(start)&&l.Contains(end)))return true;
+            if(Mathf.Abs(start.y-end.y)>.25f)return false;
             if (!IsBodyClear(start) || !IsBodyClear(end)) return false;
-            Vector3 from = start; from.y = 0;
+            var startCell=_grid.WorldToCell(start);
+            Vector3 from = start; from.y = _grid.FloorElevation(startCell.y)+SurfaceHeight(startCell);
             Vector3 delta = end - start; delta.y = 0;
             if (delta.sqrMagnitude < .000001f) return true;
             foreach (var hit in Physics.CapsuleCastAll(from + BodyBottom, from + BodyTop, BodyRadius, delta.normalized, delta.magnitude, ~0, QueryTriggerInteraction.Ignore))
@@ -71,7 +84,8 @@ namespace RetailEmpireTycoon.StoreOperations
         }
         private bool IsBodyClear(Vector3 position)
         {
-            position.y = 0;
+            var cell=_grid.WorldToCell(position);
+            position.y = _grid.FloorElevation(cell.y)+SurfaceHeight(cell);
             foreach (var collider in Physics.OverlapCapsule(position + BodyBottom, position + BodyTop, BodyRadius, ~0, QueryTriggerInteraction.Ignore))
             {
                 if (IsActor(collider)) continue;
@@ -93,6 +107,11 @@ namespace RetailEmpireTycoon.StoreOperations
                 if (door != null && (door.transform.position - position).sqrMagnitude < 1.2f * 1.2f)
                     door.RequestPassage();
         }
+        public bool TryUseTransport(ShopCharacter actor,Vector3 position,Vector3 target)
+        {
+            var link=links.FirstOrDefault(l=>l.IsUsable(floors)&&l.Contains(position)&&l.Contains(target));
+            return link==null || link.Owner.GetComponent<StoreyTransportVisual>()?.TryBoard(actor,position)!=false;
+        }
 
         public bool TryNearest(Vector3 point, out Vector3 position, bool allowOutside = false, bool requireConnection = false)
         {
@@ -109,7 +128,7 @@ namespace RetailEmpireTycoon.StoreOperations
                     if (d >= distance) continue;
                     best = cell; distance = d; found = true;
                 }
-            position = _grid.CellToWorld(best); position.y = FloorHeight;
+            position = _grid.CellToWorld(best); position.y += SurfaceHeight(best);
             return found;
         }
 
@@ -131,17 +150,29 @@ namespace RetailEmpireTycoon.StoreOperations
                 {
                     for (var cell = to; cell != from; cell = previous[cell])
                     {
-                        var point = _grid.CellToWorld(cell); point.y = FloorHeight; path.Add(point);
+                        var parent=previous[cell];
+                        var transport=links.FirstOrDefault(l=>l.IsUsable(floors) && (l.Lower==parent&&l.Upper==cell || l.Upper==parent&&l.Lower==cell));
+                        if(transport!=null)
+                        {
+                            var route=transport.Route(parent==transport.Lower); route.Reverse(); path.AddRange(route);
+                        }
+                        else { var point = _grid.CellToWorld(cell); point.y += SurfaceHeight(cell); path.Add(point); }
                     }
                     path.Add(first); path.Reverse(); return true;
                 }
-                foreach (var offset in Directions)
+                var neighbours=Directions.Select(offset=>current+offset).ToList();
+                foreach(var link in links.Where(l=>l.IsUsable(floors)))
                 {
-                    var next = current + offset;
-                    int cost = costs[current] + 1;
+                    if(link.Lower==current)neighbours.Add(link.Upper);
+                    else if(link.Upper==current)neighbours.Add(link.Lower);
+                }
+                foreach (var next in neighbours)
+                {
+                    int cost = costs[current] + (next.y==current.y ? 1 : 12);
                     if (costs.TryGetValue(next, out int known) && known <= cost) continue;
                     if (!walkable.TryGetValue(next, out bool open)) { open = IsWalkable(next, allowOutside); walkable.Add(next, open); }
-                    if (!open || !CanTraverse(_grid.CellToWorld(current), _grid.CellToWorld(next))) continue;
+                    bool transport=next.y!=current.y && links.Any(l=>l.IsUsable(floors)&&(l.Lower==current&&l.Upper==next||l.Upper==current&&l.Lower==next));
+                    if (!open || !transport&&!CanTraverse(_grid.CellToWorld(current), _grid.CellToWorld(next))) continue;
                     previous[next] = current; costs[next] = cost;
                     int estimate = Mathf.Abs(next.x - to.x) + Mathf.Abs(next.z - to.z);
                     queue.Add((cost + estimate, order++, next));

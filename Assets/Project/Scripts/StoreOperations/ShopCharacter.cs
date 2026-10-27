@@ -10,6 +10,7 @@ namespace RetailEmpireTycoon.StoreOperations
         private int _waypoint;
         private Animator _animator;
         private bool _hasWalkingParameter;
+        private bool _hasBrowsingParameter;
         private float _walkingSpeed, _retry;
         private Vector3 _destination;
         public bool HasDestination { get; private set; }
@@ -24,6 +25,7 @@ namespace RetailEmpireTycoon.StoreOperations
         {
             _path.Clear(); _waypoint = 0; HasDestination = false; Arrived = true; IsBlocked = false;
             SetWalking(false);
+            SetBrowsing(false);
         }
         public void Initialize(StoreNavigation navigation, float walkingSpeed = 0.65f, bool takeOverLegacy = true)
         {
@@ -35,9 +37,28 @@ namespace RetailEmpireTycoon.StoreOperations
             foreach (var collider in GetComponentsInChildren<Collider>()) collider.enabled = false;
             _animator = GetComponentInChildren<Animator>();
             _hasWalkingParameter = false;
+            _hasBrowsingParameter = false;
             if (_animator != null)
+            {
+                _animator.applyRootMotion = false;
                 foreach (var parameter in _animator.parameters)
+                {
                     if (parameter.name == "isWalking" && parameter.type == AnimatorControllerParameterType.Bool) _hasWalkingParameter = true;
+                    if (parameter.name == "isBrowsing" && parameter.type == AnimatorControllerParameterType.Bool) _hasBrowsingParameter = true;
+                }
+                if (_hasBrowsingParameter) _animator.Play("Idle", 0, Random.value);
+            }
+        }
+        public void SetBrowsing(bool browsing)
+        {
+            if (_hasBrowsingParameter && _animator != null) _animator.SetBool("isBrowsing", browsing);
+        }
+        public void FaceToward(Vector3 point, float seconds)
+        {
+            var direction = point - transform.position;
+            direction.y = 0;
+            if (direction.sqrMagnitude > .00001f)
+                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(direction), Mathf.Clamp01(seconds * 12));
         }
         private bool RebuildRoute()
         {
@@ -60,16 +81,18 @@ namespace RetailEmpireTycoon.StoreOperations
             while (_waypoint < _path.Count)
             {
                 Vector3 target = _path[_waypoint];
+                if(!_navigation.TryUseTransport(this,transform.position,target)) {SetWalking(false);return;}
                 if (!_navigation.IsWalkable(target, true) || !_navigation.CanTraverse(transform.position, target))
                 {
                     IsBlocked = true; SetWalking(false);
                     if (_retry <= 0) RebuildRoute();
                     return;
                 }
-                Vector3 delta = target - transform.position; delta.y = 0;
+                Vector3 delta = target - transform.position;
                 float distance = delta.magnitude;
                 if (distance <= .001f) { transform.position = target; _waypoint++; continue; }
-                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(delta), deltaTime * 12);
+                Vector3 horizontal=delta; horizontal.y=0;
+                if(horizontal.sqrMagnitude>.00001f)transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(horizontal), deltaTime * 12);
                 float step = Mathf.Min(distanceBudget, distance);
                 transform.position = Vector3.MoveTowards(transform.position, target, step);
                 distanceBudget -= step;

@@ -30,7 +30,7 @@ namespace RetailEmpireTycoon.BuildSystem
                     bool candidateConnects = ConnectsTowards(request.item, request.facing, direction);
                     bool neighbourConnects = ConnectsTowards(neighbour.item, neighbour.facing, -direction);
                     if (candidateConnects != neighbourConnects)
-                        return PlacementResult.Fail(PlaceFailReason.NoAccess, "Поверните стену: её торец должен совпадать с торцом соседней секции.");
+                        return PlacementResult.Fail(PlaceFailReason.NoAccess, "Rotate the wall so its end aligns with the neighbouring section.");
                 }
             }
             return PlacementResult.Success();

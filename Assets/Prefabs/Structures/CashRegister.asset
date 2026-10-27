@@ -12,15 +12,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d6abad8a36b0794996f8dedd8a8e734, type: 3}
   m_Name: CashRegister
   m_EditorClassIdentifier: 
+  legacyWallDepth: 0
+  wallCellSize: 0
+  wallGeometryVersion: 0
+  previousWallPrefab: {fileID: 0}
+  previousWallBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
+  previousWallAlignmentOffset: {x: 0, y: 0, z: 0}
+  decorationProportionsVersion: 0
   id: cash_register_01
-  displayName: Cash Register
+  displayName: Checkout counter
   description: For customer checkout
   icon: {fileID: 21300000, guid: 17c7ae890f2fda447986f3f19bcf8bed, type: 3}
   price: 300
+  hiddenFromShop: 0
   weightKg: 35
   cargoVolumeM3: 0.3
   isAsphalt: 0
   isParkingSpace: 0
+  parkingGeometryVersion: 0
+  previousParkingPrefab: {fileID: 0}
+  previousParkingFootprint: {x: 0, y: 0}
+  previousParkingBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   isUnloadingGate: 0
   isWall: 0
   beautyPoints: 0
@@ -37,13 +53,15 @@ MonoBehaviour:
   pivotOffset: {x: 0, y: 0}
   alignModelToFootprint: 1
   placementBounds:
-    m_Center: {x: -0.011250002, y: 0.1338525, z: 0.011250002}
-    m_Extent: {x: 0.19124998, y: 0.1338525, z: 0.19124998}
+    m_Center: {x: -0.018562503, y: 0.22085664, z: 0.018562503}
+    m_Extent: {x: 0.3155625, y: 0.22085664, z: 0.3155625}
+  placementAlignmentOffset: {x: 0, y: 0, z: 0}
   frontFacing: 0
   twoSidedAccess: 0
   isDoorway: 0
   isCheckout: 1
-  prefab: {fileID: 8762336594040129518, guid: e04c11ec4b3b47c4880d27c43f5bed39, type: 3}
+  storeyConnection: 0
+  prefab: {fileID: 8766509936826091364, guid: fc5ed74c61f690c4185cdf934a62a521, type: 3}
   previewValidMaterial: {fileID: 2100000, guid: b737f1f25c90f1842999d06f57aa1608, type: 2}
   previewInvalidMaterial: {fileID: 2100000, guid: cd8bbf8a301d0664386b1c15cc42650f, type: 2}
   shelfData: {fileID: 0}

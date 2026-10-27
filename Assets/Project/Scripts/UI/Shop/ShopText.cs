@@ -6,13 +6,28 @@ namespace RetailEmpireTycoon.UI.Shop
     /// <summary>Translated display names never change the stable IDs used by saved games.</summary>
     public static class ShopText
     {
-        public static bool Russian => PlayerPrefs.GetString("lang", "ru") == "ru";
+        // This development build is English-only, independent of old language preferences.
+        public static bool Russian => false;
         public static string Get(string ru, string en) => Russian ? ru : en;
         public static string Item(BuildItemData item)
         {
             if (item == null) return Get("Предмет", "Item");
             switch(item.id)
             {
+                case "shelf_wallgoods_01": return "Wall shelf";
+                case "shelf_doublesided_01": return "Double-sided shelf";
+                case "shelf_refrigerated_01": return "Refrigerated display";
+                case "shelf_cold_01": return "Freezer display";
+                case "cash_register_01": return "Checkout counter";
+                case "door_01": return "Entrance door";
+                case "floor_01": return "Floor tile";
+                case "wall_01": return "Wall";
+            }
+            switch(item.id)
+            {
+                case "stairs_01": return Get("Лестница", "Stairs");
+                case "elevator_01": return Get("Лифт", "Elevator");
+                case "escalator_01": return Get("Эскалатор", "Escalator");
                 case "floor_cream": return Get("Светлая плитка", "Cream tile");
                 case "floor_graphite": return Get("Графитовая плитка", "Graphite tile");
                 case "floor_checker": return Get("Шахматный пол", "Checkerboard");

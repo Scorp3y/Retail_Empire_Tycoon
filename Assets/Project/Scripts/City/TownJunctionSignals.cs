@@ -60,6 +60,14 @@ namespace RetailEmpireTycoon.City
         private bool hasDisplayed;
         public JunctionSignalState Current { get; private set; }
         public float PhaseOffset=>phaseOffset;
+        /// <summary>The single clock contract used by both visible lamps and road users.</summary>
+        public JunctionSignalState StateAt(double clock)=>Evaluate(clock+phaseOffset);
+        public bool AllowsVehicle(Vector3 travelDirection,double clock)
+        {
+            if(!IsConfigured || travelDirection.sqrMagnitude<.001f)return false;
+            var state=StateAt(clock);
+            return (Mathf.Abs(travelDirection.z)>Mathf.Abs(travelDirection.x)?state.NorthSouth:state.EastWest)==JunctionSignalAspect.Green;
+        }
         public bool IsConfigured=>northSouth!=null&&northSouth.IsComplete&&eastWest!=null&&eastWest.IsComplete&&pedestrianRed!=null&&pedestrianGreen!=null;
         public bool LampsMatchState=>IsConfigured&&northSouth.Shows(Current.NorthSouth)&&eastWest.Shows(Current.EastWest)
             &&pedestrianGreen.activeSelf==Current.PedestrianWalk&&pedestrianRed.activeSelf!=Current.PedestrianWalk;

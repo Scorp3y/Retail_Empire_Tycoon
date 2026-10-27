@@ -12,7 +12,7 @@ public sealed class TerritoryConstructionBarrier : MonoBehaviour
     public void SetPrice(int price)
     {
         if (_priceLabel != null)
-            _priceLabel.text = (_englishText ? "EXPAND\n" : "Расширить\n") + price.ToString("N0").Replace(',', ' ') + " $";
+            _priceLabel.text = "EXPAND\n" + price.ToString("N0").Replace(',', ' ') + " $";
     }
 
     public void SetVisible(bool visible)

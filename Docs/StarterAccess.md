@@ -1,0 +1,11 @@
+# Starter store access and construction editing
+
+The starter building, its indoor floor, fixtures and stock move eight grid cells right and eight back (2.20044 Game units on each axis). A matching asphalt strip connects the forecourt to the warehouse side. Street access and existing parking anchors stay in place. The initial owned parcel includes the translated building and access strip; previously owned land remains available.
+
+`StarterStoreInitialization` asks the blueprint's `StarterSiteRevision` to upgrade an existing save. The revision compares the ground-floor construction and indoor tiles with the previous default template. Only an unchanged template moves. Upper construction inside the old building envelope moves with it. Custom ground layouts, external upper additions or parking conflicts opt out without changing the save. Conversion uses a detached snapshot, preserves money, inventory and shelf-stock quantities, and records version 1 only after all checks succeed. The updated blueprint gives new games the same layout directly.
+
+Construction uses the existing monochrome vector icon system. The hammer has a thicker handle, flat striking face and split claw. There is no dedicated Parking tool or Apply button. In Move mode, clicking a bay selects its actual placed instance through occupied grid cells; the next valid world click confirms movement. Esc cancels. Personal return parking cannot be deleted, and occupied customer bays remain protected by the ordinary parking rules.
+
+Upper-floor tiles sit 5 mm above the lower wall cap, with the construction grid another 2 mm above the tile. This separates the competing surfaces responsible for flickering without altering saved tile addresses or removing the ground floor.
+
+Native checks run in the isolated project through `StarterAccessBatch.Build`, `ConstructionWorkspacePlay.RunStarterAccess`, `MultiStoreyValidation.Run` and `TrafficFleetPlay.Run`. The play scenario checks pointer selection, placement, ceiling persistence, save migration, the actual customer purchase/car-return cycle and Game → City → Game. Reports and rendered captures are in `Docs/StarterAccess`. Installation verifies hashes of tested dependencies and creates atomic backups; it never reads the player's save or writes Git history.

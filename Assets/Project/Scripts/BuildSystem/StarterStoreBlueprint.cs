@@ -21,12 +21,17 @@ namespace RetailEmpireTycoon.BuildSystem
         public bool hasStraightStreetAccess;
         public Vector3 streetEntry;
         public Vector3 drivewayEntry;
+        [SerializeField] private StarterConstructionStock constructionStock = new StarterConstructionStock();
+        [SerializeField] private StarterSiteRevision siteRevision = new StarterSiteRevision();
+        public StarterSiteRevision SiteRevision=>siteRevision;
+        // Historical migrations compare X/Z only. A multi-storey layout is custom and must never be flattened.
+        private static bool HasUpperConstruction(GameData data) => data.floorTiles.Any(f=>f.floor!=0)||data.placedObjects.Any(p=>p.floor!=0);
 
         /// <summary>Moves only the exact default forecourt. User-painted floors and moved/added bays
         /// opt out; saved buildings, inventory, money and purchased plots are never removed.</summary>
         public bool TryUpgradeUnmodifiedAccess(GameData data,GridSystem grid,BuildItemCatalog catalog)
         {
-            if(data==null||!data.usesModularStore||grid==null||catalog==null||previousAccessAsphalt.Count==0||previousAccessParking.Count!=3)return false;
+            if(data==null||HasUpperConstruction(data)||!data.usesModularStore||grid==null||catalog==null||previousAccessAsphalt.Count==0||previousAccessParking.Count!=3)return false;
             string FloorKey(FloorTileSaveData f)=>$"{f.itemId}:{f.x}:{f.z}";
             string BayKey(PlacedBuildSaveData p)=>$"{p.x}:{p.z}:{p.facing}:{p.rotated}:{p.playerParking}";
             var asphalt=data.floorTiles.Where(f=>f.itemId=="asphalt_01").ToArray();
@@ -58,7 +63,7 @@ namespace RetailEmpireTycoon.BuildSystem
 
         public bool TryUpgradeUnmodifiedStructure(GameData data,GridSystem grid,BuildItemCatalog catalog)
         {
-            if(data==null||!data.usesModularStore||previousStarterStructure.Count==0||grid==null||catalog==null)return false;
+            if(data==null||HasUpperConstruction(data)||!data.usesModularStore||previousStarterStructure.Count==0||grid==null||catalog==null)return false;
             bool IsStructure(PlacedBuildSaveData p)=>p.itemId=="wall_01"||p.itemId=="wallcorner_01"||p.itemId=="door_01"||p.itemId=="unloading_gate_01";
             string Key(PlacedBuildSaveData p)=>$"{p.itemId}:{p.x}:{p.z}:{p.facing}:{p.rotated}:{p.wallModuleVersion}";
             var existing=data.placedObjects.Where(IsStructure).ToArray();
@@ -84,7 +89,7 @@ namespace RetailEmpireTycoon.BuildSystem
         /// <summary>Upgrades only the untouched legacy exterior; a customized driveway is never overwritten.</summary>
         public bool TryUpgradeUnmodifiedFrontage(GameData data,GridSystem grid,BuildItemCatalog catalog)
         {
-            if(data==null||!data.usesModularStore||legacyPlayerParking==null||legacyPlayerParking.itemId!="parking_01"||grid==null||catalog==null)return false;
+            if(data==null||HasUpperConstruction(data)||!data.usesModularStore||legacyPlayerParking==null||legacyPlayerParking.itemId!="parking_01"||grid==null||catalog==null)return false;
             var parking=data.placedObjects.Where(p=>p.itemId=="parking_01").ToArray();
             var legacy=legacyPlayerParking;
             if(parking.Length!=1||!parking[0].playerParking||parking[0].x!=legacy.x||parking[0].z!=legacy.z
@@ -114,6 +119,7 @@ namespace RetailEmpireTycoon.BuildSystem
             var result = JsonUtility.FromJson<GameData>(JsonUtility.ToJson(initialState));
             result.usesModularStore = true;
             result.playerMoney = startingMoney;
+            constructionStock.AddTo(result, new System.Random());
             return result;
         }
     }

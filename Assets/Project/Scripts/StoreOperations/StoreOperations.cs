@@ -19,6 +19,9 @@ namespace RetailEmpireTycoon.StoreOperations
         [SerializeField] private StoreProgression progression;
         [SerializeField] private WorkMinigame work;
         [SerializeField] private GameObject[] customerModels;
+        private ShopperSelection customerSelection;
+        private Parking.ParkingTraffic parking;
+        public int CustomerAppearanceCount => customerSelection?.Count ?? 0;
         [SerializeField] private GameObject employeeModel;
         [SerializeField] private GameObject registerModel;
         [SerializeField] private Material dirtMaterial;
@@ -47,7 +50,7 @@ namespace RetailEmpireTycoon.StoreOperations
         public int Level => 1 + (progression != null ? progression.CompletedRegionCount : 0);
         public float Rating { get; private set; } = 3;
         public int BeautyPoints {get;private set;}
-        public string Notice { get; private set; } = "Магазин закрыт. Заполни полки и открой его.";
+        public string Notice { get; private set; } = "Store closed. Stock the shelves, then open for business.";
         public Vector3 CheckoutPosition => _checkout;
         public PlacedObject CheckoutObject { get; private set; }
         public Vector3 ArrivalPosition => _arrivalPoint;
@@ -55,12 +58,21 @@ namespace RetailEmpireTycoon.StoreOperations
         public bool WorkActive => work != null && work.IsActive;
         public int Money => money.Money;
         public bool CanAffordHire(StaffRole role) => money.Money >= balance.HireCost(role);
+        public bool CanAcceptCustomer => _ready && !_refreshWorld && IsOpen && building.mode==BuildMode.Normal
+            && !WorkActive && _visits.Count<4+Level*2;
 
         private void Awake()
         {
             if (balance == null || money == null || warehouse == null || building == null || building.grid == null || building.territory == null)
             { Debug.LogError("Store operations are not configured. Run Retail Empire/Shop/Configure gameplay.", this); enabled = false; return; }
             Navigation = new StoreNavigation(building.grid, building.territory);
+            parking=FindObjectOfType<Parking.ParkingTraffic>();
+            var roster = Resources.Load<ShopperRoster>("Shoppers/Roster");
+            int appearanceSeed = Environment.TickCount ^ GetInstanceID();
+            if (roster != null)
+                customerSelection = roster.CreateSelection(appearanceSeed);
+            else if (customerModels != null && customerModels.Length > 0)
+                customerSelection = new ShopperSelection(customerModels, appearanceSeed);
         }
         private void Start() { _arrival = 5; }
         private void OnEnable() { if (building != null) building.LayoutChanged += InvalidateLayout; }
@@ -83,7 +95,11 @@ namespace RetailEmpireTycoon.StoreOperations
             if (IsOpen)
             {
                 _arrival -= seconds;
-                if (_arrival <= 0) { _arrival = balance.ArrivalSeconds(Level, Rating); TrySpawnCustomer(); }
+                if (_arrival <= 0)
+                {
+                    _arrival = balance.ArrivalSeconds(Level, Rating);
+                    if(parking==null || !parking.HasVisitorBays)TrySpawnCustomer();
+                }
                 ChargeWages(seconds);
             }
             foreach (var employee in _employees.ToArray()) if (employee != null) employee.Advance(seconds, IsOpen && StaffWorking);
@@ -109,7 +125,7 @@ namespace RetailEmpireTycoon.StoreOperations
                     inward = Vector3.Dot(toInterior, door.transform.forward) >= 0 ? door.transform.forward : -door.transform.forward;
                 }
             }
-            if (!Navigation.TryNearest(front, out _entry)) { Notice = "Вход заблокирован — освободи проход."; return false; }
+            if (!Navigation.TryNearest(front, out _entry)) { Notice = "The entrance is blocked. Clear the aisle."; return false; }
             if (!Navigation.TryNearest(front - inward * .8f, out _arrivalPoint, true)) return false;
             Vector3 lateral = Vector3.Cross(Vector3.up, inward);
             var placedCheckout = FindAccessibleCheckout(placedObjects);
@@ -123,7 +139,7 @@ namespace RetailEmpireTycoon.StoreOperations
                     if (!Navigation.TryPath(_entry, point, out _)) continue;
                     _checkout = point; checkoutFound = true; break;
                 }
-            if (!checkoutFound) { Notice = "Нет места для кассы — освободи зону внутри магазина."; return false; }
+            if (!checkoutFound) { Notice = "There is no space for checkout. Clear a space inside the store."; return false; }
             CheckoutObject = placedCheckout;
             // Idle employees must wait inside, not be created between the closed door leaves.
             if (!Navigation.TryNearest(_entry + inward * .7f - lateral * .35f, out _staffRestPoint)
@@ -154,7 +170,7 @@ namespace RetailEmpireTycoon.StoreOperations
                 if (registerModel != null)
                 {
                     var model = Instantiate(registerModel, _register.transform); model.transform.localPosition = Vector3.zero;
-                    model.transform.localRotation = Quaternion.identity; model.transform.localScale = Vector3.one * 0.45f;
+                    model.transform.localRotation = Quaternion.identity; model.transform.localScale = Vector3.one * (0.45f*ShopProportions.Scale);
                     foreach (var collider in model.GetComponentsInChildren<Collider>()) collider.enabled = false;
                 }
             }
@@ -182,14 +198,14 @@ namespace RetailEmpireTycoon.StoreOperations
         public void SetOpen(bool open)
         {
             IsOpen = open; _arrival = Mathf.Min(_arrival, 5);
-            Notice = open ? "Магазин открыт. Покупатели идут!" : "Магазин закрыт. Обслужи оставшихся покупателей.";
+            Notice = open ? "Store open. Customers are arriving!" : "Store closed. Serve the remaining customers.";
         }
         public bool TryHire(StaffRole role)
         {
-            if (!_staff.CanHire(role, Level)) { Notice = "Лимит найма. Купи следующий участок."; return false; }
-            if (!money.TrySpend(balance.HireCost(role))) { Notice = "Не хватает денег на найм."; return false; }
+            if (!_staff.CanHire(role, Level)) { Notice = "Staff limit reached. Expand the store to hire more."; return false; }
+            if (!money.TrySpend(balance.HireCost(role))) { Notice = "Insufficient funds to hire this employee."; return false; }
             _staff.TryHire(role, Level); if (_ready) AddEmployee(role);
-            Notice = "Сотрудник нанят. Зарплата списывается во время работы магазина."; return true;
+            Notice = "Employee hired. Wages are paid while the store is open."; return true;
         }
         public bool TryDismiss(StaffRole role)
         {
@@ -217,36 +233,46 @@ namespace RetailEmpireTycoon.StoreOperations
             var root = new GameObject("Shop character"); root.transform.SetParent(transform); root.transform.position = point;
             var model = Instantiate(prefab, root.transform); model.transform.localPosition = Vector3.zero; model.transform.localRotation = Quaternion.identity;
             var renderers = model.GetComponentsInChildren<Renderer>();
-            if (renderers.Length > 0)
+            var appearance = model.GetComponent<ShopperAppearance>();
+            if (appearance != null) appearance.FitHeight(ShopperDimensions.ShopHeight);
+            else if (renderers.Length > 0)
             {
                 var bounds = renderers[0].bounds; foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
-                model.transform.localScale *= 0.48f / Mathf.Max(0.01f, bounds.size.y);
+                model.transform.localScale *= ShopperDimensions.ShopHeight / Mathf.Max(0.01f, bounds.size.y);
                 bounds = renderers[0].bounds; foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
                 model.transform.position += Vector3.up * (point.y - bounds.min.y);
             }
             var character = root.AddComponent<ShopCharacter>(); character.Initialize(Navigation, walkingSpeed);
             var hitArea = root.AddComponent<CapsuleCollider>();
-            hitArea.isTrigger = true; hitArea.height = 0.48f; hitArea.radius = 0.085f; hitArea.center = Vector3.up * 0.24f;
+            hitArea.isTrigger = true; hitArea.height = ShopperDimensions.ShopHeight; hitArea.radius = ShopperDimensions.ShopRadius;
+            hitArea.center = Vector3.up * (ShopperDimensions.ShopHeight*.5f);
             return character;
         }
         public bool TrySpawnCustomer(bool forceThief = false)
+            => TrySpawnCustomerAt(_arrivalPoint, false, forceThief, out _);
+        public bool TrySpawnParkingCustomer(Vector3 carDoor, out ShopperVisit visit)
+            => TrySpawnCustomerAt(carDoor, true, false, out visit);
+        private bool TrySpawnCustomerAt(Vector3 arrival, bool byCar, bool forceThief, out ShopperVisit result)
         {
-            if (!_ready || !IsOpen || customerModels == null || customerModels.Length == 0 || _visits.Count >= 4 + Level * 2) return false;
+            result=null;
+            if (!CanAcceptCustomer || customerSelection == null) return false;
+            if(!Navigation.TryNearest(arrival,out arrival,true,true))return false;
             var shelves = FindObjectsOfType<PlacedShelfStock>().Where(s => s.CurrentProduct != null && s.CurrentAmount - Reserved(s) > 0).ToArray();
-            if (shelves.Length == 0) { Notice = "Покупатели ждут ассортимент: заполни полки."; return false; }
+            if (shelves.Length == 0) { Notice = "Customers are waiting for goods. Stock the shelves."; return false; }
             PlacedShelfStock shelf = null; Vector3 approach = default;
             int first = UnityEngine.Random.Range(0, shelves.Length);
             for (int i = 0; i < shelves.Length; i++)
             {
                 var candidate = shelves[(first + i) % shelves.Length];
-                if (!TryShelfApproach(candidate, _arrivalPoint, out approach)) continue;
+                if (!TryShelfApproach(candidate, arrival, out approach)) continue;
                 shelf = candidate; break;
             }
-            if (shelf == null) { Notice = "Нет прохода к полкам. Освободи место перед товарами."; return false; }
-            var character = SpawnCharacter(customerModels[UnityEngine.Random.Range(0, customerModels.Length)], _arrivalPoint);
+            if (shelf == null) { Notice = "Customers cannot reach the shelves. Clear the aisles."; return false; }
+            var character = SpawnCharacter(customerSelection.Next(), arrival);
             if (character == null) return false;
-            if (!character.MoveTo(approach)) { Destroy(character.gameObject); Notice = "Нет прохода к полке. Оставь свободные клетки перед ней."; return false; }
+            if (!character.MoveTo(approach)) { Destroy(character.gameObject); Notice = "This shelf is inaccessible. Leave free cells in front of it."; return false; }
             var visit = new ShopperVisit(character, shelf, Mathf.Min(balance.basketSize, shelf.CurrentAmount - Reserved(shelf)), forceThief || UnityEngine.Random.value < balance.thiefChance, balance.thiefClicks);
+            visit.SetExit(arrival,byCar);result=visit;
             _visits.Add(visit); return true;
         }
         public bool TryShelfApproach(PlacedShelfStock shelf, Vector3 start, out Vector3 approach)
@@ -274,21 +300,30 @@ namespace RetailEmpireTycoon.StoreOperations
         {
             if (visit.Character == null || visit.Shelf == null) { RemoveVisit(visit); return; }
             if (!visit.Restrained) visit.Character.Advance(seconds);
+            bool browsing = visit.Stage == VisitStage.Shopping && visit.Character.Arrived && !visit.Restrained;
+            visit.Character.SetBrowsing(browsing);
+            if (browsing)
+            {
+                // Travel time is not time spent choosing goods; allow the shelf animation to finish.
+                visit.Browse(seconds);
+                visit.Character.FaceToward(visit.Shelf.transform.position, seconds);
+            }
             visit.Wait(seconds);
-            if (visit.Stage == VisitStage.Shopping && visit.Character.Arrived && visit.WaitingSeconds >= 2)
+            if (visit.Stage == VisitStage.Shopping && visit.Character.Arrived && visit.BrowsingSeconds >= 2)
             {
                 visit.ChangeStage(visit.IsThief ? VisitStage.Escaping : VisitStage.Queueing);
                 if (!visit.Character.MoveTo(visit.IsThief ? _arrivalPoint : _checkout + Vector3.right * _visits.Count(v => v.Stage == VisitStage.Waiting) * 0.18f))
-                { RemoveVisit(visit); Notice = "Покупатель не смог пройти к выходу или кассе."; }
+                { RemoveVisit(visit); Notice = "A customer could not reach the exit or checkout."; }
             }
             else if (visit.Stage == VisitStage.Queueing && visit.Character.Arrived) visit.ChangeStage(VisitStage.Waiting);
             else if (visit.Stage == VisitStage.Waiting && !visit.Claimed && visit.WaitingSeconds > balance.customerPatienceSeconds)
-            { _reputation = Mathf.Max(1, _reputation - 0.12f); Leave(visit); Notice = "Покупатель ушёл из очереди: нужна помощь на кассе."; }
+            { _reputation = Mathf.Max(1, _reputation - 0.12f); Leave(visit); Notice = "A customer left the queue. Help is needed at checkout."; }
             else if (visit.Stage == VisitStage.Escaping && visit.Character.Arrived)
-            { visit.CommitGoods(); _reputation = Mathf.Max(1, _reputation - 0.15f); Notice = "Вор сбежал с товаром!"; RemoveVisit(visit); }
-            else if (visit.Stage == VisitStage.Leaving && visit.Character.Arrived) RemoveVisit(visit);
+            { visit.CommitGoods(); _reputation = Mathf.Max(1, _reputation - 0.15f); Notice = "A thief escaped with your goods!"; RemoveVisit(visit); }
+            else if (visit.Stage == VisitStage.Leaving && visit.Character.Arrived) RemoveVisit(visit,true);
             // Furniture can change routes; never strand a visit forever.
-            else if (visit.Stage != VisitStage.Waiting && visit.WaitingSeconds > 45) { RemoveVisit(visit); Notice = "Проход заблокирован."; }
+            else if (visit.Stage != VisitStage.Waiting && visit.WaitingSeconds > 45 && !(visit.ArrivedByCar && visit.Stage==VisitStage.Leaving))
+            { RemoveVisit(visit); Notice = "The aisle is blocked."; }
         }
         public ShopperVisit ClaimCheckout()
         {
@@ -300,18 +335,20 @@ namespace RetailEmpireTycoon.StoreOperations
             if (!_visits.Contains(visit) || !visit.Claimed || visit.Stage != VisitStage.Waiting || !visit.CommitGoods()) return false;
             money.Add(visit.Quantity * visit.Product.SellPrice); _completedSales++; _reputation = Mathf.Min(5, _reputation + 0.04f);
             if (_dirt.Count < 8 && UnityEngine.Random.value < balance.litterChance) SpawnDirt(visit.Character.transform.position);
-            Leave(visit); Notice = "Продажа завершена: " + MoneyFormat.Compact(visit.Quantity * visit.Product.SellPrice); return true;
+            Leave(visit); Notice = "Sale completed: " + MoneyFormat.Compact(visit.Quantity * visit.Product.SellPrice); return true;
         }
         private void Leave(ShopperVisit visit)
         {
             visit.Release(); visit.ChangeStage(VisitStage.Leaving);
-            if (!visit.Character.MoveTo(_arrivalPoint)) RemoveVisit(visit);
+            if (!visit.Character.MoveTo(visit.ExitPosition)) RemoveVisit(visit);
         }
-        private void RemoveVisit(ShopperVisit visit) { _visits.Remove(visit); if (visit.Character != null) Destroy(visit.Character.gameObject); }
+        public void CancelParkingVisit(ShopperVisit visit) { if(visit!=null && visit.ArrivedByCar && _visits.Contains(visit))RemoveVisit(visit); }
+        private void RemoveVisit(ShopperVisit visit,bool returned=false)
+        { _visits.Remove(visit);visit.Finish(returned);if (visit.Character != null) Destroy(visit.Character.gameObject); }
         public void CatchThief(ShopperVisit visit)
         {
             if (!_visits.Contains(visit) || visit.Stage != VisitStage.Escaping) return;
-            _reputation = Mathf.Min(5, _reputation + 0.03f); RemoveVisit(visit); Notice = "Вор пойман. Товар сохранён.";
+            _reputation = Mathf.Min(5, _reputation + 0.03f); RemoveVisit(visit); Notice = "Thief caught. Stock recovered.";
         }
         public void ClickThief(ShopperVisit visit) { if (visit.CatchClick()) CatchThief(visit); }
         public ShopDirtSpot SpawnDirt(Vector3 position)
@@ -327,7 +364,7 @@ namespace RetailEmpireTycoon.StoreOperations
             }
             var dirt = root.AddComponent<ShopDirtSpot>(); _dirt.Add(dirt); return dirt;
         }
-        public void Clean(ShopDirtSpot dirt) { if (dirt == null) return; _dirt.Remove(dirt); Destroy(dirt.gameObject); Notice = "Пол чистый."; }
+        public void Clean(ShopDirtSpot dirt) { if (dirt == null) return; _dirt.Remove(dirt); Destroy(dirt.gameObject); Notice = "The floor is clean."; }
         public bool IsShelfInPlayerWork(PlacedShelfStock shelf) => work != null && work.ActiveShelf == shelf;
         public bool TryClaimRestock(out PlacedShelfStock shelf, out RetailEmpireTycoon.Core.ProductItemData product)
         {
@@ -352,7 +389,7 @@ namespace RetailEmpireTycoon.StoreOperations
             _wages += perMinute * seconds / 60;
             int due = Mathf.FloorToInt(_wages);
             if (due <= 0) { StaffWorking = true; return; }
-            if (!money.TrySpend(due)) { StaffWorking = false; _wages = Mathf.Min(_wages, perMinute); Notice = "Не хватает денег на зарплату. Персонал ждёт оплату."; return; }
+            if (!money.TrySpend(due)) { StaffWorking = false; _wages = Mathf.Min(_wages, perMinute); Notice = "Insufficient funds for wages. Staff are waiting for payment."; return; }
             _wages -= due; StaffWorking = true;
         }
         private void RefreshRating()

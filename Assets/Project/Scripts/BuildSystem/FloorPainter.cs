@@ -8,6 +8,7 @@ namespace RetailEmpireTycoon.BuildSystem
 {
     public sealed class FloorPainter : MonoBehaviour
     {
+        public const float UpperSurfaceLift=.005f;
         public GridSystem grid;
         public TerritoryManager territory;
 
@@ -22,10 +23,13 @@ namespace RetailEmpireTycoon.BuildSystem
         public Material previewInvalidMaterial;
 
         private readonly Dictionary<Vector3Int, BuildItemData> _tiles = new();
-        private readonly Dictionary<Vector2Int, FloorSurfaceChunk> _chunks = new();
+        private readonly Dictionary<Vector3Int, FloorSurfaceChunk> _chunks = new();
+        public event System.Action Changed;
+        private int visibleThroughLayer = int.MaxValue;
 
         // Cell data, not rendered objects, is authoritative for painting, parking and saves.
         public IEnumerable<MeshFilter> AsphaltSurfaces => _chunks.Values.SelectMany(chunk => chunk.AsphaltSurfaces);
+        public IEnumerable<MeshFilter> Surfaces => _chunks.Values.SelectMany(chunk=>chunk.Surfaces);
         private GameObject _previewSurface;
         private Mesh _previewMesh;
         private readonly List<Vector3Int> _previewCells = new();
@@ -51,7 +55,7 @@ namespace RetailEmpireTycoon.BuildSystem
             {
                 for (int z = minZ; z <= maxZ; z++)
                 {
-                    result.Add(new Vector3Int(x, 0, z));
+                    result.Add(new Vector3Int(x, a.y, z));
                 }
             }
 
@@ -59,6 +63,16 @@ namespace RetailEmpireTycoon.BuildSystem
         }
 
         public bool IsAsphalt(Vector3Int cell) => _tiles.TryGetValue(cell, out var item) && item != null && item.isAsphalt;
+        public bool HasSurface(Vector3Int cell) => _tiles.ContainsKey(cell);
+        public float SurfaceElevation(Vector3Int cell)=>grid.FloorElevation(cell.y)
+            +(cell.y>0?(HasSurface(cell)?UpperSurfaceLift:0):IsAsphalt(cell)?.015f:HasSurface(cell)?surfaceHeight:.015f);
+        public BuildItemData FirstSurface => _tiles.Values.FirstOrDefault(item=>item!=null);
+
+        public void SetVisibleThroughLayer(int layer)
+        {
+            visibleThroughLayer = layer;
+            foreach (var pair in _chunks) pair.Value.SetVisible(pair.Key.y <= layer);
+        }
 
         public bool AreCellsValid(List<Vector3Int> cells, BuildItemData surface = null)
         {
@@ -69,14 +83,19 @@ namespace RetailEmpireTycoon.BuildSystem
                 foreach (var parking in FindObjectsOfType<PlacedObject>().Where(p=>p.item!=null&&p.item.isParkingSpace))
                 {
                     parkingCells.UnionWith(parking.occupiedCells);
-                    parkingCells.UnionWith(RetailEmpireTycoon.Parking.Rule_ParkingSurface.ApproachCells(grid,parking.item,parking.anchorCell,parking.rotated,parking.facing));
+                    parkingCells.UnionWith(RetailEmpireTycoon.Parking.Rule_ParkingSurface.ApproachCells(grid,parking));
                 }
 
+            var openings = FindObjectsOfType<PlacedObject>().Where(p => p.item != null && p.item.storeyConnection != StoreyConnectionKind.None)
+                .SelectMany(p => StoreyLink.OpeningCells(grid,p)).ToHashSet();
             foreach (var cell in cells)
             {
-                if (territory != null && !territory.IsCellPurchased(cell))
+                if (cell.y < 0 || cell.y > GridSystem.TopFloor + 1) return false;
+                if (territory != null && !(surface != null && surface.isAsphalt || surface==null && IsAsphalt(cell)
+                    ? territory.IsParkingCellAllowed(cell) : territory.IsCellPurchased(cell)))
                     return false;
                 if (parkingCells.Contains(cell)) return false;
+                if (openings.Contains(cell)) return false;
             }
 
             return true;
@@ -105,7 +124,7 @@ namespace RetailEmpireTycoon.BuildSystem
             foreach(var cell in cells)
             {
                 // Above the imported store floor at 0.096, independent of its authored prefab origin.
-                Vector3 center=grid.CellToWorld(cell)+Vector3.up*.125f;
+                Vector3 center=grid.CellToWorld(cell)+Vector3.up*(cell.y>0?UpperSurfaceLift+.004f:surfaceHeight+.005f);
                 int first=_previewVertices.Count;
                 _previewVertices.Add(_previewSurface.transform.InverseTransformPoint(center+new Vector3(-half,0,-half)));
                 _previewVertices.Add(_previewSurface.transform.InverseTransformPoint(center+new Vector3(-half,0,half)));
@@ -137,7 +156,7 @@ namespace RetailEmpireTycoon.BuildSystem
 
         private void ApplyCells(List<Vector3Int> cells, BuildItemData item)
         {
-            var dirtyChunks = new HashSet<Vector2Int>();
+            var dirtyChunks = new HashSet<Vector3Int>();
             foreach (var cell in cells)
             {
                 if (_tiles.TryGetValue(cell, out var previous) && previous == item) continue;
@@ -152,7 +171,24 @@ namespace RetailEmpireTycoon.BuildSystem
                     _chunks.Add(coordinates, chunk);
                 }
                 chunk.Rebuild(_tiles, grid, surfaceHeight);
+                chunk.SetVisible(coordinates.y <= visibleThroughLayer);
             }
+            Changed?.Invoke();
+        }
+
+        public bool RemoveCells(List<Vector3Int> cells, BuildInventory inventory)
+        {
+            if (!AreCellsValid(cells) || inventory == null) return false;
+            var removed = cells.Where(_tiles.ContainsKey).ToHashSet();
+            var objects = FindObjectsOfType<PlacedObject>().Where(p => p.item != null).ToArray();
+            if (objects.Any(p => p.occupiedCells.Any(removed.Contains))) return false;
+            if(objects.Where(p=>p.item.isParkingSpace).Any(p=>RetailEmpireTycoon.Parking.Rule_ParkingSurface.ApproachCells(grid,p).Any(removed.Contains)))return false;
+            if (objects.Where(p => p.item.storeyConnection != StoreyConnectionKind.None)
+                .Any(p => StoreyLink.LandingCells(grid, p).Any(removed.Contains))) return false;
+            foreach (var cell in removed) { inventory.Add(_tiles[cell], 1); _tiles.Remove(cell); }
+            foreach (var key in removed.Select(FloorSurfaceChunk.Coordinates).Distinct()) _chunks[key].Rebuild(_tiles, grid, surfaceHeight);
+            Changed?.Invoke();
+            return true;
         }
 
         public List<FloorTileSaveData> BuildSaveData()
@@ -169,6 +205,7 @@ namespace RetailEmpireTycoon.BuildSystem
                 {
                     itemId = item.id,
                     x = cell.x,
+                    floor = cell.y,
                     z = cell.z
                 });
             }
@@ -188,7 +225,7 @@ namespace RetailEmpireTycoon.BuildSystem
                 var item = catalog.GetById(group.Key);
                 if (item == null || item.floorMaterial == null)
                     continue;
-                var cells = group.Select(d => new Vector3Int(d.x, 0, d.z)).ToList();
+                var cells = group.Where(d => d.floor >= 0 && d.floor <= GridSystem.TopFloor + 1).Select(d => new Vector3Int(d.x, d.floor, d.z)).ToList();
                 // Restoring authored/saved ground is not a request to build. Public starter
                 // paving and older custom floors must survive reduced construction rights,
                 // just as saved furniture does. Interactive PaintCells still checks ownership.

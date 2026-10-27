@@ -6,6 +6,8 @@ using RetailEmpireTycoon.SaveSystem;
 public class GameData
 {
     public bool usesModularStore;
+    public int shopProportionsVersion;
+    public int starterSiteVersion;
     public int playerMoney = 6000;
     public RetailEmpireTycoon.Logistics.DeliverySaveData deliveries = new RetailEmpireTycoon.Logistics.DeliverySaveData();
     public RetailEmpireTycoon.StoreOperations.ShopOperationsSaveData shopOperations = new RetailEmpireTycoon.StoreOperations.ShopOperationsSaveData();
@@ -40,12 +42,14 @@ public class PlacedBuildSaveData
 {
     public string itemId;
     public int x;
+    public int floor;
     public int z;
     public bool rotated;
     public int facing;
     // Missing in old saves: their wall sections retain the previous multi-cell dimensions.
     public int wallModuleVersion;
     public bool playerParking;
+    public int parkingModuleVersion;
 }
 
 [Serializable]
@@ -53,5 +57,7 @@ public class FloorTileSaveData
 {
     public string itemId;
     public int x;
+    // Zero when absent in legacy saves. Layer 1 is both a ceiling and the second-storey floor.
+    public int floor;
     public int z;
 }

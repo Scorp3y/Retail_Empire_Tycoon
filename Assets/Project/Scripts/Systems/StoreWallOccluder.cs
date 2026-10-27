@@ -16,8 +16,15 @@ public sealed class StoreWallOccluder : MonoBehaviour
             foreach (var renderer in _renderers)
             {
                 if (renderer == null) continue;
-                if (first) { bounds = renderer.bounds; first = false; }
-                else bounds.Encapsulate(renderer.bounds);
+                // Renderer.bounds may be stale after the shop scene is suspended for a city trip.
+                var filter=renderer.GetComponent<MeshFilter>();
+                if(filter==null||filter.sharedMesh==null)continue;
+                var local=filter.sharedMesh.bounds;
+                for(int x=-1;x<=1;x+=2)for(int y=-1;y<=1;y+=2)for(int z=-1;z<=1;z+=2)
+                {
+                    var point=renderer.transform.TransformPoint(local.center+Vector3.Scale(local.extents,new Vector3(x,y,z)));
+                    if(first){bounds=new Bounds(point,Vector3.zero);first=false;}else bounds.Encapsulate(point);
+                }
             }
             return bounds;
         }

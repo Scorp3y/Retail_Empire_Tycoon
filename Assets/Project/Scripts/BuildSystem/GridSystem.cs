@@ -20,6 +20,10 @@ namespace RetailEmpireTycoon.BuildSystem
         [Min(0.1f)]
         public float cellSize = 1f;
         public Vector3 origin;
+        // Logical Y is a full storey, not a grid-cell height; all construction uses the same proportion contract.
+        public const float StoreyHeight = ShopProportions.Scale;
+        public const int TopFloor = 1;
+        public float FloorElevation(int floor) => origin.y + floor * StoreyHeight;
 
         private readonly HashSet<Vector3Int> _occupied = new HashSet<Vector3Int>();
 
@@ -27,16 +31,16 @@ namespace RetailEmpireTycoon.BuildSystem
         {
             var local = world - origin;
             var x = Mathf.FloorToInt(local.x / cellSize);
-            var y = Mathf.FloorToInt(local.y / cellSize);
+            var y = Mathf.RoundToInt(local.y / StoreyHeight);
             var z = Mathf.FloorToInt(local.z / cellSize);
-            return new Vector3Int(x, 0, z);
+            return new Vector3Int(x, y, z);
         }
 
         public Vector3 CellToWorld(Vector3Int cell)
         {
             return origin + new Vector3(
                 (cell.x + 0.5f) * cellSize,
-                0f,
+                cell.y * StoreyHeight,
                 (cell.z + 0.5f) * cellSize
             );
         }
