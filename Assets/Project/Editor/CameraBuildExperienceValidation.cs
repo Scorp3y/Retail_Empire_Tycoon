@@ -129,9 +129,6 @@ public static class CameraBuildExperienceValidation
 
     private static void CheckWalls()
     {
-        Vector3 camera = new Vector3(0f, 6f, -6f);
-        Require(StoreWallVisibility.ShouldHide(new Bounds(new Vector3(0f, 1f, -2f), new Vector3(4f, 2f, 0.2f)), camera, Vector3.zero), "Near wall remains visible.");
-        Require(!StoreWallVisibility.ShouldHide(new Bounds(new Vector3(0f, 1f, 2f), new Vector3(4f, 2f, 0.2f)), camera, Vector3.zero), "Far wall hidden.");
         var wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
         var marker = wall.AddComponent<StoreWallOccluder>();
         marker.SetHidden(true);

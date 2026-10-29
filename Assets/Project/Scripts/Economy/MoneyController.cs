@@ -8,7 +8,7 @@ namespace RetailEmpireTycoon.Economy
     [MovedFrom(false, "MyShopGame.Economy", null, "MoneyController")]
     public sealed class MoneyController : MonoBehaviour
     {
-        [SerializeField] private int money = 6000;
+        [SerializeField] private int money = GameData.StartingCapital;
 
         public event Action<int> Changed;
 

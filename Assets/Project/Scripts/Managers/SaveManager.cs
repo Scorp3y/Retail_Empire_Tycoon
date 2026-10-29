@@ -106,6 +106,8 @@ public class SaveManager : MonoBehaviour
         gameData ??= new GameData();
         var deliveries = FindObjectOfType<RetailEmpireTycoon.Logistics.DeliveryOrders>(true);
         if (deliveries != null) gameData.deliveries = deliveries.Ledger.Capture();
+        var trip = FindObjectOfType<RetailEmpireTycoon.City.CityTrip>(true);
+        if (trip != null) gameData.vehicles = trip.Fleet.Capture();
         if (shopOperations != null) gameData.shopOperations = shopOperations.BuildSaveData();
 
         if (_money != null)
@@ -146,9 +148,11 @@ public class SaveManager : MonoBehaviour
 
         if (!File.Exists(saveFilePath))
         {
-            if (starterStore != null) gameData = starterStore.CreateNewGame(_money != null ? _money.Money : gameData.playerMoney);
+            gameData = starterStore != null ? starterStore.CreateNewGame(GameData.StartingCapital) : new GameData();
+            _money?.SetMoney(gameData.playerMoney);
             SpawnStoreFromProgressOrDefault();
             if (starterStore != null) starterStore.ApplyNewGameBuildings(gameData);
+            FindObjectOfType<RetailEmpireTycoon.City.CityTrip>(true)?.Fleet.Restore(gameData.vehicles);
             // The new-game branch returns before the ordinary load path restores construction inventory.
             if (_buildInventory != null && _buildCatalog != null)
                 _buildInventory.ApplySaveData(gameData.buildInventory, _buildCatalog);
@@ -178,6 +182,7 @@ public class SaveManager : MonoBehaviour
         if (_buildController != null && _buildCatalog != null)
             _buildController.ApplyPlacedSaveData(gameData.placedObjects, _buildCatalog);
         starterStore?.RefreshPickupParking();
+        FindObjectOfType<RetailEmpireTycoon.City.CityTrip>(true)?.Fleet.Restore(gameData.vehicles);
 
         StartCoroutine(LoadProductsAfterWorldLoaded(gameData));
 

@@ -38,6 +38,17 @@ internal sealed class TownShowroomPlacement
     private readonly List<string> audit=new();
     private Material surface,glass;
     public TownShowroomPlacement(GameObject town){this.town=town;}
+    /// <summary>Removes only the five baked exhibition sedans, retaining the unrelated parked customer car.</summary>
+    internal void RemoveExhibitionCars()
+    {
+        TownWorldSafety.RequireIsolatedEditor();
+        var site=town.transform.Find(SiteName);
+        surface=AssetDatabase.LoadAssetAtPath<Material>(Root+"/Materials/Surface.mat");
+        var templates=new[]{("Outdoor exhibition car","BlueSedan"),("Indoor exhibition WhiteSedan","WhiteSedan"),
+            ("Indoor exhibition BlueSedan","BlueSedan"),("Indoor exhibition RedSedan","RedSedan"),("Service preparation car","GreenSedan")};
+        RemovePlacedVisuals(site,templates.Select(t=>(site.Find(t.Item1),t.Item2)).ToArray(),2960,"FleetTrim");
+        foreach(var template in templates)Object.DestroyImmediate(site.Find(template.Item1).gameObject);
+    }
     /// <summary>Rearranges existing rear props and closes the service parapet; no new gameplay or interior changes.</summary>
     public void Arrange()
     {

@@ -6,7 +6,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private RetailEmpireTycoon.Economy.MoneyController wallet;
     public static GameManager Instance;
 
-    public int playerMoney = 6000;
+    public int playerMoney = GameData.StartingCapital;
     public TextMeshProUGUI moneyText;
 
     private void Awake()

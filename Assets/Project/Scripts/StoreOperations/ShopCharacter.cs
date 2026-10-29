@@ -76,7 +76,7 @@ namespace RetailEmpireTycoon.StoreOperations
             _retry -= deltaTime;
             _navigation?.NotifyMovement(transform.position);
             if (IsBlocked && (_retry > 0 || !RebuildRoute())) return;
-            float distanceBudget = deltaTime * _walkingSpeed;
+            float timeBudget = deltaTime;
             // Do not lose one frame per cell; spend the remaining distance on the next waypoint.
             while (_waypoint < _path.Count)
             {
@@ -93,11 +93,12 @@ namespace RetailEmpireTycoon.StoreOperations
                 if (distance <= .001f) { transform.position = target; _waypoint++; continue; }
                 Vector3 horizontal=delta; horizontal.y=0;
                 if(horizontal.sqrMagnitude>.00001f)transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(horizontal), deltaTime * 12);
-                float step = Mathf.Min(distanceBudget, distance);
+                float speed = _walkingSpeed * _navigation.TravelSpeedMultiplier(transform.position,target);
+                float step = Mathf.Min(timeBudget * speed, distance);
                 transform.position = Vector3.MoveTowards(transform.position, target, step);
-                distanceBudget -= step;
+                timeBudget -= step / speed;
                 if (step >= distance) _waypoint++;
-                if (distanceBudget <= .00001f) break;
+                if (timeBudget <= .00001f) break;
             }
             Arrived = _waypoint >= _path.Count;
             SetWalking(!Arrived && !IsBlocked);

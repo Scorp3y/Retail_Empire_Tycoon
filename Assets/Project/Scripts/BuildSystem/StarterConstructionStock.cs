@@ -12,6 +12,16 @@ namespace RetailEmpireTycoon.BuildSystem
     {
         [SerializeField] private BuildItemData[] shelves = Array.Empty<BuildItemData>();
         [SerializeField] private BuildItemData floor, wall, door, gate, parking;
+        [SerializeField] private BuildItemData[] transports=Array.Empty<BuildItemData>();
+
+        public void ConfigureTransports(IEnumerable<BuildItemData> items)
+        {
+            var choices=items.Where(item=>item!=null).Distinct().ToArray();
+            if(choices.Length!=4 || choices.Any(item=>item.storeyConnection==StoreyConnectionKind.None)
+                || choices.Select(item=>item.storeyConnection).Distinct().Count()!=3)
+                throw new ArgumentException("Starter transport stock needs stairs, an elevator and both escalator definitions.");
+            transports=choices;
+        }
 
         public void Configure(IEnumerable<BuildItemData> shelfChoices, BuildItemData floorItem,
             BuildItemData wallItem, BuildItemData doorItem, BuildItemData gateItem, BuildItemData parkingItem)
@@ -39,12 +49,14 @@ namespace RetailEmpireTycoon.BuildSystem
             }
             for(int i=0;i<5;i++)Add(choices[i],1);
             Add(floor,20);Add(wall,20);Add(door,1);Add(gate,1);Add(parking,2);
+            foreach(var transport in transports)Add(transport,1);
         }
 
         private void Validate()
         {
             if(shelves==null || shelves.Length<5 || shelves.Any(item=>item==null || item.category!=BuildCategory.Shelf)
-                || floor==null || floor.isAsphalt || wall==null || door==null || gate==null || parking==null)
+                || floor==null || floor.isAsphalt || wall==null || door==null || gate==null || parking==null
+                || transports==null || transports.Any(item=>item==null || item.storeyConnection==StoreyConnectionKind.None))
                 throw new InvalidOperationException("Starter construction stock requires five shelf choices, an indoor floor, wall, door, gate and parking.");
         }
     }

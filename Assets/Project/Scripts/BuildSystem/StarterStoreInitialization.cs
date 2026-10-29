@@ -19,7 +19,7 @@ namespace RetailEmpireTycoon.BuildSystem
         private void OnEnable() { if (building != null) building.LayoutChanged += RefreshPickupParking; }
         private void OnDisable() { if (building != null) building.LayoutChanged -= RefreshPickupParking; }
 
-        public GameData CreateNewGame(int startingMoney)
+        public GameData CreateNewGame(int startingMoney=GameData.StartingCapital)
         {
             if (blueprint == null) throw new InvalidOperationException("Starter store blueprint is not configured.");
             return blueprint.CreateNewGame(startingMoney);
@@ -35,6 +35,8 @@ namespace RetailEmpireTycoon.BuildSystem
                 Debug.Log("Unmodified store access moved to the straight entrance; customized sites preserved.");
             if(blueprint!=null && blueprint.SiteRevision.TryApply(data,building.grid,catalog))
                 Debug.Log("Unmodified starter store moved behind the sidewalk; stock and custom parking preserved.");
+            if(blueprint!=null && blueprint.ForecourtRevision.TryApply(data,building.grid,catalog))
+                Debug.Log("Unmodified starter frontage updated; customized shops preserved.");
         }
         public void ConfigureSite(bool modularStore)
         {

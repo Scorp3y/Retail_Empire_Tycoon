@@ -29,6 +29,24 @@ namespace RetailEmpireTycoon.City
         private RectTransform confirmation;
         private ShopUi ui;
         private bool trafficEnabled;
+        private PlayerVehicleFleet fleet;
+        private PlayerVehicleAppearance parkedAppearance;
+        public PlayerVehicleFleet Fleet
+        {
+            get
+            {
+                if (fleet != null) return fleet;
+                fleet = new PlayerVehicleFleet(Resources.LoadAll<PlayerVehicleDefinition>("PlayerVehicles"), orders.money, orders, () => orders.save?.SaveGame());
+                fleet.Changed += RefreshParkedVehicle;
+                return fleet;
+            }
+        }
+        private void RefreshParkedVehicle()
+        {
+            if (parkedPickup == null) return;
+            if (parkedAppearance == null) parkedAppearance = parkedPickup.AddComponent<PlayerVehicleAppearance>();
+            parkedAppearance.Show(Fleet.Selected, .5f);
+        }
         public bool WasShopObjectActive(GameObject instance)
         {
             if(instance==null)return false;

@@ -109,19 +109,26 @@ namespace RetailEmpireTycoon.Logistics
         {
             var cargo = Ledger.Entries.Where(e => e.location == DeliveryLocation.Pickup).ToArray();
             if (cargo.Length == 0) return Reject("The pickup is empty.");
-            if (ShopWeightKg + PickupWeightKg > shopCapacityKg + .001f) return Reject("The store warehouse is full. Free some space before unloading.");
             var before = Ledger.Capture(); var productStock = products.BuildSaveData(); var buildStock = buildings.BuildSaveData();
             try
             {
                 // Resolve every ID before changing quantities; missing imported assets must not consume a paid shipment.
                 foreach (var entry in cargo) { UnitWeight(entry); UnitVolume(entry); }
+                float freeKg = Mathf.Max(0, shopCapacityKg - ShopWeightKg); int delivered = 0;
                 foreach (var entry in cargo)
                 {
-                    if (entry.kind == DeliveryItemKind.Product) products.Add(productCatalog.GetById(entry.itemId), entry.quantity);
-                    else buildings.Add(buildCatalog.GetById(entry.itemId), entry.quantity);
-                    if (!Ledger.Deliver(entry.itemId, entry.kind, entry.quantity)) throw new InvalidOperationException("Cargo changed during unload.");
+                    float weight = UnitWeight(entry);
+                    int quantity = weight <= 0 ? entry.quantity : Mathf.Min(entry.quantity, Mathf.FloorToInt((freeKg + .001f) / weight));
+                    if (quantity <= 0) continue;
+                    if (entry.kind == DeliveryItemKind.Product) products.Add(productCatalog.GetById(entry.itemId), quantity);
+                    else buildings.Add(buildCatalog.GetById(entry.itemId), quantity);
+                    if (!Ledger.Deliver(entry.itemId, entry.kind, quantity)) throw new InvalidOperationException("Cargo changed during unload.");
+                    freeKg = Mathf.Max(0, freeKg - weight * quantity); delivered += quantity;
                 }
-                Persist(); Notice = "Cargo delivered to the store warehouse."; NoticeIsError=false; Notify(); return true;
+                if (delivered == 0) return Reject("The store warehouse is full. Free some space before unloading.");
+                Persist(); Notice = Ledger.Entries.Any(entry => entry.location == DeliveryLocation.Pickup)
+                    ? "Warehouse filled. Remaining cargo stays in your vehicle; free storage space to unload it."
+                    : "Cargo delivered to the store warehouse."; NoticeIsError=false; Notify(); return true;
             }
             catch (Exception error)
             {

@@ -7,5 +7,7 @@ namespace RetailEmpireTycoon.City
     {
         public TownWorldLayout layout;
         public DeliveryCheckpoint[] suppliers=Array.Empty<DeliveryCheckpoint>();
+        // Additional entrances share the showroom fleet; the town map keeps one destination per supplier.
+        public DeliveryCheckpoint[] showroomEntrances=Array.Empty<DeliveryCheckpoint>();
     }
 }

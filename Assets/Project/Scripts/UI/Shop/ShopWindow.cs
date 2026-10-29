@@ -228,7 +228,13 @@ namespace RetailEmpireTycoon.UI.Shop
             SetPanel(tabsCategoriesPanel, false);
             SetPanel(categoryViewPanel, true);
             SetEmpty(vehicleCardPrefab == null);
-            if (vehicleCardPrefab != null) Instantiate(vehicleCardPrefab, listRoot).Bind(pickupIcon, deliveryOrders);
+            if (vehicleCardPrefab != null)
+            {
+                Instantiate(vehicleCardPrefab, listRoot).Bind(pickupIcon, deliveryOrders,refresh:OpenVehicles);
+                var trip=deliveryOrders!=null?deliveryOrders.GetComponent<RetailEmpireTycoon.City.CityTrip>():null;
+                if(trip!=null)foreach(var vehicle in trip.Fleet.Catalog)
+                    Instantiate(vehicleCardPrefab,listRoot).Bind(vehicle.icon,deliveryOrders,vehicle,OpenVehicles);
+            }
             ResetCatalogScroll();
             ViewChanged?.Invoke();
         }

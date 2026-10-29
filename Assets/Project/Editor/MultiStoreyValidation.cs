@@ -85,7 +85,7 @@ public static class MultiStoreyValidation
             var cell=new Vector3Int(-5,floor,7);Require(grid.WorldToCell(grid.CellToWorld(cell))==cell,"Grid loses storey.");
         }
         Require(floors.GetRectCells(new Vector3Int(0,1,0),new Vector3Int(2,1,3)).All(c=>c.y==1),"Floor brush flattened.");
-        var transportItems=Resources.LoadAll<BuildItemData>("MultiStorey").OrderBy(i=>i.id).ToArray();
+        var transportItems=Resources.LoadAll<BuildItemData>("MultiStorey").Where(item=>item.id!="escalator_down_01").OrderBy(i=>i.id).ToArray();
         Require(transportItems.Length==3&&transportItems.All(i=>i.icon!=null&&i.prefab!=null),"Transport catalogue incomplete.");
         foreach(var item in transportItems)
         {
@@ -99,7 +99,7 @@ public static class MultiStoreyValidation
             foreach(var cell in grid.GetFootprintCells(anchor+Vector3Int.up,transportItems[i].footprint,false))openings.Add(cell);
         }
         floors.PaintCells(floors.GetRectCells(new Vector3Int(0,0,0),new Vector3Int(45,0,35)),tile);
-        var upstairs=floors.GetRectCells(new Vector3Int(0,1,0),new Vector3Int(45,1,35)).Where(c=>!openings.Contains(c)).ToList();
+        var upstairs=floors.GetRectCells(new Vector3Int(0,1,0),new Vector3Int(45,1,35));
         inventory.Add(tile,upstairs.Count+30);build.EnterBuildMode(tile);
         int stock=inventory.GetCount(tile);Require(build.TryPaintCells(upstairs),"Cannot paint second floor.");
         Require(inventory.GetCount(tile)==stock-upstairs.Count,"Brush inventory accounting.");
@@ -107,11 +107,26 @@ public static class MultiStoreyValidation
         Require(!build.TryPaintCells(new List<Vector3Int>{new(1000,1,0)}),"Brush accepts unowned land.");
         var unsafeCell=new Vector3Int(-20,1,10);inventory.Add(wall,2);build.EnterBuildMode(wall);
         Require(!build.CanPlaceAt(unsafeCell).ok,"Floating upper-storey furniture allowed.");
+        var obstruction=anchors.First();inventory.Add(wall,1);build.EnterBuildMode(wall);
+        Require(build.TryPlaceAt(obstruction.Value+Vector3Int.up),"Cannot prepare upstairs furniture obstruction.");
+        inventory.Add(obstruction.Key,1);build.EnterBuildMode(obstruction.Key);
+        var untouched=JsonUtility.ToJson(new GameData{floorTiles=floors.BuildSaveData(),buildInventory=inventory.BuildSaveData()});
+        Require(!build.TryPlaceAt(obstruction.Value),"Transport removed upstairs furniture automatically.");
+        Require(untouched==JsonUtility.ToJson(new GameData{floorTiles=floors.BuildSaveData(),buildInventory=inventory.BuildSaveData()}),"Failed placement removed tiles or changed stock.");
+        var edit=build.GetComponent<BuildEditingController>();edit.Begin();edit.Select(Object.FindObjectsOfType<PlacedObject>().Single(p=>p.item==wall));
+        Require(edit.DeleteSelected(),"Cannot clear test obstruction.");edit.Finish();yield return null;
         foreach(var pair in anchors)
         {
+            var wood=Item("Assets/Prefabs/StoreUpgrade/floor_wood.asset");
+            var mixedCell=pair.Value+Vector3Int.up;floors.PaintCells(new List<Vector3Int>{mixedCell},wood);
             inventory.Add(pair.Key,1);build.EnterBuildMode(pair.Key);
+            var request=new PlacementRequest(pair.Key,pair.Value,false,0);
+            int removed=floors.OpeningTileCount(request),beforeTiles=inventory.GetCount(tile),beforeWood=inventory.GetCount(wood);
+            Require(removed==pair.Key.footprint.x*pair.Key.footprint.y,"Test ceiling is not solid.");
             var validation=build.CanPlaceAt(pair.Value);Require(validation.ok,pair.Key.id+": "+validation.message);
+            Require(floors.OpeningTileCount(request)==removed,"Preview removed ceiling tiles.");
             Require(build.TryPlaceAt(pair.Value),"Failed transport placement: "+pair.Key.id);
+            Require(floors.OpeningTileCount(request)==0 && inventory.GetCount(tile)==beforeTiles+removed-1 && inventory.GetCount(wood)==beforeWood+1,"Opening did not return every ceiling material exactly once.");
             Require(openings.Any(grid.IsOccupied),"Upper opening not reserved.");
         }
         yield return null;Physics.SyncTransforms();
@@ -126,16 +141,61 @@ public static class MultiStoreyValidation
             Require(path.Any(p=>p.y>.8f),"Route stays at ground level.");
             var actor=new GameObject("Passenger "+transport.item.id).AddComponent<ShopCharacter>();actor.transform.position=lower;actor.Initialize(navigation);
             Require(actor.MoveTo(upper),"Actor refused upstairs destination.");
+            var protectedEdit=build.GetComponent<BuildEditingController>();protectedEdit.Begin();protectedEdit.Select(transport);
+            Require(!protectedEdit.PreviewAt(transport.anchorCell).ok && !protectedEdit.DeleteSelected(),"An occupied connection can be moved or removed.");protectedEdit.Finish();
+            var motor=transport.GetComponent<StoreyTransportVisual>();
+            if(motor!=null)
+            {
+                var waiting=new GameObject("Opposite passenger").AddComponent<ShopCharacter>();
+                motor.TryBoard(actor,lower,upper);
+                Require(!motor.TryBoard(waiting,upper,lower),"Motorized transport admits opposite passengers simultaneously.");Object.Destroy(waiting.gameObject);
+            }
             float travelDeadline=Time.realtimeSinceStartup+25;
-            while(!actor.Arrived&&Time.realtimeSinceStartup<travelDeadline){actor.Advance(.05f);yield return null;}
+            bool lowerOpened=false,upperOpened=false;var landingDoors=transport.GetComponent<LiftLandingDoors>();
+            void CheckLiftDoors()
+            {
+                if(landingDoors==null)return;
+                lowerOpened|=landingDoors.IsOpen(0);upperOpened|=landingDoors.IsOpen(1);
+                Require(!(landingDoors.IsOpen(0)&&landingDoors.IsOpen(1)),"Both lift entrances are open at once.");
+                if(landingDoors.IsOpen(0))Require(Mathf.Abs(motor.platform.localPosition.y)<.013f,"Lower doors open without the cabin.");
+                if(landingDoors.IsOpen(1))Require(Mathf.Abs(motor.platform.localPosition.y-motor.travelHeight)<.013f,"Upper doors open without the cabin.");
+            }
+            while(!actor.Arrived&&Time.realtimeSinceStartup<travelDeadline){actor.Advance(.05f);yield return null;CheckLiftDoors();}
             Require(actor.Arrived&&Vector3.Distance(actor.transform.position,upper)<.02f,"Passenger failed ascent: "+transport.item.id);
+            if(landingDoors!=null)Require(lowerOpened&&upperOpened,"Lift ascent skipped a landing door animation.");
+            lowerOpened=upperOpened=false;
             Require(actor.MoveTo(lower),"Actor refused downward route.");
             travelDeadline=Time.realtimeSinceStartup+25;
-            while(!actor.Arrived&&Time.realtimeSinceStartup<travelDeadline){actor.Advance(.05f);yield return null;}
+            while(!actor.Arrived&&Time.realtimeSinceStartup<travelDeadline){actor.Advance(.05f);yield return null;CheckLiftDoors();}
             Require(actor.Arrived&&Vector3.Distance(actor.transform.position,lower)<.02f,"Passenger failed descent: "+transport.item.id);
+            if(landingDoors!=null)Require(lowerOpened&&upperOpened,"Lift descent skipped a landing door animation.");
             Object.Destroy(actor.gameObject);
         }
         report.AppendLine("PASS all three transports: real placement, protected openings/landings, continuous ascent and descent by ShopCharacter.");
+        report.AppendLine("PASS new lift passenger boards at cabin center; both landing pairs open during ascent/descent only with the cabin aligned; opposite riders wait.");
+        report.AppendLine("PASS solid ceilings automatically cut on successful placement, exact material refund, preview has no side effects, upstairs furniture is protected.");
+        foreach(var transport in transports)
+        {
+            var original=transport.anchorCell;int originalFacing=transport.facing;
+            var editing=build.GetComponent<BuildEditingController>();
+            for(int facing=0;facing<4;facing++)
+            {
+                var patch=floors.GetRectCells(new Vector3Int(-57,0,8),new Vector3Int(-15,0,23));
+                floors.PaintCells(patch,tile);var ceiling=patch.Select(cell=>cell+Vector3Int.up).Where(cell=>floors.AreCellsValid(new List<Vector3Int>{cell},tile)).ToList();floors.PaintCells(ceiling,tile);
+                var destination=new Vector3Int(facing%2==0?-55:-30,0,10);
+                editing.Begin();editing.Select(transport);editing.Rotate(facing-transport.facing);
+                int beforeCount=inventory.GetCount(tile);var beforeData=JsonUtility.ToJson(new GameData{floorTiles=floors.BuildSaveData()});
+                Require(editing.PreviewAt(destination).ok,"Rotated transport preview refused: "+transport.item.id+" "+facing+" "+editing.CandidateResult.message);
+                int count=editing.OpeningTileCount;
+                Require(count==transport.item.footprint.x*transport.item.footprint.y,"Rotated opening preview count is incorrect.");
+                editing.CancelSelection();Require(beforeData==JsonUtility.ToJson(new GameData{floorTiles=floors.BuildSaveData()}) && inventory.GetCount(tile)==beforeCount,"Cancelled move changed the ceiling or storage.");
+                editing.Select(transport);editing.Rotate(facing-transport.facing);editing.PreviewAt(destination);Require(editing.Confirm(),"Rotated move failed.");
+                Require(inventory.GetCount(tile)==beforeCount+count && !StoreyLink.OpeningCells(grid,transport).Any(floors.HasSurface),"Rotated move did not cut/refund its new opening exactly once.");editing.Finish();
+            }
+            editing.Begin();editing.Select(transport);editing.Rotate(originalFacing-transport.facing);editing.PreviewAt(original);
+            Require(editing.Confirm(),"Transport cannot return to its original opening.");editing.Finish();
+        }
+        report.AppendLine("PASS all three connections moved in four orientations; preview/cancel preserves tiles and stock; successful move refunds only the new opening; old opening remains editable after removal.");
         inventory.Add(wall,2);build.EnterBuildMode(wall);Require(build.TryPlaceAt(new Vector3Int(39,0,27)),"Ground wall placement failed.");
         build.EnterBuildMode(wall);Require(build.TryPlaceAt(new Vector3Int(39,1,27)),"Same XZ occupied on a different floor.");
         build.Storeys.SelectFloor(1);Require(build.Storeys.ActiveFloor==1&&Mathf.Abs(build.worldCamera.GetComponent<MainCamera>().FocusPoint.y-GridSystem.StoreyHeight)<.001f,"Floor selector/camera not elevated.");
@@ -190,6 +250,8 @@ public static class MultiStoreyValidation
     private static void CheckFacade(BuildController build)
     {
         var world=new GameObject("City facade QA").AddComponent<CityWorld>();
+        world.unload=new GameObject("Invisible unloading QA").AddComponent<DeliveryCheckpoint>();world.unload.kind=CheckpointKind.Unload;
+        world.unload.transform.SetParent(world.transform,false);
         world.facadeRoot=new GameObject("Facade").transform;world.facadeRoot.SetParent(world.transform);
         var places=world.gameObject.AddComponent<TownWorldPlaces>();places.layout=AssetDatabase.LoadAssetAtPath<TownWorldLayout>("Assets/Prefabs/TownWorld/TownLayout.asset");world.town=places;
         var trip=new GameObject("Trip QA").AddComponent<CityTrip>();

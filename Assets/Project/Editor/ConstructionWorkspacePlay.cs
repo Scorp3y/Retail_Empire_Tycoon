@@ -21,14 +21,22 @@ public static class ConstructionWorkspacePlay
     private static readonly System.Collections.Generic.HashSet<string> englishScreens=new();
     static ConstructionWorkspacePlay(){EditorApplication.update+=Tick;}
     private static bool StarterAccess=>SessionState.GetBool("ConstructionWorkspace.StarterAccess",false);
-    private static string Report=>StarterAccess?StarterAccessBatch.Report:ConstructionWorkspaceBatch.Report;
-    private static string Documentation=>StarterAccess?"Docs/StarterAccess":"Docs/ConstructionWorkspace";
-    private static void RecordInputs(){if(StarterAccess)StarterAccessBatch.Record("play");else ConstructionWorkspaceBatch.Record("play");}
+    private static bool Transport=>SessionState.GetBool("ConstructionWorkspace.Transport",false);
+    private static bool Frontage=>SessionState.GetBool("ConstructionWorkspace.Frontage",false);
+    private static bool Escalator=>SessionState.GetBool("ConstructionWorkspace.Escalator",false);
+    private static bool Elevator=>SessionState.GetBool("ConstructionWorkspace.Elevator",false);
+    private static string Report=>Elevator?ElevatorModelBatch.Report:Escalator?EscalatorModelBatch.Report:Frontage?StarterFrontageBatch.Report:Transport?StoreyTransportBatch.Report:StarterAccess?StarterAccessBatch.Report:ConstructionWorkspaceBatch.Report;
+    private static string Documentation=>Elevator?ElevatorModelBatch.Pictures:Escalator?EscalatorModelBatch.Pictures:Frontage?StarterFrontageBatch.Pictures:Transport?StoreyTransportBatch.Pictures:StarterAccess?"Docs/StarterAccess":"Docs/ConstructionWorkspace";
+    private static void RecordInputs(){if(Elevator)ElevatorModelBatch.Record();else if(Escalator)EscalatorModelBatch.Record();else if(Frontage)StarterFrontageBatch.Record();else if(Transport)StoreyTransportBatch.Record();else if(StarterAccess)StarterAccessBatch.Record("play");else ConstructionWorkspaceBatch.Record("play");}
     public static void Run()=>Begin(false);
     public static void RunStarterAccess()=>Begin(true);
-    private static void Begin(bool starterAccess)
+    public static void RunTransport()=>Begin(false,true);
+    public static void RunFrontage()=>Begin(false,true,true);
+    public static void RunEscalator()=>Begin(false,true,false,true);
+    public static void RunElevator()=>Begin(false,transport:true,elevator:true);
+    private static void Begin(bool starterAccess,bool transport=false,bool frontage=false,bool escalator=false,bool elevator=false)
     {
-        TownWorldSafety.RequireIsolatedEditor();SessionState.SetBool("ConstructionWorkspace.StarterAccess",starterAccess);Directory.CreateDirectory(Report);
+        TownWorldSafety.RequireIsolatedEditor();SessionState.SetBool("ConstructionWorkspace.StarterAccess",starterAccess);SessionState.SetBool("ConstructionWorkspace.Transport",transport);SessionState.SetBool("ConstructionWorkspace.Frontage",frontage);SessionState.SetBool("ConstructionWorkspace.Escalator",escalator);SessionState.SetBool("ConstructionWorkspace.Elevator",elevator);Directory.CreateDirectory(Report);
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);
         EditorUtility.UnloadUnusedAssetsImmediate();GC.Collect();
         EditorSceneManager.OpenScene(CityUpdateSetup.GamePath);ShopGameplaySandbox.Open();
@@ -63,6 +71,7 @@ public static class ConstructionWorkspacePlay
         foreach(var roadCar in roads.ActiveCars)roadCar.gameObject.SetActive(false);
         Require(roads.MaximumCars==29,"Shared town retained its old traffic capacity.");
         for(int i=0;i<5;i++)yield return null;
+        if(Frontage){FrontageMigration(starter);foreach(var step in GroundOnlyTransports(starter))yield return step;}
         Physics.simulationMode=SimulationMode.Script;
         Require(Mathf.Abs(starter.building.grid.cellSize-ShopProportions.CellSize)<.00001f && Mathf.Abs(GridSystem.StoreyHeight-1.65f)<.0001f,"Construction grid/storeys were not enlarged.");
         var bays=Object.FindObjectsOfType<ParkingBay>().Where(bay=>bay.GetComponentInParent<BuildPreview>()==null).ToArray();
@@ -102,13 +111,24 @@ public static class ConstructionWorkspacePlay
         foreach(var step in Workspace(starter))yield return step;
         Migration(starter);
         ShopGameplaySandbox.PrepareActivities();
+        if(Transport)PrepareUpperShop(starter);
+        if(Escalator)
+        {
+            var motor=Object.FindObjectsOfType<StoreyTransportVisual>().Single(visual=>visual.GetComponent<PlacedObject>()?.item?.id=="escalator_01");
+            Require(motor.treadMarkers.Length==18 && motor.treadMarkers.All(step=>step.GetComponent<MeshFilter>()!=null),"New animated escalator steps are missing.");
+            var before=motor.treadMarkers.Select(step=>step.localPosition).ToArray();float until=Time.realtimeSinceStartup+.2f;
+            while(Time.realtimeSinceStartup<until)yield return null;
+            Require(motor.treadMarkers.Where((step,index)=>Vector3.Distance(step.localPosition,before[index])>.001f).Any(),"Escalator animation is frozen.");
+            File.WriteAllText(Report+"/animation.txt","PASS new shared step meshes visibly animate in actual Play Mode; same escalator ID and navigation component.\n");
+        }
         var shelves=Object.FindObjectsOfType<PlacedShelfStock>();
         var product=AssetDatabase.FindAssets("t:ProductItemData").Select(guid=>AssetDatabase.LoadAssetAtPath<ProductItemData>(AssetDatabase.GUIDToAssetPath(guid)))
-            .First(item=>item!=null&&shelves.Any(shelf=>shelf.IsProductAllowed(item)));
-        foreach(var shelf in shelves)shelf.ClearStock();var stocked=shelves.First(shelf=>shelf.IsProductAllowed(product));stocked.SetStockFromSave(product,24);
+            .First(item=>item!=null&&shelves.Any(shelf=>shelf.IsProductAllowed(item) && (!Transport || shelf.GetComponent<PlacedObject>().anchorCell.y==1)));
+        foreach(var shelf in shelves)shelf.ClearStock();var stocked=shelves.First(shelf=>shelf.IsProductAllowed(product) && (!Transport || shelf.GetComponent<PlacedObject>().anchorCell.y==1));stocked.SetStockFromSave(product,24);
         var balance=Object.Instantiate(shop.Balance);balance.thiefChance=0;balance.litterChance=0;ShopGameplaySetup.Set(shop,"balance",balance);
         shop.Advance(.1f);shop.SetOpen(true);parking.arrivalInterval=9999;
         Directory.CreateDirectory(Documentation);
+        if(Frontage)TownFloristBatch.Render(EditorSceneManager.GetActiveScene(),Documentation+"/SiteAndStreet.png",starter.blueprint.cameraFocus+new Vector3(-12,23,-31),starter.blueprint.cameraFocus+Vector3.back*8);
         File.WriteAllText(Report+"/routing.txt","entry="+shop.EntrancePosition+" arrival="+shop.ArrivalPosition+" shelf="+stocked.transform.position+" from street="+shop.TryShelfApproach(stocked,shop.ArrivalPosition,out _)+"\n");
         var map=new System.Text.StringBuilder();var grid=starter.building.grid;
         for(int z=-24;z<=12;z++)
@@ -124,12 +144,25 @@ public static class ConstructionWorkspacePlay
         }
         File.AppendAllText(Report+"/routing.txt",map.ToString());
         Require(shop.TryShelfApproach(stocked,shop.ArrivalPosition,out _),"Entrance to shelf route is blocked; see routing.txt.");
-        ShopperVisit customer=null;GameObject car=null;bool paid=false,walked=false,streetArrival=false,streetDeparture=false;int beforeMoney=shop.Money,beforeStock=stocked.CurrentAmount;
-        for(int step=0;step<16000;step++)
+        ShopperVisit customer=null;GameObject car=null;bool paid=false,walked=false,streetArrival=false,streetDeparture=false,reachedUpper=false;int beforeMoney=shop.Money,beforeStock=stocked.CurrentAmount;
+        var lift=Elevator?Object.FindObjectsOfType<StoreyTransportVisual>().Single(motor=>motor.liftDoors!=null):null;
+        bool lowerDoorSeen=false,upperDoorSeen=false,liftMoved=false;
+        float trafficTime=0,originalTimeScale=Time.timeScale;
+        if(Elevator)Time.timeScale=8;
+        for(int step=0;step<(Elevator?120000:16000);step++)
         {
-            parking.Advance(.05f);Physics.SyncTransforms();
-            roads.Simulate(.05f,step*.05,parking.roadEntry.position,true);Physics.Simulate(.05f);
-            shop.Advance(.05f);
+            // Door/cabin animation and shop patience must share one clock in the lift integration scenario.
+            float seconds=Elevator?Mathf.Clamp(Time.deltaTime,.0001f,.1f):.05f;trafficTime+=seconds;
+            parking.Advance(seconds);Physics.SyncTransforms();
+            roads.Simulate(seconds,trafficTime,parking.roadEntry.position,true);Physics.Simulate(seconds);
+            shop.Advance(seconds);
+            if(lift!=null)
+            {
+                lowerDoorSeen|=lift.liftDoors.IsOpen(0);upperDoorSeen|=lift.liftDoors.IsOpen(1);liftMoved|=lift.platform.localPosition.y>.15f;
+                Require(!(lift.liftDoors.IsOpen(0)&&lift.liftDoors.IsOpen(1)),"Both lift doors are open in the real store.");
+                if(lift.liftDoors.IsOpen(0))Require(Mathf.Abs(lift.platform.localPosition.y)<.013f,"Ground lift door opens without cabin in real store.");
+                if(lift.liftDoors.IsOpen(1))Require(Mathf.Abs(lift.platform.localPosition.y-lift.travelHeight)<.013f,"Upper lift door opens without cabin in real store.");
+            }
             Require(shop.Visits.Count<=1,"A separate pedestrian arrival duplicated the parking buyer.");
             if(car==null && customer==null)
             {
@@ -145,8 +178,9 @@ public static class ConstructionWorkspacePlay
             if(customer==null)customer=shop.Visits.FirstOrDefault(visit=>visit.ArrivedByCar);
             if(customer!=null)
             {
+                reachedUpper|=customer.Character!=null && customer.Character.transform.position.y>GridSystem.StoreyHeight;
                 var animator=customer.Character!=null?customer.Character.GetComponentInChildren<Animator>():null;
-                if(animator!=null){animator.Update(.05f);walked|=animator.GetBool("isWalking");}
+                if(animator!=null){animator.Update(seconds);walked|=animator.GetBool("isWalking");}
                 Require(customer.IsFinished || car!=null,"Driver's car left before the visit ended.");
                 if(customer.Stage==VisitStage.Waiting && !paid)
                 {
@@ -171,10 +205,18 @@ public static class ConstructionWorkspacePlay
                 File.WriteAllText(Report+"/cycle-state.txt",lines);
                 if(customer==null && parking.VisitorCars.Count>0)TownFloristBatch.Render(EditorSceneManager.GetActiveScene(),Documentation+"/RouteProbe.png",starter.blueprint.cameraFocus+new Vector3(-9,12,-16),starter.blueprint.cameraFocus+Vector3.back*3);
             }
-            if(step%100==0)yield return null;
+            // Lift doors and cabin run on real frame time; let their animations advance between buyer steps.
+            if(step%100==0 || Elevator)yield return null;
         }
+        Time.timeScale=originalTimeScale;
         Require(customer!=null && walked && paid && customer.ReturnedToCar && streetArrival && streetDeparture && parking.VisitorCars.Count==0,"Incomplete street -> car -> shop -> purchase -> same car -> street cycle. "+parking.MovementState+" notice="+shop.Notice+" visit="+customer?.Stage);
         Require(parking.VisitorCars.Count==0,"Finished visitor retained the parking lease.");
+        if(Transport)Require(reachedUpper,"Parking buyer never physically reached its upstairs shelf.");
+        if(Elevator)
+        {
+            Require(lowerDoorSeen&&upperDoorSeen&&liftMoved,"Real buyer skipped the lift cabin or a landing door pair.");
+            File.WriteAllText(Report+"/doors.txt","PASS actual parking buyer boards the single cabin, rides upstairs, returns downstairs and passes both animated door pairs; doors only open with aligned cabin, never both stops at once.\n");
+        }
         File.WriteAllText(Report+"/cycle.txt","PASS actual passenger car arrival; buyer exits beside its car, walks to shelf, browses, pays exactly once, returns to the same car, boards and leaves. Car waits for its buyer, not a timer; bay released only after departure.\n");
         File.WriteAllText(Report+"/placement.txt","PASS 10-percent larger StorePolish kit, shelves and storeys; 1.94x3.92 bays; proportional grid clearance; move all initial bays plus place and remove a test bay on service-yard asphalt; reject public/unowned ground; matching-width operable double door; idempotent version-one and legacy save conversion.\n");
         float shopWallTop=Object.FindObjectsOfType<PlacedObject>().Where(placed=>placed.item!=null && placed.item.isWall)
@@ -202,16 +244,83 @@ public static class ConstructionWorkspacePlay
         Require(!starter.cityTrip.InCity,"Return from City failed.");
         File.WriteAllText(Report+"/city.txt","PASS actual Game -> City -> Game; no automatic roof; scaled wall top "+expectedTop+"; uniform world scale, player-built surfaces only.\n");
     }
+    private static System.Collections.Generic.IEnumerable<object> GroundOnlyTransports(StarterStoreInitialization starter)
+    {
+        var build=starter.building;var floors=starter.floors;
+        Require(!floors.BuildSaveData().Any(tile=>tile.floor>0),"Starter unexpectedly has an upper floor.");
+        var anchors=floors.BuildSaveData().Where(tile=>tile.itemId!="asphalt_01").Select(tile=>new Vector3Int(tile.x,0,tile.z)).ToArray();
+        var tile=starter.catalog.GetById("floor_cream");
+        foreach(string id in new[]{"stairs_01","elevator_01","escalator_01"})
+        {
+            var item=starter.catalog.GetById(id);build.EnterBuildMode(item);
+            var valid=anchors.Where(cell=>build.CanPlaceAt(cell).ok).ToArray();Require(valid.Length>0,"Cannot place "+id+" on the fresh starter's ground floor.");
+            var anchor=valid[0];Require(build.TryPlaceAt(anchor),"Ground-only transport placement failed: "+id);
+            var placed=Object.FindObjectsOfType<PlacedObject>().Single(p=>p.item==item && p.GetComponentInParent<BuildPreview>()==null);
+            var link=new StoreyLink(build.grid,placed);Require(!link.IsUsable(floors),"Transport routes into empty upper air.");
+            build.EnterBuildMode(tile);Require(build.TryPaintCells(new System.Collections.Generic.List<Vector3Int>{link.Upper}),"Cannot add landing after transport placement.");build.ExitBuildMode();
+            Require(link.IsUsable(floors),"Upper floor does not activate the placed connection.");
+            var navigation=new StoreNavigation(build.grid,build.territory);navigation.RefreshDoorways(Object.FindObjectsOfType<PlacedObject>());
+            var lower=build.grid.CellToWorld(link.Lower)+Vector3.up*StoreNavigation.FloorOffset(0);
+            var upper=build.grid.CellToWorld(link.Upper)+Vector3.up*StoreNavigation.FloorOffset(1);
+            var actor=new GameObject("Fresh starter transport passenger").AddComponent<ShopCharacter>();actor.transform.position=lower;actor.Initialize(navigation);
+            Require(actor.MoveTo(upper),"Upper landing is unreachable after activation: "+id);
+            float until=Time.realtimeSinceStartup+25;while(!actor.Arrived && Time.realtimeSinceStartup<until){actor.Advance(.05f);yield return null;}
+            Require(actor.Arrived,"Passenger stalled on fresh starter transport: "+id);Object.Destroy(actor.gameObject);yield return null;
+            var editor=build.GetComponent<BuildEditingController>();editor.Begin();editor.Select(placed);Require(editor.DeleteSelected(),"Cannot return test connection to storage.");editor.Finish();yield return null;
+            Require(floors.RemoveCells(new System.Collections.Generic.List<Vector3Int>{link.Upper},build.inventory),"Cannot return temporary landing tile.");
+        }
+        Require(!floors.BuildSaveData().Any(cell=>cell.floor>0),"Ground-only checks left upper-floor construction behind.");
+        File.WriteAllText(Report+"/ground-only.txt","PASS all three transports placed in the fresh real starter with no upper floor; inactive until landing painted; real passenger ascends after activation; items and tile returned once.\n");
+    }
+    private static void FrontageMigration(StarterStoreInitialization starter)
+    {
+        var previous=JsonUtility.FromJson<GameData>(File.ReadAllText(Report+"/previous.json"));
+        previous.playerMoney=24680;previous.buildInventory.Add(new BuildInventorySaveEntry{itemId="floor_wood",count=7});
+        var shelf=previous.placedObjects.First(item=>item.itemId=="shelf_fresh_01");
+        previous.shelfStocks.Clear();
+        previous.shelfStocks.Add(new RetailEmpireTycoon.SaveSystem.ShelfStockSaveEntry{buildItemId=shelf.itemId,anchorX=shelf.x,anchorZ=shelf.z,productId="frontage-stock",amount=9});
+        Require(starter.blueprint.ForecourtRevision.TryApply(previous,starter.building.grid,starter.catalog),"Untouched starter frontage did not upgrade.");
+        Require(previous.playerMoney==24680 && previous.buildInventory.Single().count==7 && previous.shelfStocks.Single().anchorZ==shelf.z-2 && previous.shelfStocks.Single().amount==9,"Frontage migration changed money, inventory or stock.");
+        var once=JsonUtility.ToJson(previous);Require(!starter.blueprint.ForecourtRevision.TryApply(previous,starter.building.grid,starter.catalog) && once==JsonUtility.ToJson(previous),"Frontage migration repeats.");
+        var custom=JsonUtility.FromJson<GameData>(File.ReadAllText(Report+"/previous.json"));custom.placedObjects.First().x++;
+        once=JsonUtility.ToJson(custom);Require(!starter.blueprint.ForecourtRevision.TryApply(custom,starter.building.grid,starter.catalog) && once==JsonUtility.ToJson(custom),"Custom construction or parking was replaced.");
+        var ground=starter.blueprint.initialState.floorTiles.Where(tile=>tile.floor==0).ToArray();
+        Require(ground.Select(tile=>(tile.x,tile.z)).Distinct().Count()==ground.Length,"Starter paving overlaps indoor floor.");
+        var asphalt=ground.Where(tile=>tile.itemId=="asphalt_01").Select(tile=>new Vector2Int(tile.x,tile.z)).ToHashSet();
+        var seen=new System.Collections.Generic.HashSet<Vector2Int>();var queue=new System.Collections.Generic.Queue<Vector2Int>();queue.Enqueue(asphalt.First());
+        while(queue.Count>0){var at=queue.Dequeue();if(!seen.Add(at))continue;foreach(var d in new[]{Vector2Int.left,Vector2Int.right,Vector2Int.up,Vector2Int.down})if(asphalt.Contains(at+d)&&!seen.Contains(at+d))queue.Enqueue(at+d);}
+        Require(seen.Count==asphalt.Count,"The driveway or warehouse strip is detached from the forecourt.");
+        File.WriteAllText(Report+"/frontage.txt","PASS 0.55 m forward shift, aligned spaced bays, continuous asphalt from street to forecourt and warehouse; no duplicate ground layers; exact-template migration preserves custom sites, money, inventory and stock.\n");
+    }
+    private static void PrepareUpperShop(StarterStoreInitialization starter)
+    {
+        var build=starter.building;var tile=starter.catalog.GetById("floor_cream");
+        var upper=starter.floors.BuildSaveData().Where(cell=>cell.floor==0 && cell.itemId!="asphalt_01")
+            .Select(cell=>new Vector3Int(cell.x,1,cell.z)).Where(cell=>build.territory.IsCellPurchased(cell)).ToList();
+        build.inventory.Add(tile,upper.Count);build.EnterBuildMode(tile);Require(build.TryPaintCells(upper),"Cannot prepare the buyer's second floor.");
+        var stairs=starter.catalog.GetById(Elevator?"elevator_01":Escalator?"escalator_01":"stairs_01");build.Storeys.SelectFloor(0);build.EnterBuildMode(stairs);
+        var anchors=upper.Select(cell=>new Vector3Int(cell.x,0,cell.z)).ToArray();bool installed=false;
+        foreach(var cell in anchors)
+            if(build.CanPlaceAt(cell).ok){Require(build.TryPlaceAt(cell),"Stair preview and placement disagree.");installed=true;break;}
+        Require(installed,"No valid staircase position in starter shop.");
+        var shelf=Object.FindObjectsOfType<PlacedShelfStock>().First().GetComponent<PlacedObject>();
+        var editor=build.GetComponent<BuildEditingController>();editor.Begin();build.Storeys.SelectFloor(1);editor.Select(shelf);
+        bool moved=false;foreach(var cell in upper)
+            if(editor.PreviewAt(cell).ok){Require(editor.Confirm(),"Cannot move test shelf upstairs.");moved=true;break;}
+        Require(moved,"No upper shelf position.");editor.Finish();build.Storeys.SelectFloor(0);
+        File.WriteAllText(Report+"/upstairs.txt","PASS real starter "+stairs.id+" cuts its solid ceiling; real stock-bearing shelf moved upstairs for the parking buyer's purchase cycle.\n");
+    }
     private static void StarterStock(StarterStoreInitialization starter,GameData data)
     {
-        Require(data.buildInventory.Sum(entry=>entry.count)==49,"Incorrect starter stock total.");
+        Require(data.buildInventory.Sum(entry=>entry.count)==53,"Incorrect starter stock total.");
         Require(data.buildInventory.Where(entry=>starter.catalog.GetById(entry.itemId).category==BuildCategory.Shelf).Count()==5,"Five different starter shelves required.");
         foreach(var pair in new[]{("floor_cream",20),("wall_01",20),("door_01",1),("unloading_gate_01",1),("parking_01",2)})
             Require(data.buildInventory.Single(entry=>entry.itemId==pair.Item1).count==pair.Item2,"Incorrect stock: "+pair.Item1);
+        foreach(string id in new[]{"stairs_01","elevator_01","escalator_01","escalator_down_01"})Require(data.buildInventory.Single(entry=>entry.itemId==id).count==1,"Missing starter transport: "+id);
         Require(starter.blueprint.initialState.buildInventory.Count==0,"Grant mutated the reusable blueprint.");
         var reloaded=JsonUtility.FromJson<GameData>(JsonUtility.ToJson(data));
         starter.UpgradeUnmodifiedLayout(reloaded);
-        Require(reloaded.buildInventory.Sum(entry=>entry.count)==49,"Loading/upgrading grants the starter stock again.");
+        Require(reloaded.buildInventory.Sum(entry=>entry.count)==53,"Loading/upgrading grants the starter stock again.");
         var stock=(StarterConstructionStock)typeof(StarterStoreBlueprint).GetField("constructionStock",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance).GetValue(starter.blueprint);
         var choices=new System.Collections.Generic.HashSet<string>();
         for(int seed=1;seed<=12;seed++)
@@ -222,7 +331,7 @@ public static class ConstructionWorkspacePlay
         Require(choices.Count>1,"Starter shelf selection is not random.");
         var layout=Object.FindObjectOfType<RetailEmpireTycoon.City.TownWorldPlaces>().layout;
         Require(layout.ShopVisualScale==Vector3.one*layout.shopToCityScale,"City shop is still stretched vertically.");
-        File.WriteAllText(Report+"/stock.txt","PASS 5 distinct random shelves, 20 cream floor, 20 walls, 1 door, 1 gate, 2 bays; actual inventory restore; blueprint unchanged; existing-game upgrade grants nothing.\n");
+        File.WriteAllText(Report+"/stock.txt","PASS 5 distinct random shelves, 20 cream floor, 20 walls, 1 door, 1 gate, 2 bays, 1 stairs, 1 elevator, 1 reversible escalator and 1 down escalator; actual inventory restore; blueprint unchanged; existing-game upgrade grants nothing.\n");
     }
     private static System.Collections.Generic.IEnumerable<object> Workspace(StarterStoreInitialization starter)
     {

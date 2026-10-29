@@ -5,10 +5,12 @@ using RetailEmpireTycoon.SaveSystem;
 [Serializable]
 public class GameData
 {
+    public const int StartingCapital = 300000;
     public bool usesModularStore;
     public int shopProportionsVersion;
     public int starterSiteVersion;
-    public int playerMoney = 6000;
+    public int playerMoney = StartingCapital;
+    public RetailEmpireTycoon.City.VehicleFleetSaveData vehicles = new RetailEmpireTycoon.City.VehicleFleetSaveData();
     public RetailEmpireTycoon.Logistics.DeliverySaveData deliveries = new RetailEmpireTycoon.Logistics.DeliverySaveData();
     public RetailEmpireTycoon.StoreOperations.ShopOperationsSaveData shopOperations = new RetailEmpireTycoon.StoreOperations.ShopOperationsSaveData();
 

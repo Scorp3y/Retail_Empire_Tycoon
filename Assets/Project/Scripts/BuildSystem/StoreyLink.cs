@@ -10,6 +10,7 @@ namespace RetailEmpireTycoon.BuildSystem
     {
         public readonly PlacedObject Owner;
         private readonly GridSystem grid;
+        private readonly Vector3 cabinCenter;
         public Vector3Int Lower { get; }
         public Vector3Int Upper { get; }
         public StoreyLink(GridSystem grid, PlacedObject owner)
@@ -19,6 +20,8 @@ namespace RetailEmpireTycoon.BuildSystem
         {
             this.grid = grid;
             var cells = grid.GetFootprintCells(anchor, item.footprint, rotated, item.pivotOffset).ToArray();
+            cabinCenter=grid.origin+new Vector3((cells.Min(cell=>cell.x)+cells.Max(cell=>cell.x)+1)*.5f*grid.cellSize,
+                anchor.y*GridSystem.StoreyHeight,(cells.Min(cell=>cell.z)+cells.Max(cell=>cell.z)+1)*.5f*grid.cellSize);
             var direction = Direction(facing);
             int min = cells.Min(c => c.x*direction.x+c.z*direction.z);
             int max = cells.Max(c => c.x*direction.x+c.z*direction.z);
@@ -28,16 +31,21 @@ namespace RetailEmpireTycoon.BuildSystem
             Upper = (item.storeyConnection == StoreyConnectionKind.Elevator ? Lower : highEdge[highEdge.Length / 2] + direction) + Vector3Int.up;
         }
         public bool IsUsable(FloorPainter floors) => Owner != null && Owner.gameObject.activeInHierarchy
-            && floors != null && floors.HasSurface(Upper);
+            && floors != null && floors.HasSurface(Lower) && floors.HasSurface(Upper);
+        public bool Allows(bool upward) => Owner != null && (Owner.item.storeyDirection == StoreyTravelDirection.Both
+            || Owner.item.storeyDirection == (upward ? StoreyTravelDirection.Up : StoreyTravelDirection.Down));
         public List<Vector3> Route(bool upward)
         {
             Vector3 lower = grid.CellToWorld(Lower) + Vector3.up * RetailEmpireTycoon.StoreOperations.StoreNavigation.FloorOffset(Lower.y);
             Vector3 upper = grid.CellToWorld(Upper) + Vector3.up * RetailEmpireTycoon.StoreOperations.StoreNavigation.FloorOffset(Upper.y);
             var direction = (Vector3)Direction(Owner.facing);
-            var route = new List<Vector3> { lower, lower + direction * grid.cellSize };
+            var route = new List<Vector3> { lower };
             if (Owner.item.storeyConnection == StoreyConnectionKind.Elevator)
-                route.Add(new Vector3(route[1].x,upper.y,route[1].z));
-            else route.Add(upper - direction * grid.cellSize);
+            {
+                route.Add(new Vector3(cabinCenter.x,lower.y,cabinCenter.z));
+                route.Add(new Vector3(cabinCenter.x,upper.y,cabinCenter.z));
+            }
+            else {route.Add(lower + direction * grid.cellSize);route.Add(upper - direction * grid.cellSize);}
             route.Add(upper);
             if (!upward) route.Reverse();
             return route;
@@ -57,6 +65,10 @@ namespace RetailEmpireTycoon.BuildSystem
         { 0 => Vector3Int.forward, 1 => Vector3Int.right, 2 => Vector3Int.back, _ => Vector3Int.left };
         public static IEnumerable<Vector3Int> OpeningCells(GridSystem grid, PlacedObject owner)
             => grid.GetFootprintCells(owner.anchorCell+Vector3Int.up, owner.item.footprint, owner.rotated, owner.item.pivotOffset);
+        public static IEnumerable<Vector3Int> OpeningCells(GridSystem grid, PlacementRequest request)
+            => grid.GetFootprintCells(request.anchorCell+Vector3Int.up, request.item.footprint, request.rotated, request.item.pivotOffset);
+        public bool HasPassenger => Object.FindObjectsOfType<RetailEmpireTycoon.StoreOperations.ShopCharacter>()
+            .Any(actor=>actor.HasDestination && !actor.Arrived && Contains(actor.transform.position));
         public static IEnumerable<Vector3Int> LandingCells(GridSystem grid, PlacedObject owner)
         {
             var link = new StoreyLink(grid, owner); yield return link.Lower; yield return link.Upper;

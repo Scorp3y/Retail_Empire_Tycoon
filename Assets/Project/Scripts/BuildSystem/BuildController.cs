@@ -35,6 +35,7 @@ namespace RetailEmpireTycoon.BuildSystem
         public BuildItemData SelectedItem=>_selected;
         public PlacementResult PreviewResult {get;private set;}
         public bool HasPlacementPreview {get;private set;}
+        public int PreviewOpeningTileCount {get;private set;}
         public int FloorStrokeCellCount {get;private set;}
         public event System.Action LayoutChanged;
         public void NotifyLayoutChanged() => LayoutChanged?.Invoke();
@@ -144,6 +145,7 @@ namespace RetailEmpireTycoon.BuildSystem
             if (item == null) return;
             GetComponent<BuildEditingController>()?.Finish();
             HasPlacementPreview = false;
+            PreviewOpeningTileCount=0;
             FloorStrokeCellCount = 0;
             _isPaintingFloor = false;
             _floorPreviewCells.Clear();
@@ -215,6 +217,10 @@ namespace RetailEmpireTycoon.BuildSystem
             var res = CanPlaceAt(cell);
             PreviewResult = res;
             HasPlacementPreview = true;
+            PreviewOpeningTileCount=floorPainter!=null?floorPainter.OpeningTileCount(req):0;
+            if(req.item.storeyConnection!=StoreyConnectionKind.None && PreviewOpeningTileCount>0)
+                floorPainter.ShowPreview(StoreyLink.OpeningCells(grid,req).ToList(),res.ok);
+            else floorPainter?.ClearPreview();
 
             preview?.SetPose(worldPos, rot);
             preview?.ShowPlacement(grid, req, res);
@@ -294,6 +300,11 @@ namespace RetailEmpireTycoon.BuildSystem
                 return false;
             }
             var placed = go.GetComponent<PlacedObject>() ?? go.AddComponent<PlacedObject>();
+
+            if(floorPainter!=null && !floorPainter.TryOpenTransport(req,inventory))
+            {
+                inventory.Add(req.item,1);go.SetActive(false);Destroy(go);return false;
+            }
 
             placed.item = req.item;
             placed.anchorCell = req.anchorCell;

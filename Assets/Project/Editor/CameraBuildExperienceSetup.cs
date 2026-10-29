@@ -32,7 +32,6 @@ public static class CameraBuildExperienceSetup
         var visibility = camera.GetComponent<StoreWallVisibility>();
         if (visibility == null) visibility = camera.gameObject.AddComponent<StoreWallVisibility>();
         var settings = new SerializedObject(visibility);
-        settings.FindProperty("cameraInput").objectReferenceValue = camera;
         settings.FindProperty("buildController").objectReferenceValue = build;
         settings.ApplyModifiedPropertiesWithoutUndo();
         if (build.gridOverlay != null)

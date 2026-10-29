@@ -40,17 +40,22 @@ namespace RetailEmpireTycoon.City
         private DeliveryCheckpoint activeSupplier;
         private DeliveryCheckpoint[] checkpoints;
         private CityMapHud map;
+        private PlayerVehicleFleet vehicleFleet;
+        private readonly System.Collections.Generic.List<(DeliveryCheckpoint Point,Vector3 Gate,Quaternion Rotation,float Depth)> unloadingGates=new();
+        private Vector3 storeEnvelopeCenter;
 
         public void Enter(CityTrip trip, DeliveryOrders orders, Scene shopScene)
         {
             this.trip = trip; this.orders = orders;
+            vehicleFleet=trip.Fleet;
+            vehicleFleet.Changed += ApplySelectedVehicle;
+            ApplySelectedVehicle();
             if(town!=null)
             {
                 town.GetComponent<TownSignalChunks>()?.SetObserver(pickup.transform);
                 town.GetComponentInChildren<TownRoadTraffic>()?.SetObserver(pickup.transform);
                 town.GetComponentInChildren<TownPedestrianTraffic>()?.SetObserver(pickup.transform);
             }
-            checkpoints=(town!=null?town.suppliers:Array.Empty<DeliveryCheckpoint>()).Concat(new[]{depot,unload,home}).Where(c=>c!=null).Distinct().ToArray();
             orders.Changed += RefreshCargo;
             ui = new ShopUi(Resources.Load<ShopUiTheme>("ShopUi/Theme"));
             var canvas = new GameObject("City HUD",typeof(RectTransform),typeof(Canvas),typeof(CanvasScaler),typeof(GraphicRaycaster));
@@ -71,6 +76,8 @@ namespace RetailEmpireTycoon.City
             var buttonRect = (RectTransform)interact.transform; buttonRect.anchorMin = buttonRect.anchorMax = new Vector2(.5f,0);
             buttonRect.pivot = new Vector2(.5f,0); buttonRect.anchoredPosition = new Vector2(0,24);
             SyncFacade(shopScene); RefreshCargo();
+            checkpoints=(town!=null?town.suppliers.Concat(town.showroomEntrances??Array.Empty<DeliveryCheckpoint>()):Array.Empty<DeliveryCheckpoint>())
+                .Concat(new[]{depot,home}).Concat(unloadingGates.Select(gate=>gate.Point)).Where(c=>c!=null).Distinct().ToArray();
             if(town!=null)map=new CityMapHud(ui,canvasRoot,town,pickup,home,chaseCamera,()=>panel==null&&!trip.Transitioning);
         }
         private IEnumerator EnableCityInput(EventSystem events)
@@ -83,15 +90,15 @@ namespace RetailEmpireTycoon.City
             if (trip == null || trip.Transitioning || orders == null) return;
             map?.Tick();
             if(map!=null&&map.IsOpen){interact.gameObject.SetActive(false);return;}
-            nearest = checkpoints.Where(c=>c.CanUse(pickup)).OrderBy(c=>Vector3.Distance(c.transform.position,pickup.transform.position)).FirstOrDefault();
+            nearest = checkpoints.Where(c=>c.CanUse(pickup)).OrderBy(c=>c.DistanceTo(pickup)).FirstOrDefault();
             var nearby=checkpoints.Where(c=>c.DistanceTo(pickup)<14).OrderBy(c=>c.DistanceTo(pickup)).FirstOrDefault();
             string dockingHint=nearby!=null&&!nearby.CanUse(pickup)?nearby.UnavailableReason(pickup):string.Empty;
             interact.gameObject.SetActive(nearest != null && panel == null);
             if (nearest != null)
                 interact.GetComponentInChildren<TMP_Text>().text = nearest.kind == CheckpointKind.Depot ? "E — "+SupplierRouting.Name(nearest.supplier)
                     : nearest.kind == CheckpointKind.Showroom ? "E — View vehicles"
-                    : nearest.kind == CheckpointKind.Unload ? "E — Unload pickup" : "E — Return to store";
-            status.text = $"Pickup: {orders.PickupWeightKg:0.#} / {orders.pickupCapacityKg:0} kg • {orders.PickupVolumeM3:0.##} / {orders.pickupCapacityM3:0.#} m³\n"
+                    : nearest.kind == CheckpointKind.Unload ? "E — Unload vehicle" : "E — Return to store";
+            status.text = $"{trip.Fleet.SelectedName}: {orders.PickupWeightKg:0.#} / {orders.pickupCapacityKg:0} kg • {orders.PickupVolumeM3:0.##} / {orders.pickupCapacityM3:0.#} m³\n"
                 + $"Store: {Vector3.Distance(pickup.transform.position,home.transform.position):0} m • M — town map\n"
                 + "WASD — drive · Space — brake · Mouse — camera · V — rear view · Esc — cursor\n"
                 + (GetComponent<CityRiverRecovery>()?.ShowRecoveryNotice==true?"The pickup was recovered to the riverbank. Cargo preserved.":orders.NoticeIsError?orders.Notice:dockingHint);
@@ -100,6 +107,8 @@ namespace RetailEmpireTycoon.City
         }
         public void Interact()
         {
+            // Resolve from the current pose: button/input can arrive before the next world Update.
+            if(checkpoints!=null)nearest=checkpoints.Where(c=>c.CanUse(pickup)).OrderBy(c=>c.DistanceTo(pickup)).FirstOrDefault();
             if (nearest == null || !nearest.CanUse(pickup) || panel != null || trip.Transitioning) return;
             pickup.Stop(); pickup.InputEnabled = false; page = 0;
             chaseCamera.SetInteractionBlocked(true);
@@ -176,16 +185,56 @@ namespace RetailEmpireTycoon.City
         }
         private void ShowShowroom()
         {
-            panel=ui.Modal("Vehicle showroom",canvasRoot,new Vector2(630,370));
-            ui.Heading(panel,"Vehicle showroom", "Vehicle showroom",new Vector2(24,-18),new Vector2(560,44));
-            ui.Label(panel,"Drive around the display and inspect the vehicles from your pickup.\n\nYour pickup is already owned and selected. Payload: 350 kg. Cargo capacity: 2 m³. Buying other vehicles is not available yet.",new Vector2(24,-89),new Vector2(582,200),20);
-            ui.Button(panel,"Continue browsing",new Vector2(24,-302),new Vector2(582,44),ClosePanel);
+            if (panel != null) ui.CloseModal(panel);
+            var fleet = trip.Fleet;
+            panel=ui.Modal("Vehicle showroom",canvasRoot,new Vector2(880,790));
+            ui.Heading(panel,"Vehicle showroom", "Vehicle showroom",new Vector2(24,-18),new Vector2(730,44));
+            ui.Button(panel,"×",new Vector2(812,-18),new Vector2(42,42),ClosePanel);
+            ui.Label(panel,$"Balance: ${orders.money.Money:N0} · Selected: {fleet.SelectedName}\nUnload before exchanging vehicles. Owned vehicles remain in your garage.",new Vector2(24,-73),new Vector2(832,56),18);
+            VehicleRow(null,0);
+            for (int i=0;i<fleet.Catalog.Count;i++) VehicleRow(fleet.Catalog[i],i+1);
+            ui.Label(panel,fleet.Notice??"Inspect all five upgrades here. Each tier carries more weight and volume.",new Vector2(24,-718),new Vector2(832,50),18);
+        }
+        private void VehicleRow(PlayerVehicleDefinition definition,int index)
+        {
+            var fleet=trip.Fleet;string id=definition!=null?definition.id:PlayerVehicleFleet.StarterId;
+            float y=-146-index*92;
+            if(definition!=null&&definition.icon!=null)
+            {
+                var rect=ui.Rect("Vehicle preview",panel,new Vector2(0,1),new Vector2(0,1),new Vector2(24,y),new Vector2(116,82));
+                var preview=rect.gameObject.AddComponent<Image>();preview.sprite=definition.icon;preview.preserveAspect=true;
+            }
+            string name=definition!=null?definition.displayName:"Delivery pickup";
+            float kg=definition!=null?definition.payloadKg:350, volume=definition!=null?definition.cargoM3:2;
+            ui.Label(panel,$"{name}\n{kg:0} kg · {volume:0} m³",new Vector2(156,y-6),new Vector2(420,74),21);
+            bool selected=fleet.SelectedId==id, owned=fleet.Owns(id);
+            string label=selected?"Selected":owned?"Select":$"Buy · ${definition.price:N0}";
+            var button=ui.Button(panel,label,new Vector2(606,y-15),new Vector2(246,48),()=>
+            {
+                if(owned)fleet.Select(id);else fleet.BuyAndSelect(id);
+                ShowShowroom();
+            });
+            button.interactable=!selected&&(owned||orders.money.CanSpend(definition.price));
+        }
+        private void ApplySelectedVehicle()
+        {
+            pickup.SetVehicle(trip.Fleet.Selected);
+            chaseCamera.distance=Mathf.Max(8,(trip.Fleet.Selected!=null?trip.Fleet.Selected.length:4.4f)*1.15f);
+            RefreshCargo();
+            RefreshUnloadingZones();
+        }
+        private void OnDestroy()
+        {
+            if(vehicleFleet!=null)vehicleFleet.Changed-=ApplySelectedVehicle;
+            if(orders!=null)orders.Changed-=RefreshCargo;
         }
         private void ClosePanel() { ui.CloseModal(panel); panel = null; pickup.InputEnabled = true;chaseCamera.SetInteractionBlocked(false); }
         private void RefreshCargo()
         {
             if (orders == null || cargoRoot == null) return;
             for (int i = cargoRoot.childCount-1;i>=0;i--) { cargoRoot.GetChild(i).gameObject.SetActive(false); Destroy(cargoRoot.GetChild(i).gameObject); }
+            // Enclosed cargo vehicles keep their load inside the body; only the starting open pickup shows crates.
+            if(trip.Fleet.Selected!=null)return;
             int count = Mathf.Clamp(Mathf.CeilToInt(orders.PickupVolumeM3/.18f),0,12);
             for (int i=0;i<count;i++)
             {
@@ -250,18 +299,40 @@ namespace RetailEmpireTycoon.City
                     if(trip.WasShopObjectActive(filter.gameObject))CopyExterior(filter,Map,geometryScale);
             foreach(var parking in shopScene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<PlacedObject>(true)).Where(p=>p.item!=null&&p.item.isParkingSpace&&p.GetComponentInParent<BuildPreview>()==null))
                 foreach(var filter in parking.GetComponentsInChildren<MeshFilter>(true)) CopyExterior(filter,Map,geometryScale);
-            var gates = shopScene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<PlacedObject>(true)).Where(p=>p.item!=null&&p.item.isUnloadingGate).ToArray();
-            if(gates.Length>0)
+            var gates = shopScene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<PlacedObject>(true))
+                .Where(p=>p.item!=null&&p.item.isUnloadingGate&&p.anchorCell.y==0&&p.GetComponentInParent<BuildPreview>()==null&&trip.WasShopObjectActive(p.gameObject)).ToArray();
+            storeEnvelopeCenter=Map(bounds.center);
+            unloadingGates.Clear();unload.gameObject.SetActive(gates.Length>0);
+            // Older City scenes may still contain the yellow loading slab. Interaction needs no visible platform.
+            foreach(var renderer in unload.GetComponentsInChildren<Renderer>(true))renderer.enabled=false;
+            for(int index=0;index<gates.Length;index++)
             {
-                var gate=gates[0]; Vector3 gatePoint=Map(gate.transform.position);
-                Vector3 direction=gatePoint-Map(bounds.center);direction.y=0;
-                if(direction.sqrMagnitude<.1f) direction=Vector3.forward;
-                direction.Normalize();
-                // Move the usable loading area outside the sealed shop hull, even if a gate faces inward.
-                float extent=Mathf.Abs(direction.x)*collider.size.x*.5f+Mathf.Abs(direction.z)*collider.size.z*.5f;
-                unload.transform.position=Map(bounds.center)+direction*(extent+6);
-                unload.transform.position=new Vector3(unload.transform.position.x,.05f,unload.transform.position.z);
+                var gate=gates[index];
+                var point=index==0?unload:new GameObject("Invisible store unloading zone "+(index+1)).AddComponent<DeliveryCheckpoint>();
+                if(index>0)point.transform.SetParent(transform,false);
+                point.kind=CheckpointKind.Unload;point.radius=2.5f;point.requiresRearDocking=true;point.displayName="Store unloading gate";
+                unloadingGates.Add((point,Map(gate.transform.position),gate.transform.rotation,gate.item.placementBounds.size.z*geometryScale.z));
                 foreach(var filter in gate.GetComponentsInChildren<MeshFilter>(true)) CopyExterior(filter,Map,geometryScale);
+            }
+            RefreshUnloadingZones();
+        }
+        /// <summary>Positions the vehicle centre so its rear faces the gate with clearance; the gate's normal defines the approach.</summary>
+        public static (Vector3 Position,Quaternion Rotation) UnloadingPose(Vector3 gate,Quaternion rotation,Vector3 shopCenter,float gateDepth,float vehicleLength)
+        {
+            var normal=Vector3.ProjectOnPlane(rotation*Vector3.forward,Vector3.up).normalized;
+            var outside=gate-shopCenter;outside.y=0;
+            if(Vector3.Dot(normal,outside)<0)normal=-normal;
+            var position=gate+normal*(gateDepth*.5f+vehicleLength*.5f+.65f);position.y=.05f;
+            return (position,Quaternion.LookRotation(normal));
+        }
+        private void RefreshUnloadingZones()
+        {
+            if(pickup==null)return;
+            var body=pickup.GetComponent<BoxCollider>();float length=body!=null?body.size.z*pickup.transform.lossyScale.z:4.4f;
+            foreach(var gate in unloadingGates)
+            {
+                var pose=UnloadingPose(gate.Gate,gate.Rotation,storeEnvelopeCenter,gate.Depth,length);
+                gate.Point.transform.SetPositionAndRotation(pose.Position,pose.Rotation);
             }
         }
         private void CopyExterior(MeshFilter filter,Func<Vector3,Vector3> map,Vector3 scale)
@@ -273,6 +344,5 @@ namespace RetailEmpireTycoon.City
             var properties=new MaterialPropertyBlock();renderer.GetPropertyBlock(properties);copy.GetComponent<MeshRenderer>().SetPropertyBlock(properties);
             copy.GetComponent<MeshRenderer>().shadowCastingMode=renderer.shadowCastingMode;
         }
-        private void OnDestroy() { if(orders!=null) orders.Changed-=RefreshCargo; }
     }
 }

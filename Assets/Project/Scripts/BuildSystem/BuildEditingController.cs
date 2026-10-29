@@ -24,6 +24,7 @@ namespace RetailEmpireTycoon.BuildSystem
         [NonSerialized] public bool ReadPointerInput = true;
         public string Notice { get; private set; }
         public PlacementResult CandidateResult { get; private set; }
+        public int OpeningTileCount {get;private set;}
         private BuildItemData placementDefinition;
         private Vector3Int candidateCell;
         private int candidateFacing;
@@ -62,6 +63,8 @@ namespace RetailEmpireTycoon.BuildSystem
             }
             candidateCell = placed.anchorCell;
             candidateFacing = placed.facing;
+            // Capture authored wall visibility before the movement preview hides its source instance.
+            foreach(var wall in placed.GetComponentsInChildren<StoreWallOccluder>())wall.SetHidden(false);
             selectedRenderers = placed.GetComponentsInChildren<Renderer>();
             hiddenStates = selectedRenderers.Select(r => r.forceRenderingOff).ToArray();
             foreach (var renderer in selectedRenderers) renderer.forceRenderingOff = true;
@@ -79,6 +82,10 @@ namespace RetailEmpireTycoon.BuildSystem
             hasCandidate = true;
             var request = Request();
             CandidateResult = building.ValidateExistingPlacement(request);
+            OpeningTileCount=building.floorPainter!=null?building.floorPainter.OpeningTileCount(request):0;
+            if(placementDefinition.storeyConnection!=StoreyConnectionKind.None && OpeningTileCount>0)
+                building.floorPainter.ShowPreview(StoreyLink.OpeningCells(building.grid,request).ToList(),CandidateResult.ok);
+            else building.floorPainter?.ClearPreview();
             building.preview.SetPose(BuildPlacementPose.Position(building.grid, placementDefinition, cell, request.rotated, candidateFacing), Quaternion.Euler(0, candidateFacing * 90, 0));
             building.preview.ShowPlacement(building.grid, request, CandidateResult);
             return CandidateResult;
@@ -99,6 +106,8 @@ namespace RetailEmpireTycoon.BuildSystem
             var request = Request();
             CandidateResult = building.ValidateExistingPlacement(request);
             if (!CandidateResult.ok) { Notice = BuildPreview.FailureText(CandidateResult); return false; }
+            if(building.floorPainter!=null && !building.floorPainter.TryOpenTransport(request,building.inventory))
+            {Notice="The opening is no longer clear. Move upstairs furniture first.";return false;}
             var cells = StoreyLink.OccupiedCells(building.grid, placementDefinition, candidateCell, request.rotated).ToList();
             building.grid.Release(Selected.occupiedCells);
             if(Selected.item.isParkingSpace && Selected.parkingModuleVersion<Selected.item.parkingGeometryVersion)
@@ -119,6 +128,8 @@ namespace RetailEmpireTycoon.BuildSystem
         public bool DeleteSelected()
         {
             if (!IsActive || Selected == null) return false;
+            if(Selected.item.storeyConnection!=StoreyConnectionKind.None && new StoreyLink(building.grid,Selected).HasPassenger)
+            {Notice="Wait until everyone has left this connection before removing it.";return false;}
             var parkingTraffic=FindObjectOfType<RetailEmpireTycoon.Parking.ParkingTraffic>();
             if(Selected.item.isParkingSpace && parkingTraffic!=null && !parkingTraffic.CanEdit(Selected.GetComponent<RetailEmpireTycoon.Parking.ParkingBay>()))
             {Notice="Wait until this parking bay is free.";return false;}
@@ -154,6 +165,7 @@ namespace RetailEmpireTycoon.BuildSystem
             selectedRenderers = Array.Empty<Renderer>();
             hiddenStates = Array.Empty<bool>();
             Selected = null;
+            OpeningTileCount=0;building?.floorPainter?.ClearPreview();
             if (placementDefinition != null) Destroy(placementDefinition);
             placementDefinition = null;
             hasCandidate = false;

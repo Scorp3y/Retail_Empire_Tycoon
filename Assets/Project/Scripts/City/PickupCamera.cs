@@ -43,7 +43,7 @@ namespace RetailEmpireTycoon.City
             var pickup=target.GetComponent<PickupDrive>();
             if(!blocked && Time.unscaledTime-lastLook>4 && pickup!=null && pickup.Speed>2)
                 Yaw=Mathf.LerpAngle(Yaw,target.eulerAngles.y,1-Mathf.Exp(-Time.unscaledDeltaTime));
-            Vector3 look=target.position+Vector3.up*1.5f;
+            Vector3 look=target.position+Vector3.up*(pickup!=null?pickup.CameraHeight:1.5f);
             Vector3 direction=-(Quaternion.Euler(Pitch,Yaw,0)*Vector3.forward);
             var hit=Physics.SphereCastAll(look,.25f,direction,distance,~0,QueryTriggerInteraction.Ignore)
                 .Where(h=>h.transform!=target&&!h.transform.IsChildOf(target)).OrderBy(h=>h.distance).FirstOrDefault();

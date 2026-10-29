@@ -147,6 +147,12 @@ namespace RetailEmpireTycoon.UI.Shop
             notice.text=selected?(!editor.CandidateResult.ok?BuildPreview.FailureText(editor.CandidateResult):editor.Notice)
                 :building.HasPlacementPreview&&!building.PreviewResult.ok?BuildPreview.FailureText(building.PreviewResult)
                 :building.mode==BuildMode.Build?"Click to place · Esc cancels the current tool":"Choose Build or Move · click any parking bay to relocate it";
+            if(item!=null && item.storeyConnection!=StoreyConnectionKind.None && (selected?editor.CandidateResult.ok:building.HasPlacementPreview&&building.PreviewResult.ok))
+            {
+                int tiles=selected?editor.OpeningTileCount:building.PreviewOpeningTileCount;
+                notice.text=tiles>0?$"Place to return {tiles} ceiling tiles to storage · keep both landings clear"
+                    :"Place now · add Floor 2 tiles at the marked upper exit to connect it";
+            }
             left.interactable=right.interactable=item!=null && item.allowRotation;
             remove.interactable=selected;cancel.interactable=selected || building.mode==BuildMode.Build;
             down.interactable=building.Storeys.ActiveFloor>0;up.interactable=building.Storeys.ActiveFloor<GridSystem.TopFloor;

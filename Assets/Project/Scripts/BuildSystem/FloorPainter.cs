@@ -64,6 +64,16 @@ namespace RetailEmpireTycoon.BuildSystem
 
         public bool IsAsphalt(Vector3Int cell) => _tiles.TryGetValue(cell, out var item) && item != null && item.isAsphalt;
         public bool HasSurface(Vector3Int cell) => _tiles.ContainsKey(cell);
+        public int OpeningTileCount(PlacementRequest request) => request.item.storeyConnection==RetailEmpireTycoon.Core.StoreyConnectionKind.None
+            ? 0 : StoreyLink.OpeningCells(grid,request).Count(HasSurface);
+
+        /// <summary>Called only after placement validation. Preview never removes tiles; each removed material returns to inventory once.</summary>
+        public bool TryOpenTransport(PlacementRequest request,BuildInventory inventory)
+        {
+            if(request.item.storeyConnection==RetailEmpireTycoon.Core.StoreyConnectionKind.None)return true;
+            var tiles=StoreyLink.OpeningCells(grid,request).Where(HasSurface).ToList();
+            return tiles.Count==0 || RemoveCells(tiles,inventory);
+        }
         public float SurfaceElevation(Vector3Int cell)=>grid.FloorElevation(cell.y)
             +(cell.y>0?(HasSurface(cell)?UpperSurfaceLift:0):IsAsphalt(cell)?.015f:HasSurface(cell)?surfaceHeight:.015f);
         public BuildItemData FirstSurface => _tiles.Values.FirstOrDefault(item=>item!=null);

@@ -291,6 +291,8 @@ namespace RetailEmpireTycoon.StoreOperations
                 {
                     Vector3 target = center + placed.transform.rotation * (forward * (side == 0 ? 1 : -1) * (depth + building.grid.cellSize * 2) + lateral * width * offset);
                     if (!Navigation.TryNearest(target, out var point) || !Navigation.TryPath(start, point, out _, true)) continue;
+                    // A one-way escalator may reach this shelf without providing a way back to ground-floor checkout.
+                    if(placed.anchorCell.y>0 && !Navigation.TryPath(point,_checkout,out _,true))continue;
                     approach = point; return true;
                 }
             return false;

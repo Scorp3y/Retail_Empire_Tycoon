@@ -139,7 +139,7 @@ namespace RetailEmpireTycoon.BuildSystem
             var accessTriangles = new List<int>();
             foreach (var cell in grid.GetFootprintCells(request.anchorCell, request.item.footprint, request.rotated, request.item.pivotOffset))
             {
-                Vector3 center = grid.CellToWorld(cell) + Vector3.up * 0.115f;
+                Vector3 center = grid.CellToWorld(cell) + Vector3.up * (cell.y>0?FloorPainter.UpperSurfaceLift+.02f:request.item.isParkingSpace?.035f:.18f);
                 float half = grid.cellSize * 0.47f;
                 int first = vertices.Count;
                 vertices.Add(transform.InverseTransformPoint(center + new Vector3(-half, 0f, -half)));
@@ -154,7 +154,7 @@ namespace RetailEmpireTycoon.BuildSystem
                 for (int side = 0; side < sides; side++)
                 foreach (var cell in ShelfAccessArea.Cells(grid, request, side))
                 {
-                    Vector3 center = grid.CellToWorld(cell) + Vector3.up * .118f;
+                    Vector3 center = grid.CellToWorld(cell) + Vector3.up * (cell.y>0?FloorPainter.UpperSurfaceLift+.023f:.183f);
                     int facing = (request.facing + request.item.frontFacing + side * 2) % 4;
                     Vector3 outward = facing == 0 ? Vector3.forward : facing == 1 ? Vector3.right : facing == 2 ? Vector3.back : Vector3.left;
                     Vector3 lateral = Vector3.Cross(Vector3.up, outward);
@@ -165,6 +165,18 @@ namespace RetailEmpireTycoon.BuildSystem
                     vertices.Add(transform.InverseTransformPoint(center + outward * half + lateral * half));
                     vertices.Add(transform.InverseTransformPoint(center + outward * half - lateral * half));
                     accessTriangles.AddRange(new[] { first, first + 2, first + 1 });
+                }
+            }
+            if(request.item.storeyConnection!=StoreyConnectionKind.None)
+            {
+                var link=new StoreyLink(grid,request.item,request.anchorCell,request.rotated,request.facing);
+                foreach(var cell in new[]{link.Lower,link.Upper})
+                {
+                    var center=grid.CellToWorld(cell)+Vector3.up*(cell.y==0?.18f:.025f);
+                    float half=grid.cellSize*.46f;int first=vertices.Count;
+                    foreach(var corner in new[]{new Vector3(-half,0,-half),new Vector3(-half,0,half),new Vector3(half,0,half),new Vector3(half,0,-half)})
+                        vertices.Add(transform.InverseTransformPoint(center+corner));
+                    accessTriangles.AddRange(new[]{first,first+1,first+2,first,first+2,first+3});
                 }
             }
             _footprintMesh.Clear();

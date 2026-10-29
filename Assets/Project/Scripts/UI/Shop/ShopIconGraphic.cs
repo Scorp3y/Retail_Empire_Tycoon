@@ -110,15 +110,16 @@ namespace RetailEmpireTycoon.UI.Shop
         {
             Vector2 P(float x,float y)
             {
-                float a=-38*Mathf.Deg2Rad;var d=new Vector2(x-.5f,y-.5f)*.9f;
+                float a=-24*Mathf.Deg2Rad;var d=new Vector2(x-.5f,y-.5f);
                 return new Vector2(.5f+d.x*Mathf.Cos(a)-d.y*Mathf.Sin(a),.5f+d.x*Mathf.Sin(a)+d.y*Mathf.Cos(a));
             }
-            // Thick handle, a flat striking face and two open claw tines remain legible at HUD size.
-            Polygon(P(.435f,.10f),P(.565f,.10f),P(.565f,.69f),P(.435f,.69f));
-            Polygon(P(.32f,.62f),P(.75f,.62f),P(.75f,.82f),P(.32f,.82f));
-            Polygon(P(.73f,.57f),P(.90f,.57f),P(.90f,.86f),P(.73f,.86f));
-            Polygon(P(.33f,.82f),P(.19f,.77f),P(.13f,.56f),P(.25f,.66f),P(.39f,.69f));
-            Polygon(P(.35f,.71f),P(.27f,.61f),P(.24f,.49f),P(.39f,.60f),P(.45f,.70f));
+            // Broad flat striking head and a single short claw read as a hammer at 20–28 px.
+            // Each piece is convex: the icon renderer's centre fan cannot triangulate a concave claw correctly.
+            Polygon(P(.415f,.10f),P(.585f,.10f),P(.56f,.70f),P(.44f,.70f));
+            Polygon(P(.30f,.64f),P(.73f,.64f),P(.73f,.84f),P(.30f,.84f));
+            Polygon(P(.70f,.61f),P(.87f,.61f),P(.87f,.87f),P(.70f,.87f));
+            Polygon(P(.30f,.64f),P(.15f,.71f),P(.13f,.85f),P(.30f,.84f));
+            Polygon(P(.15f,.71f),P(.09f,.62f),P(.10f,.81f),P(.13f,.85f));
         }
         private void EquipmentShelving()
         {

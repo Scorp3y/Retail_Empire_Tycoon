@@ -60,7 +60,6 @@ public static class CameraBuildSandbox
         build.worldCamera = camera;
         var walls = camera.gameObject.AddComponent<StoreWallVisibility>();
         var settings = new SerializedObject(walls);
-        settings.FindProperty("cameraInput").objectReferenceValue = input;
         settings.FindProperty("buildController").objectReferenceValue = build;
         settings.ApplyModifiedPropertiesWithoutUndo();
         var wallPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Structures/Wall.prefab");

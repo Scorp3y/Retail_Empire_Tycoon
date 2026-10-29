@@ -110,8 +110,10 @@ namespace RetailEmpireTycoon.StoreOperations
         public bool TryUseTransport(ShopCharacter actor,Vector3 position,Vector3 target)
         {
             var link=links.FirstOrDefault(l=>l.IsUsable(floors)&&l.Contains(position)&&l.Contains(target));
-            return link==null || link.Owner.GetComponent<StoreyTransportVisual>()?.TryBoard(actor,position)!=false;
+            return link==null || link.Owner.GetComponent<StoreyTransportVisual>()?.TryBoard(actor,position,target)!=false;
         }
+        public float TravelSpeedMultiplier(Vector3 position,Vector3 target) => links.Any(link=>link.IsUsable(floors)
+            && link.Owner.item.storeyConnection==Core.StoreyConnectionKind.Escalator && link.Contains(position)&&link.Contains(target)) ? .8f : 1f;
 
         public bool TryNearest(Vector3 point, out Vector3 position, bool allowOutside = false, bool requireConnection = false)
         {
@@ -163,8 +165,8 @@ namespace RetailEmpireTycoon.StoreOperations
                 var neighbours=Directions.Select(offset=>current+offset).ToList();
                 foreach(var link in links.Where(l=>l.IsUsable(floors)))
                 {
-                    if(link.Lower==current)neighbours.Add(link.Upper);
-                    else if(link.Upper==current)neighbours.Add(link.Lower);
+                    if(link.Lower==current && link.Allows(true))neighbours.Add(link.Upper);
+                    else if(link.Upper==current && link.Allows(false))neighbours.Add(link.Lower);
                 }
                 foreach (var next in neighbours)
                 {

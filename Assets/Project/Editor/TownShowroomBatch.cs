@@ -103,6 +103,11 @@ public static class TownShowroomBatch
         var scene=EditorSceneManager.OpenScene(CityUpdateSetup.CityPath,OpenSceneMode.Single);
         var town=scene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<TownWorldPlaces>(true)).Single();
         var site=town.transform.Find(TownShowroomPlacement.SiteName);Require(site!=null,"Riverside showroom absent.");
+        if(site.Find("Player vehicle collection")!=null)
+        {
+            PlayerVehicleShowroomBatch.CaptureAndValidate();
+            return;
+        }
         var hall=site.Find("ShowroomHall");Require(hall!=null&&Vector3.Dot(hall.forward,Vector3.left)>.999f&&Vector3.Distance(hall.position,TownShowroomPlacement.Point(11.5f,14))<.001f,"Wrong showroom position or heading.");
         var checkpoint=town.suppliers.Single(c=>c.supplier==SupplierKind.Showroom);
         Require(checkpoint.kind==CheckpointKind.Showroom&&!checkpoint.requiresRearDocking&&Vector3.Distance(checkpoint.transform.position,TownShowroomPlacement.PublicBay)<.001f,"Showroom public inspection contract changed.");

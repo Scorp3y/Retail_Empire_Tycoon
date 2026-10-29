@@ -97,6 +97,7 @@ namespace RetailEmpireTycoon.Core
         [Tooltip("Customers use the accessible front of this placed object for checkout.")]
         public bool isCheckout;
         public StoreyConnectionKind storeyConnection;
+        public StoreyTravelDirection storeyDirection;
 
         [Header("Prefab")]
         public GameObject prefab;

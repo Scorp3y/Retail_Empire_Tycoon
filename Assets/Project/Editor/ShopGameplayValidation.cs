@@ -203,11 +203,11 @@ public static class ShopGameplayValidation
             UnityEngine.Object.FindObjectOfType<StoreWallVisibility>().SendMessage("LateUpdate");
             var walls = UnityEngine.Object.FindObjectsOfType<StoreWallOccluder>();
             int hiddenWalls = walls.Count(w => w.GetComponentsInChildren<Renderer>().Any(r => r.forceRenderingOff));
-            Require(hiddenWalls <= 4, "Construction hides too many wall sections: " + hiddenWalls);
+            Require(hiddenWalls == 0, "Construction hides installed walls: " + hiddenWalls);
             Require(walls.All(w => w.GetComponentsInChildren<Collider>().All(c => c.enabled)), "Cutaway disables wall physics.");
             building.ExitBuildMode(); UnityEngine.Object.FindObjectOfType<StoreWallVisibility>().SendMessage("LateUpdate");
             Require(walls.All(w => w.GetComponentsInChildren<Renderer>().All(r => !r.forceRenderingOff)), "Walls not restored after construction.");
-            log.AppendLine("PASS at most four hidden construction wall sections, unchanged physics, full restoration");
+            log.AppendLine("PASS all installed walls visible during construction, unchanged physics and visibility after exit");
             log.Insert(0, "ALL CHECKS PASSED\n");
         }
         catch (Exception error) { log.AppendLine("FAIL " + error); Debug.LogException(error); }

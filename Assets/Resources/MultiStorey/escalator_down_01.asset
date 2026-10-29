@@ -1,0 +1,72 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d6abad8a36b0794996f8dedd8a8e734, type: 3}
+  m_Name: escalator_down_01
+  m_EditorClassIdentifier: 
+  legacyWallDepth: 0
+  wallCellSize: 0
+  wallGeometryVersion: 0
+  previousWallPrefab: {fileID: 0}
+  previousWallBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
+  previousWallAlignmentOffset: {x: 0, y: 0, z: 0}
+  decorationProportionsVersion: 0
+  id: escalator_down_01
+  displayName: Down escalator
+  description: One-way descending escalator from floor 2 to floor 1, 20% slower.
+    Use stairs, an elevator or another escalator for the upward route. Ceiling tiles
+    in its opening return to storage.
+  icon: {fileID: 21300000, guid: c5072b7029338c240aab9839bffd8fe8, type: 3}
+  price: 2200
+  hiddenFromShop: 0
+  weightKg: 100
+  cargoVolumeM3: 0.65
+  isAsphalt: 0
+  isParkingSpace: 0
+  parkingGeometryVersion: 0
+  previousParkingPrefab: {fileID: 0}
+  previousParkingFootprint: {x: 0, y: 0}
+  previousParkingBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
+  isUnloadingGate: 0
+  isWall: 0
+  beautyPoints: 0
+  unlockedByDefault: 1
+  unlockCondition: {fileID: 0}
+  category: 1
+  subCategory: 0
+  footprint: {x: 4, y: 10}
+  allowRotation: 1
+  ruleFlags: 3
+  placementKind: 0
+  floorMaterial: {fileID: 0}
+  accessibilitySides: 1
+  pivotOffset: {x: 0, y: 0}
+  alignModelToFootprint: 1
+  placementBounds:
+    m_Center: {x: 0, y: 1.1714265, z: 0}
+    m_Extent: {x: 0.5220255, y: 1.1264265, z: 1.367775}
+  placementAlignmentOffset: {x: 0, y: 0, z: 0}
+  frontFacing: 0
+  twoSidedAccess: 0
+  isDoorway: 0
+  isCheckout: 0
+  storeyConnection: 3
+  storeyDirection: 2
+  prefab: {fileID: 1663887153192624369, guid: bfb7731e62d7c594ba8414c8936a2463, type: 3}
+  previewValidMaterial: {fileID: 0}
+  previewInvalidMaterial: {fileID: 0}
+  shelfData: {fileID: 0}
+  decorationData: {fileID: 0}
+  cashierData: {fileID: 0}

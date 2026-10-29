@@ -23,7 +23,10 @@ namespace RetailEmpireTycoon.BuildSystem
         public Vector3 drivewayEntry;
         [SerializeField] private StarterConstructionStock constructionStock = new StarterConstructionStock();
         [SerializeField] private StarterSiteRevision siteRevision = new StarterSiteRevision();
+        [SerializeField] private StarterForecourtRevision forecourtRevision = new StarterForecourtRevision();
+        public StarterForecourtRevision ForecourtRevision=>forecourtRevision;
         public StarterSiteRevision SiteRevision=>siteRevision;
+        public StarterConstructionStock ConstructionStock=>constructionStock;
         // Historical migrations compare X/Z only. A multi-storey layout is custom and must never be flattened.
         private static bool HasUpperConstruction(GameData data) => data.floorTiles.Any(f=>f.floor!=0)||data.placedObjects.Any(p=>p.floor!=0);
 
