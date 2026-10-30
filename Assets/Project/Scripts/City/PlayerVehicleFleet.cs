@@ -28,6 +28,8 @@ namespace RetailEmpireTycoon.City
         public PlayerVehicleDefinition Selected => catalog.FirstOrDefault(item => item.id == SelectedId);
         public string SelectedName => Selected != null ? Selected.displayName : "Delivery pickup";
         public string Notice { get; private set; }
+        public bool DriverHasVehicle {get;private set;}
+        public void AssignDriver(bool assigned)=>DriverHasVehicle=assigned;
 
         public PlayerVehicleFleet(IEnumerable<PlayerVehicleDefinition> catalog, MoneyController money, DeliveryOrders orders, Action persist)
         {
@@ -70,6 +72,7 @@ namespace RetailEmpireTycoon.City
         }
         private bool CanExchange()
         {
+            if(DriverHasVehicle)return Reject("Your driver is using this vehicle. Wait for the delivery to return.");
             if (!orders.Ledger.Entries.Any(entry => entry.location == DeliveryLocation.Pickup)) return true;
             return Reject("Unload your current vehicle before exchanging it. Cargo is preserved.");
         }

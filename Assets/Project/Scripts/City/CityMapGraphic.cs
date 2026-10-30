@@ -9,6 +9,7 @@ namespace RetailEmpireTycoon.City
         public TownWorldPlaces town;
         public PickupDrive pickup;
         public DeliveryCheckpoint home,destination;
+        public Logistics.DriverDelivery driver;
         private TownWorldPlaces cachedTown;
         private TownForestMapData forestDistrict;
 
@@ -37,7 +38,21 @@ namespace RetailEmpireTycoon.City
             // Redraw transport over the river so bridges stay visible on the same authored map.
             AddPath(mesh,layout.countryRoad,new Color(.2f,.25f,.23f));
             AddPath(mesh,layout.railway,new Color(.78f,.68f,.48f));
-            foreach(var checkpoint in town.suppliers)Marker(mesh,checkpoint.transform.position,5,new Color(.93f,.72f,.16f));
+            Vector3 TownPoint(Vector3 world)=>driver!=null?driver.ToNative(world):world;
+            foreach(var checkpoint in town.suppliers)Marker(mesh,TownPoint(checkpoint.transform.position),5,new Color(.93f,.72f,.16f));
+            if(driver!=null)
+            {
+                var points=driver.MapRoute;
+                for(int i=1;i<points.Count;i++)
+                {
+                    var a=Map(new Vector2(points[i-1].x,points[i-1].z));var b=Map(new Vector2(points[i].x,points[i].z));
+                    var side=new Vector2(-(b-a).y,(b-a).x).normalized*1.5f;int start=mesh.currentVertCount;
+                    foreach(var p in new[]{a-side,a+side,b+side,b-side})mesh.AddVert(p,new Color(.57f,.40f,.72f),Vector2.zero);
+                    mesh.AddTriangle(start,start+1,start+2);mesh.AddTriangle(start,start+2,start+3);
+                }
+                Marker(mesh,TownPoint(driver.trip.parkedPickup.transform.position),8,new Color(.85f,.31f,.23f));
+                Marker(mesh,driver.NativePosition,9,new Color(.18f,.49f,.87f));
+            }
             if(home!=null)Marker(mesh,home.transform.position,6,new Color(.85f,.31f,.23f));
             if(destination!=null)Marker(mesh,destination.transform.position,9,new Color(.95f,.94f,.8f));
             if(pickup!=null)Marker(mesh,pickup.transform.position,6,new Color(.18f,.49f,.87f));

@@ -18,6 +18,7 @@ namespace RetailEmpireTycoon.City
         private readonly List<TrafficVehicle> pool = new();
         private readonly List<TrafficVehicle> active = new();
         private readonly HashSet<TrafficVehicle> parkingArrivals = new();
+        private readonly Dictionary<TrafficVehicle,(int Lane,float Distance)> privateMerges=new();
         private readonly Dictionary<Vector2Int,List<Spawn>> spawnChunks = new();
         private readonly List<Spawn> candidates = new();
         private readonly Dictionary<int,TrafficVehicle> reservations = new();
@@ -54,6 +55,12 @@ namespace RetailEmpireTycoon.City
             network=roads;fleet=(TrafficVehicle[])designs.Clone();signals=junctionSignals;crossing=railCrossing;maximumCars=capacity;
         }
         public void SetObserver(Transform target) { observer=target;hasObserverChunk=false; }
+        /// <summary>Creates a gap before a private car reaches the public lane. Existing occupants clear it first.</summary>
+        public void RequestPrivateMerge(TrafficVehicle car,int lane,float metres)
+        {
+            if(car==null || lane<0 || lane>=network.Lanes.Count)return;
+            privateMerges[car]=(lane,metres);
+        }
         /// <summary>Transfers a parking car to the road simulation without a visual replacement.
         /// Capacity is preserved; only an off-screen pool slot may be displaced.</summary>
         public bool TryJoinTraffic(TrafficVehicle car,int lane,float metres,bool reservedForParking=false)
@@ -61,9 +68,15 @@ namespace RetailEmpireTycoon.City
             Initialize();
             if(car==null || lane<0 || lane>=network.Lanes.Count || metres<0 || metres>=network.Lanes[lane].Path.Length)
                 throw new ArgumentException("A departing car must join an existing road lane.");
-            var position=network.Lanes[lane].Path.Sample(metres,out _);
+            var position=network.Lanes[lane].Path.Sample(metres,out var direction);
+            var lateral=Vector3.Cross(Vector3.up,direction);
             foreach(var other in active)
-                if(Vector3.Distance(other.LocalPosition,position)<(other.Length+car.Length)*.5f+1)return false;
+            {
+                var offset=other.LocalPosition-position;
+                // A vehicle in the opposite lane is not occupying the merging lane.
+                if(Mathf.Abs(Vector3.Dot(offset,direction))<(ProjectedHalfSize(other,direction)+car.Length*.5f+1)
+                    && Mathf.Abs(Vector3.Dot(offset,lateral))<(ProjectedHalfSize(other,lateral)+car.Width*.5f+.25f))return false;
+            }
             if(pool.Count>=maximumCars)
             {
                 TrafficVehicle reusable=null;
@@ -84,6 +97,7 @@ namespace RetailEmpireTycoon.City
             car.Place(network,lane,metres,ChooseDeparture(lane));
             pool.Add(car);active.Add(car);
             if(reservedForParking)parkingArrivals.Add(car);
+            privateMerges.Remove(car);
             return true;
         }
         /// <summary>Transfers ownership back to parking (or cancels its road journey). Does not destroy the car.</summary>
@@ -91,13 +105,13 @@ namespace RetailEmpireTycoon.City
         {
             if(car==null)return;
             if(car.ReservedJunction>=0)reservations.Remove(car.ReservedJunction);
-            car.ReservedJunction=-1;active.Remove(car);pool.Remove(car);parkingArrivals.Remove(car);car.enabled=false;
+            car.ReservedJunction=-1;active.Remove(car);pool.Remove(car);parkingArrivals.Remove(car);privateMerges.Remove(car);car.enabled=false;
         }
         private void Start() { Initialize(); }
         private void OnDisable()
         {
             foreach (var car in active) car.gameObject.SetActive(false);
-            active.Clear();reservations.Clear();hasObserverChunk=false;
+            active.Clear();reservations.Clear();privateMerges.Clear();hasObserverChunk=false;
         }
         private void FixedUpdate()
         {
@@ -227,6 +241,8 @@ namespace RetailEmpireTycoon.City
             => ExitClear(car,car.NextLane);
         private bool ExitClear(TrafficVehicle car,int departure)
         {
+            foreach(var merge in privateMerges)
+                if(merge.Key!=null && merge.Value.Lane==departure && merge.Value.Distance<car.Length+merge.Key.Length+10)return false;
             var exit=network.Lanes[departure].Path.Sample(0,out var direction);
             var side=Vector3.Cross(Vector3.up,direction);
             foreach(var other in active)
@@ -258,6 +274,21 @@ namespace RetailEmpireTycoon.City
         private float FrontClearance(TrafficVehicle car)
         {
             float result=35;
+            foreach(var merge in privateMerges)
+            {
+                if(merge.Key==null || car.IsTurning || car.LaneIndex!=merge.Value.Lane)continue;
+                var mergePoint=network.Lanes[merge.Value.Lane].Path.Sample(merge.Value.Distance,out var direction);
+                var waiting=transform.InverseTransformPoint(merge.Key.transform.position);
+                float waitingAlong=Vector3.Dot(waiting-mergePoint,direction);
+                float occupantAlong=Vector3.Dot(car.LocalPosition-mergePoint,direction);
+                // On the farm's shared access, a car may already be ahead of the delivery vehicle.
+                // Holding that leader for a gap farther ahead would strand both cars in the same queue.
+                if(waitingAlong<0 && occupantAlong>waitingAlong-car.Length*.5f)continue;
+                float gap=merge.Value.Distance-car.Distance;
+                // A vehicle already passing the access must continue clearing it.
+                float buffer=(car.Length+merge.Key.Length)*.5f+2;
+                if(gap>buffer-.1f)result=Mathf.Min(result,Mathf.Max(0,gap-buffer));
+            }
             foreach(var other in active)
             {
                 if(other==car)continue;
@@ -305,6 +336,9 @@ namespace RetailEmpireTycoon.City
             for(int attempt=0;attempt<candidates.Count;attempt++)
             {
                 var spawn=candidates[spawnCursor++%candidates.Count];
+                bool merging=false;
+                foreach(var merge in privateMerges)if(merge.Value.Lane==spawn.Lane && Mathf.Abs(merge.Value.Distance-spawn.Distance)<16){merging=true;break;}
+                if(merging)continue;
                 if(!initial && Vector3.Distance(spawn.Position,observerPosition)<48)continue;
                 bool occupied=false;
                 foreach(var other in active)if(Vector3.Distance(other.LocalPosition,spawn.Position)<18){occupied=true;break;}

@@ -1,0 +1,127 @@
+{
+  "category": "Wave2_05_PetSupplies",
+  "iteration": 3,
+  "blender": "5.2.3 LTS",
+  "models": [
+    {
+      "name": "dog_food",
+      "triangles": 492,
+      "budget_exclusive": 900,
+      "materials": 3,
+      "size_m": [
+        0.13728000223636627,
+        0.08924999833106995,
+        0.25
+      ],
+      "cavities": [],
+      "texts": [
+        "Dog food"
+      ],
+      "sha256": "ce7a50f640c27dbb0fc3637ea27f7456233e3a51e366314651a60b94791e35a1"
+    },
+    {
+      "name": "cat_food",
+      "triangles": 612,
+      "budget_exclusive": 900,
+      "materials": 3,
+      "size_m": [
+        0.11751999706029892,
+        0.07985500246286392,
+        0.20000000298023224
+      ],
+      "cavities": [],
+      "texts": [
+        "Cat food"
+      ],
+      "sha256": "b79e89221b3fb0c3d201f7a789a5c34a7f38f222a433e4022b99db13cdc942b9"
+    },
+    {
+      "name": "pet_treats",
+      "triangles": 689,
+      "budget_exclusive": 900,
+      "materials": 3,
+      "size_m": [
+        0.09359999746084213,
+        0.06728100031614304,
+        0.15000000596046448
+      ],
+      "cavities": [],
+      "texts": [
+        "Pet treats"
+      ],
+      "sha256": "617782afaed4ee4225d924ac2ca611e4fef2dfece4bf51b62b0e81b98793b98c"
+    },
+    {
+      "name": "cat_litter",
+      "triangles": 565,
+      "budget_exclusive": 900,
+      "materials": 3,
+      "size_m": [
+        0.15703999996185303,
+        0.10232999920845032,
+        0.2800000011920929
+      ],
+      "cavities": [],
+      "texts": [
+        "Cat litter"
+      ],
+      "sha256": "6c4bb9b31032a14bcd607c5b446d8ba3db717228ac8eead64bf403b7a4abd0b4"
+    },
+    {
+      "name": "pet_bowl",
+      "triangles": 258,
+      "budget_exclusive": 900,
+      "materials": 2,
+      "size_m": [
+        0.18000000715255737,
+        0.18020081520080566,
+        0.07999999821186066
+      ],
+      "cavities": [
+        {
+          "part": "True hollow flared pet bowl",
+          "inner_floor_z": 0.013999998569488525
+        }
+      ],
+      "texts": [],
+      "sha256": "8bc3919234bcc48452b906aa017f63ca88686dbad1cb179e65cf470105cd1ec2"
+    },
+    {
+      "name": "chew_toy",
+      "triangles": 288,
+      "budget_exclusive": 900,
+      "materials": 2,
+      "size_m": [
+        0.15969599783420563,
+        0.032918497920036316,
+        0.05780000239610672
+      ],
+      "cavities": [],
+      "texts": [],
+      "sha256": "636c155c688144265466339add7a908a844dc806fae1379f2c1f90411635ae7b"
+    }
+  ],
+  "shared_helpers_unchanged": [
+    "srgb_to_linear",
+    "color_rgba",
+    "make_material",
+    "register",
+    "apply_transform",
+    "make_sphere",
+    "add_bevel",
+    "apply_modifiers",
+    "make_leaf",
+    "make_disk",
+    "join_and_seat",
+    "export_glb",
+    "preview",
+    "shade_hex",
+    "prepare_palette",
+    "lathe",
+    "soft_cylinder",
+    "curved_label",
+    "label_text"
+  ],
+  "blender_4_runtime_tested": false,
+  "unity_import_tested": false
+}

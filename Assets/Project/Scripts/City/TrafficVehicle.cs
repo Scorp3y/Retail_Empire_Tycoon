@@ -42,8 +42,8 @@ namespace RetailEmpireTycoon.City
 
         public void Configure(string id, float bodyLength, float bodyWidth, float axleDistance, float radius, Wheel[] bindings)
         {
-            if (string.IsNullOrEmpty(id) || bodyLength <= 0 || bodyWidth <= 0 || axleDistance <= 0 || radius <= 0 || bindings == null || bindings.Length != 4)
-                throw new ArgumentException("Complete car dimensions and four wheel bindings required.");
+            if (string.IsNullOrEmpty(id) || bodyLength <= 0 || bodyWidth <= 0 || axleDistance <= 0 || radius <= 0 || bindings == null || bindings.Length < 4)
+                throw new ArgumentException("Complete car dimensions and at least four wheel bindings required.");
             foreach (var wheel in bindings) if (wheel.visual == null) throw new ArgumentException("Missing wheel mesh.");
             designId=id; length=bodyLength; width=bodyWidth; wheelbase=axleDistance; wheelRadius=radius; wheels=bindings;
         }

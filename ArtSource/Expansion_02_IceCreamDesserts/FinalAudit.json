@@ -1,0 +1,131 @@
+{
+  "category": "Expansion_02_IceCreamDesserts",
+  "iteration": 2,
+  "blender": "5.2.3 LTS",
+  "models": [
+    {
+      "name": "ice_cream_cone",
+      "triangles": 1148,
+      "budget_exclusive": 1200,
+      "materials": 3,
+      "size_m": [
+        0.06035782769322395,
+        0.060369815677404404,
+        0.1846800148487091
+      ],
+      "cavities": [
+        {
+          "part": "Waffle cone with thick open rim",
+          "inner_floor_z": 0.008000016212463379
+        }
+      ],
+      "texts": [],
+      "sha256": "9fe578cdd6000bd21cfb3563f6d2fa7774ac55331b617e4ce57563e21691690e"
+    },
+    {
+      "name": "ice_cream_tub",
+      "triangles": 440,
+      "budget_exclusive": 900,
+      "materials": 3,
+      "size_m": [
+        0.10400000214576721,
+        0.08799999952316284,
+        0.11149999499320984
+      ],
+      "cavities": [
+        {
+          "part": "Hollow cream tub with inner floor",
+          "inner_floor_z": 0.004999995231628418
+        }
+      ],
+      "texts": [],
+      "sha256": "204e698ade9f8c774a83c7713cb8e0c03a1985885f6fbf28a75363f7e0ca0495"
+    },
+    {
+      "name": "popsicle",
+      "triangles": 284,
+      "budget_exclusive": 900,
+      "materials": 3,
+      "size_m": [
+        0.05400000140070915,
+        0.027699999511241913,
+        0.16999998688697815
+      ],
+      "cavities": [],
+      "texts": [],
+      "sha256": "fc0142e8685fdf40b57469feceaf41a01b5d75d6c67320e3d8348b9c27d3dcff"
+    },
+    {
+      "name": "cheesecake",
+      "triangles": 516,
+      "budget_exclusive": 900,
+      "materials": 4,
+      "size_m": [
+        0.09590429067611694,
+        0.09004765748977661,
+        0.06700000166893005
+      ],
+      "cavities": [],
+      "texts": [],
+      "sha256": "9cd1922f83a408d7ea2925a2eeda1efd46cf883cfbe4aedd876d6182af41dc03"
+    },
+    {
+      "name": "macarons",
+      "triangles": 924,
+      "budget_exclusive": 1200,
+      "materials": 2,
+      "size_m": [
+        0.05000000074505806,
+        0.04800000041723251,
+        0.06799999624490738
+      ],
+      "cavities": [],
+      "texts": [],
+      "sha256": "8b5f67db509b6c18ce30635ac735474b5bf99ed5ff8683eb3ffd807be8e844e3"
+    },
+    {
+      "name": "pudding",
+      "triangles": 612,
+      "budget_exclusive": 900,
+      "materials": 3,
+      "size_m": [
+        0.06800000369548798,
+        0.06800000369548798,
+        0.0808660238981247
+      ],
+      "cavities": [
+        {
+          "part": "Clear pudding cup",
+          "inner_floor_z": 0.0029999613761901855
+        }
+      ],
+      "texts": [],
+      "sha256": "4c91e0a837b4de7b0151c149120332f79530b3f9fefbe4d65691b912c634f0bb"
+    }
+  ],
+  "shared_helpers_unchanged": [
+    "srgb_to_linear",
+    "color_rgba",
+    "make_material",
+    "register",
+    "apply_transform",
+    "make_sphere",
+    "add_bevel",
+    "apply_modifiers",
+    "make_leaf",
+    "make_disk",
+    "join_and_seat",
+    "export_glb",
+    "preview",
+    "shade_hex",
+    "prepare_palette",
+    "lathe",
+    "soft_cylinder",
+    "curved_label",
+    "label_text"
+  ],
+  "blender_4_runtime_tested": false,
+  "unity_import_tested": false,
+  "geometry_axis": "Z-up",
+  "exported_objects_per_file": 1
+}

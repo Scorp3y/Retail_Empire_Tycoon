@@ -10,6 +10,7 @@ namespace RetailEmpireTycoon.BuildSystem
         public IReadOnlyList<BuildItemData> Items => items;
         private void Awake()
         {
+            StoreAssortmentPack.Load()?.IncludeFixtures(items);
             foreach(var item in Resources.LoadAll<BuildItemData>("MultiStorey"))
                 if(!items.Exists(existing=>existing!=null&&existing.id==item.id))items.Add(item);
         }
@@ -18,6 +19,9 @@ namespace RetailEmpireTycoon.BuildSystem
         {
             if (string.IsNullOrWhiteSpace(id))
                 return null;
+
+            // Save restoration may ask for an item before this component's Awake.
+            StoreAssortmentPack.Load()?.IncludeFixtures(items);
 
             foreach (var item in items)
             {

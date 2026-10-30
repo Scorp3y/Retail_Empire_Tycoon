@@ -8,6 +8,10 @@ namespace RetailEmpireTycoon.Shelves
     {
         public Vector3 usableSize = new Vector3(.12f, .15f, .20f);
 
+        public string[] permittedProductIds;
+        public bool hanging;
+        public bool Supports(RetailEmpireTycoon.Core.ProductItemData product) => product != null && ((product.Id != "product_broom" && product.Id != "product_mop") || hanging) && (permittedProductIds == null || permittedProductIds.Length == 0 || System.Array.IndexOf(permittedProductIds, product.Id) >= 0);
+
         public void Seat(GameObject product)
         {
             var filters = product.GetComponentsInChildren<MeshFilter>();
@@ -30,8 +34,24 @@ namespace RetailEmpireTycoon.Shelves
             }
             float fit = Mathf.Min(1, usableSize.x / Mathf.Max(.0001f, bounds.size.x),
                 usableSize.y / Mathf.Max(.0001f, bounds.size.y), usableSize.z / Mathf.Max(.0001f, bounds.size.z));
+            Vector3 mount = new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
+            if (hanging)
+            {
+                Vector3 sum = Vector3.zero; int count = 0;
+                foreach (var filter in filters)
+                {
+                    if (filter.sharedMesh == null) continue;
+                    foreach (var vertex in filter.sharedMesh.vertices)
+                    {
+                        var point = transform.InverseTransformPoint(filter.transform.TransformPoint(vertex));
+                        if (point.y >= bounds.max.y - .004f) { sum += point; count++; }
+                    }
+                }
+                if (count > 0) mount = sum / count;
+                mount.y = bounds.max.y;
+            }
             product.transform.localScale *= fit;
-            product.transform.localPosition -= new Vector3(bounds.center.x, bounds.min.y, bounds.center.z) * fit;
+            product.transform.localPosition -= mount * fit;
         }
     }
 }

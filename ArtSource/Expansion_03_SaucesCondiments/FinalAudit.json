@@ -1,0 +1,146 @@
+{
+  "category": "Expansion_03_SaucesCondiments",
+  "iteration": 2,
+  "blender": "5.2.3 LTS",
+  "models": [
+    {
+      "name": "ketchup",
+      "triangles": 840,
+      "budget_exclusive": 900,
+      "materials": 3,
+      "size_m": [
+        0.052000001072883606,
+        0.05336746945977211,
+        0.20000000298023224
+      ],
+      "cavities": [
+        {
+          "part": "Hollow squeeze bottle",
+          "inner_floor_z": 0.0030000805854797363
+        }
+      ],
+      "texts": [],
+      "sha256": "f667f348d599f147e8a9578c4f2332a2699420e21f5d2fb2a58ccb4e21938e8a"
+    },
+    {
+      "name": "mustard",
+      "triangles": 840,
+      "budget_exclusive": 900,
+      "materials": 3,
+      "size_m": [
+        0.052000001072883606,
+        0.053612496703863144,
+        0.20000000298023224
+      ],
+      "cavities": [
+        {
+          "part": "Hollow squeeze bottle.001",
+          "inner_floor_z": 0.0030000805854797363
+        }
+      ],
+      "texts": [],
+      "sha256": "93a6525ebb25f2506eee19b5fe6af19a805076ef356c2b7f68ecbf700c03cc6a"
+    },
+    {
+      "name": "mayonnaise",
+      "triangles": 860,
+      "budget_exclusive": 900,
+      "materials": 4,
+      "size_m": [
+        0.07500000298023224,
+        0.0755496472120285,
+        0.11900000274181366
+      ],
+      "cavities": [
+        {
+          "part": "Clear mayonnaise jar",
+          "inner_floor_z": 0.003000020980834961
+        }
+      ],
+      "texts": [],
+      "sha256": "e21a55c49a44fb433ed0be6ef93880053bb53bdc3d7d186bfc8efbdd14691158"
+    },
+    {
+      "name": "soy_sauce",
+      "triangles": 692,
+      "budget_exclusive": 900,
+      "materials": 4,
+      "size_m": [
+        0.05000000074505806,
+        0.05112641677260399,
+        0.19949999451637268
+      ],
+      "cavities": [
+        {
+          "part": "Tinted dark glass soy bottle",
+          "inner_floor_z": 0.0030000805854797363
+        }
+      ],
+      "texts": [],
+      "sha256": "e51f7a3181583a65a5e2084614b4d10745b130a8c2af882a3d97918365f04bce"
+    },
+    {
+      "name": "hot_sauce",
+      "triangles": 880,
+      "budget_exclusive": 900,
+      "materials": 4,
+      "size_m": [
+        0.041999999433755875,
+        0.04332219064235687,
+        0.19999998807907104
+      ],
+      "cavities": [
+        {
+          "part": "Slim hot sauce bottle",
+          "inner_floor_z": 0.0029999613761901855
+        }
+      ],
+      "texts": [],
+      "sha256": "17614f4a4ad3a14c00f003ba213e2321dea639b209e6a854705419f97d05b25d"
+    },
+    {
+      "name": "bbq_sauce",
+      "triangles": 840,
+      "budget_exclusive": 900,
+      "materials": 4,
+      "size_m": [
+        0.06800000369548798,
+        0.06868591904640198,
+        0.20000000298023224
+      ],
+      "cavities": [
+        {
+          "part": "Wide BBQ sauce bottle",
+          "inner_floor_z": 0.0030000805854797363
+        }
+      ],
+      "texts": [],
+      "sha256": "ae520c36ac9fd8ad11da6fd5b9202625f71cdfeafb6ad9c023b6038db41b2169"
+    }
+  ],
+  "shared_helpers_unchanged": [
+    "srgb_to_linear",
+    "color_rgba",
+    "make_material",
+    "register",
+    "apply_transform",
+    "make_sphere",
+    "add_bevel",
+    "apply_modifiers",
+    "make_leaf",
+    "make_disk",
+    "join_and_seat",
+    "export_glb",
+    "preview",
+    "shade_hex",
+    "prepare_palette",
+    "lathe",
+    "soft_cylinder",
+    "curved_label",
+    "label_text"
+  ],
+  "blender_4_runtime_tested": false,
+  "unity_import_tested": false,
+  "geometry_axis": "Z-up",
+  "exported_objects_per_file": 1
+}

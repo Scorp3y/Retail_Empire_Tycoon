@@ -106,6 +106,8 @@ public class SaveManager : MonoBehaviour
         gameData ??= new GameData();
         var deliveries = FindObjectOfType<RetailEmpireTycoon.Logistics.DeliveryOrders>(true);
         if (deliveries != null) gameData.deliveries = deliveries.Ledger.Capture();
+        var driver=FindObjectOfType<RetailEmpireTycoon.Logistics.DriverDelivery>(true);
+        if(driver!=null)gameData.driverJourney=driver.Capture();
         var trip = FindObjectOfType<RetailEmpireTycoon.City.CityTrip>(true);
         if (trip != null) gameData.vehicles = trip.Fleet.Capture();
         if (shopOperations != null) gameData.shopOperations = shopOperations.BuildSaveData();
@@ -228,6 +230,7 @@ public class SaveManager : MonoBehaviour
         productSaveService.ApplyWarehouseSaveData(loadedData.productInventory);
         productSaveService.ApplyShelfSaveData(loadedData.shelfStocks);
         if (shopOperations != null) shopOperations.ApplySaveData(loadedData.shopOperations);
+        FindObjectOfType<RetailEmpireTycoon.Logistics.DriverDelivery>(true)?.Restore(loadedData.driverJourney);
         worldRestored=true;
 
         Debug.Log("[SaveManager] Products loaded.");

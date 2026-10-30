@@ -39,6 +39,7 @@ namespace RetailEmpireTycoon.Products
 
         public void RebuildCache()
         {
+            StoreAssortmentPack.Load()?.IncludeProducts(products);
             _byId.Clear();
 
             foreach (ProductItemData product in products)

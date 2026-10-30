@@ -2,7 +2,8 @@ using UnityEngine;
 
 namespace RetailEmpireTycoon.StoreOperations
 {
-    public enum StaffRole { Cashier, Guard, Stocker, Cleaner }
+    // Append roles: existing saves store these numeric values.
+    public enum StaffRole { Cashier, Guard, Stocker, Cleaner, Driver }
 
     [CreateAssetMenu(menuName = "Retail Empire Tycoon/Shop balance")]
     public sealed class ShopBalance : ScriptableObject
@@ -17,8 +18,10 @@ namespace RetailEmpireTycoon.StoreOperations
         public Vector4 hiringCosts = new Vector4(150, 180, 160, 100);
         public Vector4 wagesPerMinute = new Vector4(12, 10, 12, 8);
 
-        public int HireCost(StaffRole role) => Mathf.Max(0, Mathf.RoundToInt(hiringCosts[(int)role]));
-        public int Wage(StaffRole role) => Mathf.Max(0, Mathf.RoundToInt(wagesPerMinute[(int)role]));
+        [Min(0)] public int driverHiringCost = 500;
+        [Min(0)] public int driverWagePerMinute = 20;
+        public int HireCost(StaffRole role) => role==StaffRole.Driver?driverHiringCost:Mathf.Max(0, Mathf.RoundToInt(hiringCosts[(int)role]));
+        public int Wage(StaffRole role) => role==StaffRole.Driver?driverWagePerMinute:Mathf.Max(0, Mathf.RoundToInt(wagesPerMinute[(int)role]));
         public float ArrivalSeconds(int level, float rating)
             => Mathf.Max(4f, baseArrivalSeconds / ((1f + 0.15f * (level - 1)) * Mathf.Lerp(0.55f, 1.35f, Mathf.InverseLerp(1, 5, rating))));
     }

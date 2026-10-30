@@ -1,0 +1,144 @@
+{
+  "category": "Wave2_08_Kitchenware",
+  "iteration": 3,
+  "blender": "5.2.3 LTS",
+  "models": [
+    {
+      "name": "mug",
+      "triangles": 424,
+      "budget_exclusive": 900,
+      "materials": 2,
+      "size_m": [
+        0.12403509765863419,
+        0.0820000022649765,
+        0.0949999988079071
+      ],
+      "cavities": [
+        {
+          "part": "Thick hollow cream mug",
+          "inner_floor_z": 0.008000016212463379
+        }
+      ],
+      "texts": [],
+      "sha256": "17b636e8f500fa206d833717a0b463d9ce0418e0f0a1f2a1042b128ff46b43d5"
+    },
+    {
+      "name": "plate",
+      "triangles": 380,
+      "budget_exclusive": 900,
+      "materials": 2,
+      "size_m": [
+        0.24978147447109222,
+        0.24978147447109222,
+        0.017000000923871994
+      ],
+      "cavities": [
+        {
+          "part": "Chunky raised cream plate",
+          "inner_floor_z": 0.006000041961669922
+        }
+      ],
+      "texts": [],
+      "sha256": "ebffe3ca6db92a9df61cfb0e9814508cd931ad748ee842a9f88a252e12f05ae9"
+    },
+    {
+      "name": "bowl",
+      "triangles": 236,
+      "budget_exclusive": 900,
+      "materials": 2,
+      "size_m": [
+        0.15000000596046448,
+        0.15000000596046448,
+        0.07500000298023224
+      ],
+      "cavities": [
+        {
+          "part": "Deep green and cream bowl",
+          "inner_floor_z": 0.008999943733215332
+        }
+      ],
+      "texts": [],
+      "sha256": "4ddc5db20c1cfb272ab94a8ab75820ce05f1432546921af2e2960af1dee96fb0"
+    },
+    {
+      "name": "frying_pan",
+      "triangles": 488,
+      "budget_exclusive": 900,
+      "materials": 3,
+      "size_m": [
+        0.27902400493621826,
+        0.19703540205955505,
+        0.03400000184774399
+      ],
+      "cavities": [
+        {
+          "part": "Hollow dark non stick pan",
+          "inner_floor_z": 0.005999922752380371
+        }
+      ],
+      "texts": [],
+      "sha256": "f10765d4d8fcbeb8bb44d06ec3686c9801fe4bdb2abbb962991b688755ae3eea"
+    },
+    {
+      "name": "saucepan",
+      "triangles": 868,
+      "budget_exclusive": 900,
+      "materials": 2,
+      "size_m": [
+        0.219340518116951,
+        0.15600000321865082,
+        0.11699999868869781
+      ],
+      "cavities": [
+        {
+          "part": "Hollow cream saucepan",
+          "inner_floor_z": 0.007000148296356201
+        }
+      ],
+      "texts": [],
+      "sha256": "f1bb7c105104ddb40c817e8124c6caa220cfed9d07764cdbc06de9f2adae089d"
+    },
+    {
+      "name": "food_container",
+      "triangles": 424,
+      "budget_exclusive": 1200,
+      "materials": 3,
+      "size_m": [
+        0.17399999499320984,
+        0.12600000202655792,
+        0.05849999934434891
+      ],
+      "cavities": [
+        {
+          "part": "Hollow clear container with actual walls",
+          "inner_floor_z": 0.004999995231628418
+        }
+      ],
+      "texts": [],
+      "sha256": "4945917e5f86cf5937f972b1ba5f97667a20c63cb9b749929a4b04fbfd96341a"
+    }
+  ],
+  "shared_helpers_unchanged": [
+    "srgb_to_linear",
+    "color_rgba",
+    "make_material",
+    "register",
+    "apply_transform",
+    "make_sphere",
+    "add_bevel",
+    "apply_modifiers",
+    "make_leaf",
+    "make_disk",
+    "join_and_seat",
+    "export_glb",
+    "preview",
+    "shade_hex",
+    "prepare_palette",
+    "lathe",
+    "soft_cylinder",
+    "curved_label",
+    "label_text"
+  ],
+  "blender_4_runtime_tested": false,
+  "unity_import_tested": false
+}

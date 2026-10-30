@@ -12,6 +12,7 @@ public class GameData
     public int playerMoney = StartingCapital;
     public RetailEmpireTycoon.City.VehicleFleetSaveData vehicles = new RetailEmpireTycoon.City.VehicleFleetSaveData();
     public RetailEmpireTycoon.Logistics.DeliverySaveData deliveries = new RetailEmpireTycoon.Logistics.DeliverySaveData();
+    public RetailEmpireTycoon.Logistics.DriverJourneySaveData driverJourney = new RetailEmpireTycoon.Logistics.DriverJourneySaveData();
     public RetailEmpireTycoon.StoreOperations.ShopOperationsSaveData shopOperations = new RetailEmpireTycoon.StoreOperations.ShopOperationsSaveData();
 
     public TerritorySaveData territory = new TerritorySaveData();

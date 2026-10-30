@@ -52,6 +52,7 @@ namespace RetailEmpireTycoon.StoreOperations
         public void SetBrowsing(bool browsing)
         {
             if (_hasBrowsingParameter && _animator != null) _animator.SetBool("isBrowsing", browsing);
+            GetComponentInChildren<StaffAppearance>()?.SetWorking(browsing);
         }
         public void FaceToward(Vector3 point, float seconds)
         {

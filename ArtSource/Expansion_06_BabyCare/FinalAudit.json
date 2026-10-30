@@ -1,0 +1,126 @@
+{
+  "category": "Expansion_06_BabyCare",
+  "iteration": 2,
+  "blender": "5.2.3 LTS",
+  "models": [
+    {
+      "name": "diapers",
+      "triangles": 608,
+      "budget_exclusive": 900,
+      "materials": 3,
+      "size_m": [
+        0.25,
+        0.12053923308849335,
+        0.210999995470047
+      ],
+      "cavities": [],
+      "texts": [],
+      "sha256": "c900297c3eb2ee2a79323e16729c9122a4b904ec508e0cf5ab83a8b565babfa6"
+    },
+    {
+      "name": "baby_wipes",
+      "triangles": 560,
+      "budget_exclusive": 900,
+      "materials": 4,
+      "size_m": [
+        0.18000000715255737,
+        0.10135000199079514,
+        0.10317274928092957
+      ],
+      "cavities": [],
+      "texts": [],
+      "sha256": "7641c1f1dd49b8843627eaa955f1c6aafaf3a0bbd50c792038a401af481a71ad"
+    },
+    {
+      "name": "baby_food",
+      "triangles": 740,
+      "budget_exclusive": 900,
+      "materials": 4,
+      "size_m": [
+        0.05999999865889549,
+        0.06103101372718811,
+        0.07999999821186066
+      ],
+      "cavities": [
+        {
+          "part": "Hollow clear baby food jar",
+          "inner_floor_z": 0.0030000805854797363
+        }
+      ],
+      "texts": [],
+      "sha256": "06e0c2c5b9d971dbd12a4ebe5fc06044f022298236892b2350fdda61a167c2f9"
+    },
+    {
+      "name": "baby_bottle",
+      "triangles": 824,
+      "budget_exclusive": 900,
+      "materials": 3,
+      "size_m": [
+        0.06199999898672104,
+        0.06210227310657501,
+        0.20000000298023224
+      ],
+      "cavities": [
+        {
+          "part": "Transparent milk bottle",
+          "inner_floor_z": 0.006000041961669922
+        }
+      ],
+      "texts": [],
+      "sha256": "de0cf8833eee10f99318c4093d07e7e71208b929327c29fb6b32f0579d23e78f"
+    },
+    {
+      "name": "pacifier",
+      "triangles": 720,
+      "budget_exclusive": 900,
+      "materials": 2,
+      "size_m": [
+        0.05392451584339142,
+        0.06438109278678894,
+        0.03800000250339508
+      ],
+      "cavities": [],
+      "texts": [],
+      "sha256": "bdc00be649e5167d0afeb618482fee6150384ef255daa20f088dd75e7457cfbc"
+    },
+    {
+      "name": "baby_cereal",
+      "triangles": 476,
+      "budget_exclusive": 900,
+      "materials": 3,
+      "size_m": [
+        0.09700000286102295,
+        0.05903923138976097,
+        0.20149999856948853
+      ],
+      "cavities": [],
+      "texts": [],
+      "sha256": "62a3252e6cd704b3e76a991b4cd3c8234f691c15a926371a4c404246d755ecbf"
+    }
+  ],
+  "shared_helpers_unchanged": [
+    "srgb_to_linear",
+    "color_rgba",
+    "make_material",
+    "register",
+    "apply_transform",
+    "make_sphere",
+    "add_bevel",
+    "apply_modifiers",
+    "make_leaf",
+    "make_disk",
+    "join_and_seat",
+    "export_glb",
+    "preview",
+    "shade_hex",
+    "prepare_palette",
+    "lathe",
+    "soft_cylinder",
+    "curved_label",
+    "label_text"
+  ],
+  "blender_4_runtime_tested": false,
+  "unity_import_tested": false,
+  "geometry_axis": "Z-up",
+  "exported_objects_per_file": 1
+}

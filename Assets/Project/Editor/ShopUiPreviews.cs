@@ -68,6 +68,10 @@ public static class ShopUiPreviews
             camera.orthographicSize = radius * 1.12f; camera.nearClipPlane = .001f; camera.farClipPlane = radius * 10 + 1;
             Light(scene, "Key light", new Vector3(40, -35, 0), 1.2f);
             Light(scene, "Fill light", new Vector3(30, 145, 0), .6f);
+            // Broad flat facets need gentle side fill in the preview scene,
+            // which does not inherit the game's ambient daylight.
+            Light(scene, "Soft side fill", new Vector3(25, 65, 0), .28f);
+            Light(scene, "Soft rear fill", new Vector3(45, 245, 0), .18f);
             target = new RenderTexture(384,384,24,RenderTextureFormat.ARGB32); target.Create(); camera.targetTexture = target;
             camera.Render(); RenderTexture.active = target;
             image = new Texture2D(384,384,TextureFormat.RGBA32,false); image.ReadPixels(new Rect(0,0,384,384),0,0); image.Apply();

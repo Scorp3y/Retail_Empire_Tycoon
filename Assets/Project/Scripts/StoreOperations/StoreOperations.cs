@@ -23,6 +23,10 @@ namespace RetailEmpireTycoon.StoreOperations
         private Parking.ParkingTraffic parking;
         public int CustomerAppearanceCount => customerSelection?.Count ?? 0;
         [SerializeField] private GameObject employeeModel;
+        [SerializeField] private GameObject[] staffModels=Array.Empty<GameObject>();
+        public bool ReadyForStaff=>_ready;
+        public Logistics.DriverDelivery Driver {get;set;}
+        public GameObject ModelFor(StaffRole role)=>staffModels!=null && (int)role<staffModels.Length && staffModels[(int)role]!=null?staffModels[(int)role]:employeeModel;
         [SerializeField] private GameObject registerModel;
         [SerializeField] private Material dirtMaterial;
         private readonly StaffRoster _staff = new StaffRoster();
@@ -209,6 +213,7 @@ namespace RetailEmpireTycoon.StoreOperations
         }
         public bool TryDismiss(StaffRole role)
         {
+            if(role==StaffRole.Driver && Driver!=null && Driver.IsAway){Notice="Wait for the driver to return before dismissing them.";return false;}
             if (!_staff.TryDismiss(role)) return false;
             var employee = _employees.LastOrDefault(e => e != null && e.Role == role);
             if (employee != null) { employee.CancelDuty(); _employees.Remove(employee); Destroy(employee.gameObject); }
@@ -223,7 +228,8 @@ namespace RetailEmpireTycoon.StoreOperations
         }
         private void AddEmployee(StaffRole role)
         {
-            var character = SpawnCharacter(employeeModel, _staffRestPoint, role == StaffRole.Guard ? 1.05f : 0.65f);
+            if(role==StaffRole.Driver)return; // The delivery service owns this employee outside the shop.
+            var character = SpawnCharacter(ModelFor(role), _staffRestPoint, role == StaffRole.Guard ? 1.05f : 0.65f);
             if (character == null) return;
             var duty = character.gameObject.AddComponent<EmployeeDuty>(); duty.Initialize(this, character, role); _employees.Add(duty);
         }

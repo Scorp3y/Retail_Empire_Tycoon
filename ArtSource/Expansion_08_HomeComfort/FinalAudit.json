@@ -1,0 +1,121 @@
+{
+  "category": "Expansion_08_HomeComfort",
+  "iteration": 2,
+  "blender": "5.2.3 LTS",
+  "models": [
+    {
+      "name": "candle",
+      "triangles": 608,
+      "budget_exclusive": 900,
+      "materials": 4,
+      "size_m": [
+        0.06199999898672104,
+        0.06335000693798065,
+        0.08300000429153442
+      ],
+      "cavities": [
+        {
+          "part": "Green glass candle jar",
+          "inner_floor_z": 0.004999935626983643
+        }
+      ],
+      "texts": [],
+      "sha256": "df93504091aa190f8fb9a571d374ed423d306a801a438e875e0fcfd81f788221"
+    },
+    {
+      "name": "table_lamp",
+      "triangles": 772,
+      "budget_exclusive": 900,
+      "materials": 3,
+      "size_m": [
+        0.20399999618530273,
+        0.20399999618530273,
+        0.3409999907016754
+      ],
+      "cavities": [],
+      "texts": [],
+      "sha256": "a81d7cbb016c5813d418e7ec255c4a1cabb88637f57db469e74fd40a4404e142"
+    },
+    {
+      "name": "alarm_clock",
+      "triangles": 1018,
+      "budget_exclusive": 1200,
+      "materials": 3,
+      "size_m": [
+        0.09000000357627869,
+        0.04188502952456474,
+        0.1257999986410141
+      ],
+      "cavities": [],
+      "texts": [],
+      "sha256": "b96c2555c4bcf669bb746fc6d96a5f07441b2f6c773893c24c506846e5a56a23"
+    },
+    {
+      "name": "photo_frame",
+      "triangles": 644,
+      "budget_exclusive": 900,
+      "materials": 2,
+      "size_m": [
+        0.14400000870227814,
+        0.0640866607427597,
+        0.18000000715255737
+      ],
+      "cavities": [],
+      "texts": [],
+      "sha256": "63990086561e7a43078956e6292c91789221dd8bd702b717d80df89578450f3b"
+    },
+    {
+      "name": "cushion",
+      "triangles": 396,
+      "budget_exclusive": 1200,
+      "materials": 3,
+      "size_m": [
+        0.30260002613067627,
+        0.3059588074684143,
+        0.10082995891571045
+      ],
+      "cavities": [],
+      "texts": [],
+      "sha256": "c10aab741a641eb478103266d33a2c85776c5d9742e6708ba846dfac40846c81"
+    },
+    {
+      "name": "blanket",
+      "triangles": 1140,
+      "budget_exclusive": 1200,
+      "materials": 3,
+      "size_m": [
+        0.35100001096725464,
+        0.24067234992980957,
+        0.05400000140070915
+      ],
+      "cavities": [],
+      "texts": [],
+      "sha256": "ebbb8e014bbc50a8ca89ab3233703379210da39aa9b1c60a7fdaf264342d9f8b"
+    }
+  ],
+  "shared_helpers_unchanged": [
+    "srgb_to_linear",
+    "color_rgba",
+    "make_material",
+    "register",
+    "apply_transform",
+    "make_sphere",
+    "add_bevel",
+    "apply_modifiers",
+    "make_leaf",
+    "make_disk",
+    "join_and_seat",
+    "export_glb",
+    "preview",
+    "shade_hex",
+    "prepare_palette",
+    "lathe",
+    "soft_cylinder",
+    "curved_label",
+    "label_text"
+  ],
+  "blender_4_runtime_tested": false,
+  "unity_import_tested": false,
+  "geometry_axis": "Z-up",
+  "exported_objects_per_file": 1
+}

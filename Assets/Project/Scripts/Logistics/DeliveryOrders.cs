@@ -149,7 +149,7 @@ namespace RetailEmpireTycoon.Logistics
             if (building == null) throw new InvalidOperationException("Unknown paid building: " + entry.itemId);
             return building.weightKg;
         }
-        private float UnitVolume(DeliveryEntry entry)
+        public float UnitVolume(DeliveryEntry entry)
         {
             if (entry.kind == DeliveryItemKind.Product)
             {

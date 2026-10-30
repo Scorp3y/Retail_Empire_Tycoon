@@ -18170,6 +18170,7 @@ GameObject:
   - component: {fileID: 405377439}
   - component: {fileID: 405377438}
   - component: {fileID: 405377440}
+  - component: {fileID: 405377441}
   m_Layer: 0
   m_Name: City and delivery services
   m_TagString: Untagged
@@ -18333,6 +18334,25 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   uiRoot: {fileID: 1047166554}
+--- !u!114 &405377441
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 405377431}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 823fea4c0014d8748b8251d3e92571c7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  trip: {fileID: 405377434}
+  shop: {fileID: 1669881618}
+  orders: {fileID: 405377435}
+  town: {fileID: 1557235802}
+  traffic: {fileID: 1557235801}
+  parking: {fileID: 405377433}
+  starterVehicleModel: {fileID: 6179531469074577412, guid: 5d88cf8f546b3cb42a5f5a4483c2b6b8, type: 3}
 --- !u!1001 &406415998
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -30652,6 +30672,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 196754680578486607, guid: cdb0525c894e3c1488341b823a338665, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 833188359758560248, guid: cdb0525c894e3c1488341b823a338665, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.49999925
@@ -30707,6 +30731,18 @@ PrefabInstance:
     - target: {fileID: 4086694378861088243, guid: cdb0525c894e3c1488341b823a338665, type: 3}
       propertyPath: m_Name
       value: Player pickup
+      objectReference: {fileID: 0}
+    - target: {fileID: 6631769951643932499, guid: cdb0525c894e3c1488341b823a338665, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8829207750154844863, guid: cdb0525c894e3c1488341b823a338665, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8862943531624870221, guid: cdb0525c894e3c1488341b823a338665, type: 3}
+      propertyPath: m_Enabled
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 828387545219628203, guid: cdb0525c894e3c1488341b823a338665, type: 3}
@@ -60419,6 +60455,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4826d653a4422a43823e7c3dbcecc0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1557235802 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7182982348746523599, guid: 03d7041345f08de4dbbe6cbc20c438d7, type: 3}
+  m_PrefabInstance: {fileID: 1557235800}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 365b7389b9d71504cbb79d2289dceffa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &1558043171 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: d372dbc1acdf2b14fb741024354ef278, type: 3}
@@ -63503,6 +63550,12 @@ MonoBehaviour:
   - {fileID: 1961948969429558488, guid: b3d7eceb09e4487428ba7c28b72ada2f, type: 3}
   - {fileID: 3814670193367950839, guid: 29d78f7b99c7b1e4b8f7d09b8715e66b, type: 3}
   employeeModel: {fileID: 1635211368391665721, guid: 5c4fe080d5e1ea14b854e0c4258e3eff, type: 3}
+  staffModels:
+  - {fileID: 2803585301251933277, guid: aa511dbc0e576a941beea6b6555ecedb, type: 3}
+  - {fileID: 4855984512880910166, guid: 6e06000a82e6a404486952f6c7afdec1, type: 3}
+  - {fileID: 1473643729776064620, guid: f297e36f1bf0a2a4bb6518956d4a6069, type: 3}
+  - {fileID: 7263114967270230912, guid: 3171e914894a36c49a9321bb5ab8dba6, type: 3}
+  - {fileID: 5994338886218532532, guid: 82245b4906128794fbff38b27a071ce7, type: 3}
   registerModel: {fileID: 919132149155446097, guid: 2f3e8160e1dcc4a44abef280a426dfa1, type: 3}
   dirtMaterial: {fileID: 2100000, guid: 59819a32287adb04fbbf3bc7b4369dc3, type: 2}
 --- !u!4 &1669881619

@@ -34,10 +34,15 @@ namespace RetailEmpireTycoon.Shelves
         public ProductItemData CurrentProduct => currentProduct;
         public ProductItemData AssignedProduct => currentProduct != null ? currentProduct : assignedProduct;
         public int CurrentAmount => currentAmount;
-        public int MaxAmount => maxAmount;
-        public int FreeSpace => Mathf.Max(0, maxAmount - currentAmount);
+        public int CapacityFor(ProductItemData product)
+        {
+            var display = GetComponent<ShelfProductDisplay>();
+            return display != null && display.UsesSlotLimits ? Mathf.Min(maxAmount, display.CompatibleCapacity(product)) : maxAmount;
+        }
+        public int MaxAmount => AssignedProduct != null ? CapacityFor(AssignedProduct) : maxAmount;
+        public int FreeSpace => Mathf.Max(0, MaxAmount - currentAmount);
         public bool IsEmpty => currentAmount <= 0;
-        public bool IsFull => currentAmount >= maxAmount;
+        public bool IsFull => currentAmount >= MaxAmount;
 
         private void OnEnable()
         {
@@ -75,7 +80,7 @@ namespace RetailEmpireTycoon.Shelves
                 return false;
 
             int available = inventory.GetCount(product);
-            int amountToMove = Mathf.Min(available, FreeSpace);
+            int amountToMove = Mathf.Min(available, Mathf.Max(0, CapacityFor(product) - currentAmount));
 
             if (amountToMove <= 0)
                 return false;
@@ -120,7 +125,7 @@ namespace RetailEmpireTycoon.Shelves
             }
 
             currentProduct = product;
-            currentAmount = Mathf.Clamp(amount, 0, maxAmount);
+            currentAmount = Mathf.Clamp(amount, 0, CapacityFor(product));
 
             if (currentAmount <= 0)
                 currentProduct = null;
@@ -146,14 +151,25 @@ namespace RetailEmpireTycoon.Shelves
             if (product == null)
                 return false;
 
+            var display = GetComponent<ShelfProductDisplay>();
+            if (display != null && display.CompatibleCapacity(product) == 0)
+                return false;
+
             if (blockedProducts.Contains(product))
                 return false;
 
             if (extraAllowedProducts.Contains(product))
                 return true;
 
+            var type = product.StorageType;
+            // New ranges reuse the physical equipment they require, while keeping
+            // distinct catalogue groups and stable pre-existing save enum values.
+            var equipmentType = type == ProductStorageType.Preserves ? ProductStorageType.Groceries
+                : type == ProductStorageType.ReadyMeals ? ProductStorageType.Dairy
+                : type >= ProductStorageType.PetSupplies && type <= ProductStorageType.Kitchenware
+                    ? ProductStorageType.Household : type;
             return acceptedProductTypes.Contains(ProductStorageType.Any)
-                || acceptedProductTypes.Contains(product.StorageType);
+                || acceptedProductTypes.Contains(type) || acceptedProductTypes.Contains(equipmentType);
         }
 
         private void NotifyChanged()

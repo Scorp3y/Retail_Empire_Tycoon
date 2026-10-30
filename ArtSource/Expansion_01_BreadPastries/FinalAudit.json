@@ -1,0 +1,121 @@
+{
+  "category": "Expansion_01_BreadPastries",
+  "iteration": 2,
+  "blender": "5.2.3 LTS",
+  "models": [
+    {
+      "name": "bagel",
+      "triangles": 672,
+      "budget_exclusive": 900,
+      "materials": 2,
+      "size_m": [
+        0.1080000028014183,
+        0.10635923594236374,
+        0.03799999877810478
+      ],
+      "cavities": [],
+      "texts": [],
+      "sha256": "62c9e9d5ed5632cdbf6c1189fc166b6c3cdff8aec68df4fef879082b72300674"
+    },
+    {
+      "name": "baguette",
+      "triangles": 516,
+      "budget_exclusive": 900,
+      "materials": 2,
+      "size_m": [
+        0.06199999898672104,
+        0.4000000059604645,
+        0.05516127869486809
+      ],
+      "cavities": [],
+      "texts": [],
+      "sha256": "53315c5ed7104e9221e99be201207eebf8471f90df6eb94a3751485fd241bacd"
+    },
+    {
+      "name": "cinnamon_roll",
+      "triangles": 780,
+      "budget_exclusive": 900,
+      "materials": 3,
+      "size_m": [
+        0.10000000149011612,
+        0.10000000149011612,
+        0.04999185726046562
+      ],
+      "cavities": [],
+      "texts": [],
+      "sha256": "38c031446482c0d68ba771ab5957cfb7f5d9629a567a354c40eccec8faafcc0c"
+    },
+    {
+      "name": "gingerbread",
+      "triangles": 996,
+      "budget_exclusive": 1200,
+      "materials": 3,
+      "size_m": [
+        0.09658712148666382,
+        0.11522552371025085,
+        0.017800001427531242
+      ],
+      "cavities": [],
+      "texts": [],
+      "sha256": "500e94a36194441b0073ece6017a9c8fd8e64d7442d2f7d625b62c92cd05c5f2"
+    },
+    {
+      "name": "fruit_tart",
+      "triangles": 904,
+      "budget_exclusive": 1200,
+      "materials": 4,
+      "size_m": [
+        0.10280000418424606,
+        0.09776860475540161,
+        0.04800000041723251
+      ],
+      "cavities": [
+        {
+          "part": "Fluted pastry crust",
+          "inner_floor_z": 0.005999863147735596
+        }
+      ],
+      "texts": [],
+      "sha256": "cf54b42ff889fb7de0165a6db833006542c415007b656d16c3d815aadb18156e"
+    },
+    {
+      "name": "eclair",
+      "triangles": 368,
+      "budget_exclusive": 900,
+      "materials": 3,
+      "size_m": [
+        0.13600000739097595,
+        0.051249999552965164,
+        0.04399999976158142
+      ],
+      "cavities": [],
+      "texts": [],
+      "sha256": "7bc38a3c4e77d319714f2793fe39d6eba4e432735bea3363b5891554223adfaa"
+    }
+  ],
+  "shared_helpers_unchanged": [
+    "srgb_to_linear",
+    "color_rgba",
+    "make_material",
+    "register",
+    "apply_transform",
+    "make_sphere",
+    "add_bevel",
+    "apply_modifiers",
+    "make_leaf",
+    "make_disk",
+    "join_and_seat",
+    "export_glb",
+    "preview",
+    "shade_hex",
+    "prepare_palette",
+    "lathe",
+    "soft_cylinder",
+    "curved_label",
+    "label_text"
+  ],
+  "blender_4_runtime_tested": false,
+  "unity_import_tested": false,
+  "geometry_axis": "Z-up",
+  "exported_objects_per_file": 1
+}

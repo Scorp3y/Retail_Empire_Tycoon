@@ -1,0 +1,128 @@
+{
+  "category": "Expansion_07_GardenSupplies",
+  "iteration": 2,
+  "blender": "5.2.3 LTS",
+  "models": [
+    {
+      "name": "potted_cactus",
+      "triangles": 972,
+      "budget_exclusive": 1200,
+      "materials": 3,
+      "size_m": [
+        0.09598439931869507,
+        0.08299999684095383,
+        0.17100000381469727
+      ],
+      "cavities": [
+        {
+          "part": "Terracotta pot with inner floor",
+          "inner_floor_z": 0.006000041961669922
+        }
+      ],
+      "texts": [],
+      "sha256": "0f1cdc6790b78d8acc501a130c7057efe4905a028cf2a4d7b5dcdf4cd0e02fd2"
+    },
+    {
+      "name": "seeds",
+      "triangles": 556,
+      "budget_exclusive": 900,
+      "materials": 3,
+      "size_m": [
+        0.08500000089406967,
+        0.016125833615660667,
+        0.14500001072883606
+      ],
+      "cavities": [],
+      "texts": [],
+      "sha256": "b0255fd692a9b94e5324da8285b1abe346d15196a0f87436d439dd670ade15b9"
+    },
+    {
+      "name": "watering_can",
+      "triangles": 820,
+      "budget_exclusive": 900,
+      "materials": 3,
+      "size_m": [
+        0.25066205859184265,
+        0.0989098772406578,
+        0.16899999976158142
+      ],
+      "cavities": [
+        {
+          "part": "Hollow watering can body",
+          "inner_floor_z": 0.006000041961669922
+        }
+      ],
+      "texts": [],
+      "sha256": "d190e1911187a39c8ee5eaa0de13706d45fe10310d74732f3a97624b05ea2593"
+    },
+    {
+      "name": "hand_trowel",
+      "triangles": 396,
+      "budget_exclusive": 900,
+      "materials": 3,
+      "size_m": [
+        0.07000000029802322,
+        0.27903810143470764,
+        0.022299999371170998
+      ],
+      "cavities": [],
+      "texts": [],
+      "sha256": "3cce9e70af3cfc871a0ccbb044c01597bf72c509ef6b78b081b793b704e47310"
+    },
+    {
+      "name": "garden_gloves",
+      "triangles": 1112,
+      "budget_exclusive": 1200,
+      "materials": 3,
+      "size_m": [
+        0.258627712726593,
+        0.2599727213382721,
+        0.024500001221895218
+      ],
+      "cavities": [],
+      "texts": [],
+      "sha256": "adca4a3b6e9a97aaa3fe3b97c5785d4bc78a9208018324ce9c93969e767f1edf"
+    },
+    {
+      "name": "plant_food",
+      "triangles": 694,
+      "budget_exclusive": 900,
+      "materials": 4,
+      "size_m": [
+        0.12999999523162842,
+        0.06312583386898041,
+        0.25
+      ],
+      "cavities": [],
+      "texts": [
+        "Plant\nfood"
+      ],
+      "sha256": "95ab0de886d668d78a33eea55b6fdee20694d3ed806dcbe64b9a44c2fce54dd2"
+    }
+  ],
+  "shared_helpers_unchanged": [
+    "srgb_to_linear",
+    "color_rgba",
+    "make_material",
+    "register",
+    "apply_transform",
+    "make_sphere",
+    "add_bevel",
+    "apply_modifiers",
+    "make_leaf",
+    "make_disk",
+    "join_and_seat",
+    "export_glb",
+    "preview",
+    "shade_hex",
+    "prepare_palette",
+    "lathe",
+    "soft_cylinder",
+    "curved_label",
+    "label_text"
+  ],
+  "blender_4_runtime_tested": false,
+  "unity_import_tested": false,
+  "geometry_axis": "Z-up",
+  "exported_objects_per_file": 1
+}

@@ -30,6 +30,7 @@ namespace RetailEmpireTycoon.StoreOperations
             if (Role == StaffRole.Guard && _visit != null && Vector3.Distance(transform.position, _visit.Character.transform.position) <= 0.25f)
             {
                 // Reaching the thief interrupts the escape while the short capture action finishes.
+                _character.SetBrowsing(true);
                 _visit.Restrain(); _taskTime += seconds;
                 if (_taskTime >= 1.5f) { _shop.CatchThief(_visit); CancelDuty(); }
                 return;
@@ -42,6 +43,7 @@ namespace RetailEmpireTycoon.StoreOperations
             if (!_character.Arrived) return;
             if (_visit != null && Role == StaffRole.Guard && Vector3.Distance(transform.position, _visit.Character.transform.position) > 0.25f)
             { _taskTime = 0; if (!_character.MoveTo(_visit.Character.transform.position)) CancelDuty(); return; }
+            _character.SetBrowsing(true);
             _taskTime += seconds;
             if (_taskTime < (Role == StaffRole.Guard ? 1.5f : _shop.Balance.staffTaskSeconds)) return;
             switch (Role)

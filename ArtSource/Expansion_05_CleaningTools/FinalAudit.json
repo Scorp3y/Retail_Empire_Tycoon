@@ -1,0 +1,131 @@
+{
+  "category": "Expansion_05_CleaningTools",
+  "iteration": 2,
+  "blender": "5.2.3 LTS",
+  "models": [
+    {
+      "name": "broom",
+      "triangles": 832,
+      "budget_exclusive": 1200,
+      "materials": 4,
+      "size_m": [
+        0.11912000179290771,
+        0.03189999982714653,
+        0.3936648368835449
+      ],
+      "cavities": [],
+      "texts": [],
+      "sha256": "390905ed362aea8a3e2ea13b9ea16f7e0b4011954814c7b4ff122f83fc1654ba"
+    },
+    {
+      "name": "mop",
+      "triangles": 1032,
+      "budget_exclusive": 1200,
+      "materials": 3,
+      "size_m": [
+        0.10285671800374985,
+        0.09952510893344879,
+        0.3963507413864136
+      ],
+      "cavities": [],
+      "texts": [],
+      "sha256": "da2c74ceee3acc4101050aa628c658dc5aebc3702161b859e924e021c371829c"
+    },
+    {
+      "name": "bucket",
+      "triangles": 668,
+      "budget_exclusive": 900,
+      "materials": 2,
+      "size_m": [
+        0.24720460176467896,
+        0.2460000067949295,
+        0.25200000405311584
+      ],
+      "cavities": [
+        {
+          "part": "Bucket with real inner floor",
+          "inner_floor_z": 0.0059999823570251465
+        }
+      ],
+      "texts": [],
+      "sha256": "8817d45a61ad1f75f1366d4da4f43ca7bb2b01ba0c64b0f8fcbfec765794e531"
+    },
+    {
+      "name": "dustpan",
+      "triangles": 496,
+      "budget_exclusive": 900,
+      "materials": 3,
+      "size_m": [
+        0.15000000596046448,
+        0.2554999887943268,
+        0.03530000150203705
+      ],
+      "cavities": [
+        {
+          "part": "Hollow dustpan with low front lip",
+          "inner_floor_z": 0.004999995231628418
+        }
+      ],
+      "texts": [],
+      "sha256": "216bb53438cce233e14bac74a6daa0a0f708171b69deb44d1dfd7b7706bc7ae1"
+    },
+    {
+      "name": "cleaning_spray",
+      "triangles": 864,
+      "budget_exclusive": 900,
+      "materials": 3,
+      "size_m": [
+        0.07761363685131073,
+        0.07453909516334534,
+        0.24250000715255737
+      ],
+      "cavities": [
+        {
+          "part": "Hollow cleaning bottle",
+          "inner_floor_z": 0.006999969482421875
+        }
+      ],
+      "texts": [],
+      "sha256": "8ee975e30bd669d14374dacd312751a728d5e3841debbcb3d0ce964eae3b0451"
+    },
+    {
+      "name": "trash_bags",
+      "triangles": 872,
+      "budget_exclusive": 900,
+      "materials": 4,
+      "size_m": [
+        0.10900000482797623,
+        0.0524354912340641,
+        0.1014794185757637
+      ],
+      "cavities": [],
+      "texts": [],
+      "sha256": "3b2e91243874c477972edadc0e44502c767218bda498b07cbd12591c2cdd23b5"
+    }
+  ],
+  "shared_helpers_unchanged": [
+    "srgb_to_linear",
+    "color_rgba",
+    "make_material",
+    "register",
+    "apply_transform",
+    "make_sphere",
+    "add_bevel",
+    "apply_modifiers",
+    "make_leaf",
+    "make_disk",
+    "join_and_seat",
+    "export_glb",
+    "preview",
+    "shade_hex",
+    "prepare_palette",
+    "lathe",
+    "soft_cylinder",
+    "curved_label",
+    "label_text"
+  ],
+  "blender_4_runtime_tested": false,
+  "unity_import_tested": false,
+  "geometry_axis": "Z-up",
+  "exported_objects_per_file": 1
+}

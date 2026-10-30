@@ -35,6 +35,14 @@ namespace RetailEmpireTycoon.Shelves
         private readonly List<GameObject> _spawnedObjects = new List<GameObject>();
 
         public float ProductScale => productScale;
+        private List<Transform> Eligible(ProductItemData product)
+        {
+            CollectSlotsIfNeeded();
+            return slots.FindAll(s => s != null && (product == null || s.GetComponent<ShelfProductSlot>() == null || s.GetComponent<ShelfProductSlot>().Supports(product)));
+        }
+        public bool UsesSlotLimits { get { CollectSlotsIfNeeded(); return slots.Exists(s => s != null && s.GetComponent<ShelfProductSlot>() != null && (s.GetComponent<ShelfProductSlot>().hanging || (s.GetComponent<ShelfProductSlot>().permittedProductIds?.Length ?? 0) > 0)); } }
+        public int CompatibleCapacity(ProductItemData product) => Eligible(product).Count;
+
         public Bounds WorkAreaBounds
         {
             get
@@ -47,13 +55,13 @@ namespace RetailEmpireTycoon.Shelves
         }
         public List<Transform> GetWorkSlots(int count)
         {
-            CollectSlotsIfNeeded();
+            var active = Eligible(shelfStock != null ? shelfStock.AssignedProduct : null);
             var result = new List<Transform>();
-            if (slots.Count == 0) return result;
-            int start = shelfStock != null ? CalculateVisibleCount(shelfStock.CurrentAmount, shelfStock.MaxAmount, slots.Count) : 0;
-            int remaining = Mathf.Max(1, slots.Count - start);
+            if (active.Count == 0) return result;
+            int start = shelfStock != null ? CalculateVisibleCount(shelfStock.CurrentAmount, shelfStock.MaxAmount, active.Count) : 0;
+            int remaining = Mathf.Max(1, active.Count - start);
             for (int i = 0; i < count; i++)
-                result.Add(slots[Mathf.Min(slots.Count - 1, start + i % remaining)]);
+                result.Add(active[Mathf.Min(active.Count - 1, start + i % remaining)]);
             return result;
         }
 
@@ -116,14 +124,15 @@ namespace RetailEmpireTycoon.Shelves
                 return;
             }
 
+            var activeSlots = Eligible(product);
             int visibleCount = CalculateVisibleCount(
                 shelfStock.CurrentAmount,
                 shelfStock.MaxAmount,
-                slots.Count
+                activeSlots.Count
             );
 
             for (int i = 0; i < visibleCount; i++)
-                SpawnProduct(product, slots[i]);
+                SpawnProduct(product, activeSlots[i]);
         }
 
         private int CalculateVisibleCount(int amount, int maxAmount, int slotCount)

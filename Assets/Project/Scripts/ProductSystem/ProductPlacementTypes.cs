@@ -10,7 +10,15 @@ namespace RetailEmpireTycoon.Core
         Dairy,
         Produce,
         Groceries,
-        Frozen
+        Frozen,
+        Snacks,
+        Household,
+        Preserves,
+        ReadyMeals,
+        PetSupplies,
+        Toys,
+        Stationery,
+        Kitchenware
     }
 
     public enum ShelfStorageType
@@ -21,6 +29,10 @@ namespace RetailEmpireTycoon.Core
         WallGoods,
         ColdPantry,
         Refrigerated,
-        Produce
+        Produce,
+        ChilledCounter,
+        ChestFreezer,
+        Household,
+        SnackEndcap
     }
 }

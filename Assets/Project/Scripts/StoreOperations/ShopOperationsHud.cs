@@ -246,38 +246,39 @@ namespace RetailEmpireTycoon.StoreOperations
             _ui.Heading(_staff, "Команда магазина", "Your team", new Vector2(4, -10), new Vector2(530, 30), 23);
             _ui.Copy(_staff, "Зарплата начисляется, пока магазин открыт.", "Wages are paid while the store is open.", new Vector2(4, -44), new Vector2(540, 30), 15).color = ShopUiTheme.Muted;
             _staffLabels.Clear(); _hireButtons.Clear(); _dismissButtons.Clear();
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < StaffRoster.RoleCount; i++)
             {
                 var role = (StaffRole)i;
-                float y = -80 - i * 80;
-                var row = _ui.Rect("Recruit " + role, _staff, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, y), new Vector2(560, 72));
+                float y = -76 - i * 66;
+                var row = _ui.Rect("Recruit " + role, _staff, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, y), new Vector2(560, 62));
                 _ui.Panel(row, new Color32(235, 235, 217, 255));
                 var theme = Resources.Load<ShopUiTheme>("ShopUi/Theme");
                 Sprite rolePortrait = theme != null && theme.staffPortraits != null && i < theme.staffPortraits.Length
                     ? theme.staffPortraits[i] : employeePortrait;
                 if (rolePortrait != null)
                 {
-                    var portrait = _ui.Rect("Employee portrait", row, new Vector2(0, 1), new Vector2(0, 1), new Vector2(6, -4), new Vector2(60, 64));
+                    var portrait = _ui.Rect("Employee portrait", row, new Vector2(0, 1), new Vector2(0, 1), new Vector2(6, -3), new Vector2(58, 56));
                     var image = _ui.Panel(portrait, Color.white); image.sprite = rolePortrait; image.type = Image.Type.Simple; image.preserveAspect = true; image.raycastTarget = false;
                 }
-                var badge = _ui.Rect("Profession badge", row, new Vector2(0, 1), new Vector2(0, 1), new Vector2(49, -46), new Vector2(24, 24));
+                var badge = _ui.Rect("Profession badge", row, new Vector2(0, 1), new Vector2(0, 1), new Vector2(49, -36), new Vector2(24, 24));
                 _ui.Panel(badge, ShopUiTheme.Paper).raycastTarget = false;
-                _ui.Icon(badge, (ShopIcon)((int)ShopIcon.Cashier + i), Vector2.zero, new Vector2(19, 19));
+                _ui.Icon(badge, role==StaffRole.Driver?ShopIcon.Pickup:(ShopIcon)((int)ShopIcon.Cashier + i), Vector2.zero, new Vector2(19, 19));
                 _staffLabels.Add(_ui.Label(row, "", new Vector2(82, -7), new Vector2(254, 58), 15));
-                _hireButtons.Add(_ui.Button(row, "Нанять", "Hire", new Vector2(350, -8), new Vector2(98, 28), () => shop.TryHire(role)));
-                var dismiss = _ui.Button(row, "Уволить", "Dismiss", new Vector2(350, -39), new Vector2(98, 26), () => shop.TryDismiss(role));
+                _hireButtons.Add(_ui.Button(row, "Нанять", "Hire", new Vector2(350, -2), new Vector2(98, 28), () => shop.TryHire(role)));
+                var dismiss = _ui.Button(row, "Уволить", "Dismiss", new Vector2(350, -32), new Vector2(98, 28), () => shop.TryDismiss(role));
                 dismiss.image.color = ShopUiTheme.Line; _dismissButtons.Add(dismiss);
                 var count = _ui.Label(row, "", new Vector2(464, -18), new Vector2(80, 34), 18);
                 count.gameObject.name = "Employee count";
             }
-            _staffNotice = _ui.Label(_staff, "", new Vector2(4, -405), new Vector2(550, 28), 16);
+            _ui.Button(_staff,"Track driver",new Vector2(350,-410),new Vector2(194,28),()=>shop.Driver?.OpenMap(canvas.transform));
+            _staffNotice = _ui.Label(_staff, "", new Vector2(4, -410), new Vector2(340, 28), 15);
             RefreshStaff();
         }
         private void RefreshStaff()
         {
-            string[] names = { "Кассир", "Охранник", "Складовщик", "Уборщик" };
-            string[] englishNames = { "Cashier", "Guard", "Stocker", "Cleaner" };
-            for (int i = 0; i < 4; i++)
+            string[] names = { "Кассир", "Охранник", "Складовщик", "Уборщик", "Водитель" };
+            string[] englishNames = { "Cashier", "Security", "Stocker", "Cleaner", "Driver" };
+            for (int i = 0; i < StaffRoster.RoleCount; i++)
             {
                 var role = (StaffRole)i;
                 _staffLabels[i].text = "<b>" + ShopText.Get(names[i], englishNames[i]) + "</b>\n" + ShopText.Get("Найм ", "Hire ") + MoneyFormat.Compact(shop.Balance.HireCost(role))
@@ -287,7 +288,7 @@ namespace RetailEmpireTycoon.StoreOperations
                 _hireButtons[i].interactable = shop.Staff.CanHire(role, shop.Level) && shop.CanAffordHire(role);
                 _dismissButtons[i].interactable = shop.Staff.Count(role) > 0;
             }
-            _staffNotice.text = ShopText.Get("Баланс: ", "Balance: ") + MoneyFormat.Compact(shop.Money);
+            _staffNotice.text = shop.Driver!=null && shop.Driver.IsAway?shop.Driver.Status:ShopText.Get("Баланс: ", "Balance: ") + MoneyFormat.Compact(shop.Money);
         }
         public void CloseStaff()
         {

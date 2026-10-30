@@ -113,7 +113,15 @@ namespace RetailEmpireTycoon.UI.Shop
                 case ProductStorageType.Oil:
                 case ProductStorageType.Groceries: return Get("Бакалея", "Groceries");
                 case ProductStorageType.Drinks: return Get("Напитки", "Drinks");
-                case ProductStorageType.Meat: return Get("Мясо", "Meat");
+                case ProductStorageType.Meat: return Get("Мясо и морепродукты", "Meat & seafood");
+                case ProductStorageType.Snacks: return "Snacks & sweets";
+                case ProductStorageType.Household: return "Household & care";
+                case ProductStorageType.Preserves: return "Preserves & spreads";
+                case ProductStorageType.ReadyMeals: return "Ready meals";
+                case ProductStorageType.PetSupplies: return "Pet supplies";
+                case ProductStorageType.Toys: return "Toys & games";
+                case ProductStorageType.Stationery: return "Stationery";
+                case ProductStorageType.Kitchenware: return "Kitchenware";
                 case ProductStorageType.Produce: return Get("Овощи и фрукты", "Produce");
                 case ProductStorageType.Frozen: return Get("Заморозка", "Frozen");
                 default: return Get("Товары", "Products");
@@ -123,12 +131,21 @@ namespace RetailEmpireTycoon.UI.Shop
         public static string ShelfHint(ProductItemData item)
         {
             if (item == null) return "";
+            if (item.Id == "product_broom" || item.Id == "product_mop") return "Cleaning tool rack (hooks)";
             switch (item.StorageType)
             {
                 case ProductStorageType.Bakery: return Get("Хлебный стеллаж", "Bakery rack");
                 case ProductStorageType.Produce: return Get("Овощной стеллаж", "Produce rack");
                 case ProductStorageType.Dairy: return Get("Холодильник", "Refrigerated display");
-                case ProductStorageType.Meat:
+                case ProductStorageType.Meat: return "Chilled counter / freezer display";
+                case ProductStorageType.Snacks: return "Snack endcap";
+                case ProductStorageType.Household: return "Household rack";
+                case ProductStorageType.Preserves: return "Wall / double-sided shelf";
+                case ProductStorageType.ReadyMeals: return "Refrigerated display";
+                case ProductStorageType.PetSupplies: return "Pet supplies rack / Household rack";
+                case ProductStorageType.Toys: return "Toy cubby shelf / Household rack";
+                case ProductStorageType.Stationery: return "Stationery stand / Pegboard display";
+                case ProductStorageType.Kitchenware: return "Homeware shelf / Household rack";
                 case ProductStorageType.Frozen: return Get("Морозильная витрина", "Cold pantry");
                 case ProductStorageType.Oil:
                 case ProductStorageType.Groceries:

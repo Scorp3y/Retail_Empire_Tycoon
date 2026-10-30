@@ -71,6 +71,7 @@ namespace RetailEmpireTycoon.City
         public void ConfirmDeparture()
         {
             if (Transitioning || InCity || confirmation != null) return;
+            if(Fleet.DriverHasVehicle)return;
             confirmation = ui.Modal("Drive into town", uiRoot, new Vector2(480,240));
             ui.Heading(confirmation,"Drive into town?","Drive to the city?",new Vector2(22,-18),new Vector2(430,40),26);
             ui.Copy(confirmation,"Visit suppliers around town and collect your orders. The store will be paused until you return.",
@@ -82,6 +83,7 @@ namespace RetailEmpireTycoon.City
         public void Begin()
         {
             if (InCity || Transitioning) return;
+            if(Fleet.DriverHasVehicle)return;
             if (!Application.CanStreamedLevelBeLoaded(cityScene) || !Application.CanStreamedLevelBeLoaded(loadingScene))
             { Debug.LogError("City and Loading scenes must be enabled in Build Settings.",this); return; }
             // Save before suspending the scene; a failed save must not strand the player in transit.
