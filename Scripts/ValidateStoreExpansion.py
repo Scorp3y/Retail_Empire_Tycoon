@@ -3,9 +3,14 @@ from pathlib import Path
 import json
 import os
 import re
+import argparse
 
 root = Path(__file__).resolve().parents[1]
-report = root / 'Library/StoreExpansionIntegration'
+parser = argparse.ArgumentParser()
+parser.add_argument('--products', type=int, default=144)
+parser.add_argument('--report', default='Library/StoreExpansionIntegration')
+args = parser.parse_args()
+report = root / args.report
 guids = {}
 duplicates = []
 for directory in (root / 'Assets', root / 'Library/PackageCache'):
@@ -28,7 +33,7 @@ for directory in (root / 'Assets', root / 'Library/PackageCache'):
 pack = (root / 'Assets/Resources/StoreAssortment/Expansion.asset').read_text(encoding='utf-8')
 products, fixtures = pack.split('  products:')[1].split('  fixtures:')
 counts = {}
-for label, section, expected in [('products', products, 144), ('fixtures', fixtures, 20)]:
+for label, section, expected in [('products', products, args.products), ('fixtures', fixtures, 20)]:
     refs = re.findall(r'guid: (\w+)', section)
     assert len(refs) == expected, (label, len(refs))
     ids = []
