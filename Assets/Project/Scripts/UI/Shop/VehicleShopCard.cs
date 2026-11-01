@@ -26,7 +26,9 @@ namespace RetailEmpireTycoon.UI.Shop
             details.text = $"{weight:0} kg\n{volume:0.#} m³\n"+(owned?"Owned":$"${vehicle.price:N0}");
             stateButton.onClick.RemoveAllListeners();
             stateButton.interactable = fleet!=null&&!selected&&(owned||orders.money.CanSpend(vehicle.price));
-            string label=selected?"Owned · Selected":owned?"Select":"Buy vehicle";
+            string label=selected?"Selected":owned?"Select":"Buy vehicle";
+            if(fleet!=null&&fleet.DriverHasVehicle){stateButton.interactable=false;if(selected)label="Driver on delivery";}
+            if(selected)stateButton.image.color=ShopUiTheme.Ink;
             var localized=stateButton.GetComponentInChildren<ShopLocalizedLabel>();
             if(localized!=null)localized.Set(label,label);else stateButton.GetComponentInChildren<TMP_Text>().text=label;
             stateButton.onClick.AddListener(()=>

@@ -28,6 +28,8 @@ namespace RetailEmpireTycoon.UI.Shop
         {
             int selected = shop != null ? shop.IsVehiclesView ? 3 : shop.IsStaffView ? 2 : shop.IsProductsView ? 1 : shop.IsBuildView ? shop.SelectedCategory == BuildCategory.Decoration ? 4 : 0 : -1
                 : inventory != null && inventory.IsProductsView ? 1 : 0;
+            if(shop!=null&&tabs.Length==6)
+                selected=shop.IsProductsView?0:shop.IsStaffView?3:shop.IsVehiclesView?4:shop.IsBuildView?shop.SelectedCategory==BuildCategory.Shelf?1:shop.SelectedCategory==BuildCategory.Structures?2:5:-1;
             for (int i=0;i<tabs.Length;i++) Style(tabs[i],i==selected);
             for (int i=0;i<categories.Length;i++) Style(categories[i],shop != null && shop.SelectedCategory == (i==0 ? BuildCategory.Shelf : i==1 ? BuildCategory.Structures : BuildCategory.Decoration));
         }

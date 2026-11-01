@@ -21,6 +21,7 @@ namespace RetailEmpireTycoon.City
         private readonly Dictionary<TrafficVehicle,(int Lane,float Distance)> privateMerges=new();
         private readonly Dictionary<Vector2Int,List<Spawn>> spawnChunks = new();
         private readonly List<Spawn> candidates = new();
+        private readonly List<Spawn> sparseCandidates=new();
         private readonly Dictionary<int,TrafficVehicle> reservations = new();
         private readonly RaycastHit[] hits = new RaycastHit[48];
         private readonly Collider[] spawnHits = new Collider[32];
@@ -29,7 +30,8 @@ namespace RetailEmpireTycoon.City
         private Vector2Int observerChunk;
         private bool initialized, hasObserverChunk;
         private float nextSpawn, nextObserverSearch;
-        private int spawnCursor, designCursor;
+        private float nextSparseSpawn;
+        private int spawnCursor, designCursor,sparseCursor;
         private Vector3 spawnHalfExtents;
         public IReadOnlyList<TrafficVehicle> ActiveCars => active;
         public TrafficRoadNetwork Network => network;
@@ -38,6 +40,20 @@ namespace RetailEmpireTycoon.City
         public long SimulatedCarSteps { get; private set; }
         public int SuccessfulSpawns { get; private set; }
         public Vector2Int ObserverChunk => observerChunk;
+        public int SparseTrafficCount=>SparseCount(null);
+
+        private int SparseCount(TrafficVehicle except)
+        {
+            if(network==null||network.SparseTrafficMaximum==0)return 0;
+            int count=0;
+            foreach(var car in active)
+                if(car!=except&&!parkingArrivals.Contains(car)&&(network.IsSparseLane(car.LaneIndex)
+                    ||car.ReservedJunction>=0&&car.NextLane>=0&&network.IsSparseLane(car.NextLane)))count++;
+            return count;
+        }
+        private bool DistrictEntryClear(TrafficVehicle car,int departure)
+            =>network.SparseTrafficMaximum==0||parkingArrivals.Contains(car)||network.IsSparseLane(car.LaneIndex)
+                ||!network.IsSparseLane(departure)||SparseCount(car)<network.SparseTrafficMaximum;
 
         private readonly struct Spawn
         {
@@ -148,7 +164,8 @@ namespace RetailEmpireTycoon.City
                 {
                     var p=path.Sample(d,out _);var cell=Cell(p);
                     if (!spawnChunks.TryGetValue(cell,out var list)) spawnChunks.Add(cell,list=new List<Spawn>());
-                    list.Add(new Spawn(i,d,p));
+                    var spawn=new Spawn(i,d,p);list.Add(spawn);
+                    if(network.IsSparseResidentLane(i))sparseCandidates.Add(spawn);
                 }
             }
             initialized=true;
@@ -172,14 +189,20 @@ namespace RetailEmpireTycoon.City
             for (int i=active.Count-1;i>=0;i--)
             {
                 var car=active[i];var at=Cell(car.LocalPosition);
-                if(!parkingArrivals.Contains(car) && (Mathf.Abs(at.x-cell.x)>2 || Mathf.Abs(at.y-cell.y)>2 || (car.HoldSeconds>90 && Vector3.Distance(car.LocalPosition,localObserver)>95))) Recycle(car);
+                bool resident=network.IsSparseLane(car.LaneIndex);
+                if(!parkingArrivals.Contains(car) && (!resident&&(Mathf.Abs(at.x-cell.x)>2 || Mathf.Abs(at.y-cell.y)>2) || (car.HoldSeconds>90 && Vector3.Distance(car.LocalPosition,localObserver)>95))) Recycle(car);
             }
-            nextSpawn-=seconds;
+            nextSpawn-=seconds;nextSparseSpawn-=seconds;
             if (initial || nextSpawn<=0)
             {
                 nextSpawn=.5f;
+                // Two residents remain visible in this small distant neighbourhood while
+                // sharing the existing global pool. Nearby traffic may fill it to four.
+                if(network.SparseTrafficMaximum>0)
+                    for(int i=0;i<(initial?2:1)&&SparseCount(null)<2&&active.Count<maximumCars;i++)TrySpawn(localObserver,initial,physicsQueries,true);
                 int attempts=initial ? maximumCars : 3;
-                for(int i=0;i<attempts && active.Count<maximumCars;i++) TrySpawn(localObserver,initial,physicsQueries);
+                int reserve=network.SparseTrafficMaximum>0?Mathf.Max(0,2-SparseCount(null)):0;
+                for(int i=0;i<attempts && active.Count<maximumCars-reserve;i++) TrySpawn(localObserver,initial,physicsQueries);
             }
             foreach (var car in active)
             {
@@ -219,12 +242,15 @@ namespace RetailEmpireTycoon.City
         private int ChooseDeparture(int incoming)
         {
             var lane=network.Lanes[incoming];var exits=network.Departures(lane.to);
+            bool keepOutside=network.SparseTrafficMaximum>0&&!network.IsSparseLane(incoming)&&SparseCount(null)>=network.SparseTrafficMaximum;
+            int alternatives=0;foreach(int index in exits)if(network.Lanes[index].to!=lane.from&&!network.IsSparseLane(index))alternatives++;
+            bool Eligible(int index)=>network.Lanes[index].to!=lane.from&&(!keepOutside||alternatives==0||!network.IsSparseLane(index));
             int count=0;
-            foreach(int index in exits) if(network.Lanes[index].to!=lane.from)count++;
+            foreach(int index in exits) if(Eligible(index))count++;
             if(count==0) return exits[0]; // The only turnaround is the authored farm apron.
             int selected=random.Next(count);
             foreach(int index in exits)
-                if(network.Lanes[index].to!=lane.from && selected--==0)return index;
+                if(Eligible(index) && selected--==0)return index;
             throw new InvalidOperationException("No road departure.");
         }
         private bool SignalAllows(TrafficRoadNetwork.Lane lane,double clock)
@@ -241,6 +267,7 @@ namespace RetailEmpireTycoon.City
             => ExitClear(car,car.NextLane);
         private bool ExitClear(TrafficVehicle car,int departure)
         {
+            if(!DistrictEntryClear(car,departure))return false;
             foreach(var merge in privateMerges)
                 if(merge.Key!=null && merge.Value.Lane==departure && merge.Value.Distance<car.Length+merge.Key.Length+10)return false;
             var exit=network.Lanes[departure].Path.Sample(0,out var direction);
@@ -331,11 +358,14 @@ namespace RetailEmpireTycoon.City
             }
             return result;
         }
-        private void TrySpawn(Vector3 observerPosition,bool initial,bool physicsQueries)
+        private void TrySpawn(Vector3 observerPosition,bool initial,bool physicsQueries,bool districtOnly=false)
         {
-            for(int attempt=0;attempt<candidates.Count;attempt++)
+            var source=districtOnly?sparseCandidates:candidates;
+            for(int attempt=0;attempt<source.Count;attempt++)
             {
-                var spawn=candidates[spawnCursor++%candidates.Count];
+                var spawn=source[(districtOnly?sparseCursor++:spawnCursor++)%source.Count];
+                bool sparse=network.IsSparseLane(spawn.Lane);
+                if(sparse&&(SparseCount(null)>=network.SparseTrafficMaximum||!initial&&nextSparseSpawn>0))continue;
                 bool merging=false;
                 foreach(var merge in privateMerges)if(merge.Value.Lane==spawn.Lane && Mathf.Abs(merge.Value.Distance-spawn.Distance)<16){merging=true;break;}
                 if(merging)continue;
@@ -357,7 +387,7 @@ namespace RetailEmpireTycoon.City
                     else { car=Instantiate(design,transform);car.gameObject.SetActive(false);pool.Add(car); }
                 }
                 car.Place(network,spawn.Lane,spawn.Distance,ChooseDeparture(spawn.Lane));
-                car.gameObject.SetActive(true);active.Add(car);designCursor++;SuccessfulSpawns++;return;
+                car.gameObject.SetActive(true);active.Add(car);designCursor++;SuccessfulSpawns++;if(sparse)nextSparseSpawn=network.SparseTrafficSpawnInterval;return;
             }
         }
         private bool SpawnClear(Spawn spawn,TrafficVehicle design)

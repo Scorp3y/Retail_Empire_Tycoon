@@ -57,7 +57,8 @@ internal sealed class TownCityCorrectionsGeometry
         }
     }
     internal readonly View[] Views;
-    internal TownCityCorrectionsGeometry(Transform root)=>Views=root.GetComponentsInChildren<MeshFilter>(true).Where(f=>f.sharedMesh!=null).Select(f=>new View(f)).ToArray();
+    internal TownCityCorrectionsGeometry(Transform root):this(root.GetComponentsInChildren<MeshFilter>(true)){}
+    internal TownCityCorrectionsGeometry(IEnumerable<MeshFilter> filters)=>Views=filters.Where(f=>f.sharedMesh!=null).Select(f=>new View(f)).ToArray();
     internal void Save(string assetRoot=TownCityCorrectionsPlacement.Root){int n=0;foreach(var v in Views)v.Save("ScopedMesh"+n++,assetRoot);}
     internal int Remove(Func<View,int,bool> predicate)
     {

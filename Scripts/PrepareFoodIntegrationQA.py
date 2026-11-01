@@ -6,7 +6,7 @@ import shutil
 ROOT=Path(__file__).resolve().parents[1]
 QA=ROOT/'Library/CityUpdateQA/IsolatedProject'
 assert (QA/'ProjectSettings/ProjectVersion.txt').is_file(),'Existing isolated project is required.'
-SCOPES=['Assets/Project','Assets/Prefabs','Assets/Resources/StoreAssortment',
+SCOPES=['Assets/Project','Assets/Prefabs','Assets/Resources/StoreAssortment','Assets/Resources/ShopUi',
         'Assets/Art/FoodExpansion','Assets/Art/Wave2','Assets/Art/ShopUi/Items',
         'ProjectSettings','Packages/manifest.json','Packages/packages-lock.json']
 count=0

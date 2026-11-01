@@ -229,8 +229,10 @@ internal static class TownPilotScopePreservation
             var bounds = new Bounds(first, Vector3.one * radius * 2); bounds.Encapsulate(new Bounds(second, Vector3.one * radius * 2));
             return bounds;
         }
-        if (collider is MeshCollider mesh && mesh.sharedMesh != null)
-            return TransformedBounds(collider.transform.localToWorldMatrix, mesh.sharedMesh.bounds);
+        if (collider is MeshCollider mesh)
+            // Unity permits an empty MeshCollider. It has no physical volume; its state is still fingerprinted.
+            return mesh.sharedMesh != null ? TransformedBounds(collider.transform.localToWorldMatrix, mesh.sharedMesh.bounds)
+                : new Bounds(collider.transform.position, Vector3.zero);
         throw new InvalidOperationException("Pilot scope audit cannot guarantee the unsupported collision shape " + collider.GetType().Name + ".");
     }
 
@@ -268,9 +270,15 @@ internal static class TownPilotScopePreservation
                 if (Compare(first, second) > 0) { var swap = first; first = second; second = swap; }
                 Point(writer, first); Point(writer, second); writer.Write(Quantize(radius));
             }
+            else if (collider is MeshCollider empty && empty.sharedMesh == null)
+            {
+                writer.Write(false); writer.Write(empty.convex); writer.Write((int)empty.cookingOptions);
+                Point(writer, pose.MultiplyPoint3x4(Vector3.zero));
+                Point(writer, pose.MultiplyVector(Vector3.right)); Point(writer, pose.MultiplyVector(Vector3.up)); Point(writer, pose.MultiplyVector(Vector3.forward));
+            }
             else if (collider is MeshCollider mesh)
             {
-                writer.Write(mesh.convex); writer.Write((int)mesh.cookingOptions);
+                writer.Write(true); writer.Write(mesh.convex); writer.Write((int)mesh.cookingOptions);
                 var vertices = mesh.sharedMesh.vertices; var triangles = mesh.sharedMesh.triangles;
                 var parts = new List<Digest>(triangles.Length / 3);
                 for (int i = 0; i < triangles.Length; i += 3)

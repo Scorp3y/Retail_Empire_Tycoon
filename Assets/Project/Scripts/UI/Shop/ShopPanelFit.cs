@@ -25,7 +25,7 @@ namespace RetailEmpireTycoon.UI.Shop
             rect.localScale = Vector3.one * scale;
             if (grid == null) return;
             float width = ((RectTransform)grid.transform.parent).rect.width;
-            int columns = width >= 480 ? 2 : 1;
+            int columns = width >= 780 ? 3 : width >= 480 ? 2 : 1;
             grid.constraintCount = columns;
             grid.cellSize = new Vector2(Mathf.Floor((width - grid.padding.horizontal - grid.spacing.x * (columns - 1)) / columns), 220);
         }

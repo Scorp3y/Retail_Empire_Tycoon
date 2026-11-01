@@ -27,9 +27,43 @@ namespace RetailEmpireTycoon.City
 
         [SerializeField] private Junction[] junctions = Array.Empty<Junction>();
         [SerializeField] private Lane[] lanes = Array.Empty<Lane>();
+        [SerializeField] private Rect sparseTrafficArea;
+        [SerializeField] private int sparseTrafficMaximum;
+        [SerializeField] private float sparseTrafficSpawnInterval=8;
         private List<int>[] departures;
+        [NonSerialized] private bool[] sparseLanes;
         public IReadOnlyList<Junction> Junctions => junctions;
         public IReadOnlyList<Lane> Lanes => lanes;
+        public int SparseTrafficMaximum=>sparseTrafficMaximum;
+        public float SparseTrafficSpawnInterval=>sparseTrafficSpawnInterval;
+
+        /// <summary>Caps ambient traffic in an authored neighbourhood, including its incoming gateway lanes.</summary>
+        public void ConfigureSparseTraffic(Rect nativeArea,int maximum,float spawnInterval)
+        {
+            if(!float.IsFinite(nativeArea.xMin)||!float.IsFinite(nativeArea.xMax)||!float.IsFinite(nativeArea.yMin)||!float.IsFinite(nativeArea.yMax)||nativeArea.width<=0||nativeArea.height<=0||maximum<1||maximum>32||!float.IsFinite(spawnInterval)||spawnInterval<1)
+                throw new ArgumentException("A finite area, positive capacity and spawn interval are required.");
+            sparseTrafficArea=nativeArea;sparseTrafficMaximum=maximum;sparseTrafficSpawnInterval=spawnInterval;sparseLanes=null;
+        }
+        public bool IsSparseLane(int lane)
+        {
+            if(sparseTrafficMaximum==0)return false;
+            if(lane<0||lane>=lanes.Length)throw new ArgumentOutOfRangeException(nameof(lane));
+            // Unity's editor reload can restore an empty private array. This derived
+            // cache must always match the authored network before runtime reads it.
+            if(sparseLanes==null||sparseLanes.Length!=lanes.Length)
+            {
+                sparseLanes=new bool[lanes.Length];
+                for(int i=0;i<lanes.Length;i++)
+                    foreach(var p in lanes[i].points)if(sparseTrafficArea.Contains(new Vector2(p.x,p.z))){sparseLanes[i]=true;break;}
+            }
+            return sparseLanes[lane];
+        }
+        public bool IsSparseResidentLane(int lane)
+        {
+            if(!IsSparseLane(lane))return false;
+            var a=junctions[lanes[lane].from].position;var b=junctions[lanes[lane].to].position;
+            return sparseTrafficArea.Contains(new Vector2(a.x,a.z))&&sparseTrafficArea.Contains(new Vector2(b.x,b.z));
+        }
 
         public void Configure(Junction[] nodes, Lane[] connections)
         {
@@ -38,7 +72,7 @@ namespace RetailEmpireTycoon.City
             foreach (var lane in connections)
                 if (lane.from < 0 || lane.from >= nodes.Length || lane.to < 0 || lane.to >= nodes.Length || lane.from == lane.to || lane.Path.Length < 1)
                     throw new ArgumentException("Invalid directed lane.");
-            junctions = nodes; lanes = connections; departures = null;
+            junctions = nodes; lanes = connections; departures = null;sparseLanes=null;
         }
 
         public IReadOnlyList<int> Departures(int node)

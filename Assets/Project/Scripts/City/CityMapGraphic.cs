@@ -59,7 +59,15 @@ namespace RetailEmpireTycoon.City
         }
         private Vector2 Map(Vector2 position)
         {
-            var bounds=town.layout.cityBounds;var rect=rectTransform.rect;
+            var bounds=town.layout.cityBounds;
+            // Include the authored expansion in the viewport without changing the older city layout asset.
+            if(forestDistrict!=null)
+            {
+                var district=forestDistrict.DistrictBounds;
+                bounds=Rect.MinMaxRect(Mathf.Min(bounds.xMin,district.xMin),Mathf.Min(bounds.yMin,district.yMin),
+                    Mathf.Max(bounds.xMax,district.xMax),Mathf.Max(bounds.yMax,district.yMax));
+            }
+            var rect=rectTransform.rect;
             return new Vector2(rect.xMin+(position.x-bounds.xMin)/bounds.width*rect.width,
                 rect.yMin+(position.y-bounds.yMin)/bounds.height*rect.height);
         }

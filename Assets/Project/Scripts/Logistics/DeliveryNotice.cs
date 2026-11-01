@@ -21,7 +21,7 @@ namespace RetailEmpireTycoon.Logistics
         private void Refresh()
         {
             if(label==null) return;
-            label.text=orders.Notice;label.transform.parent.gameObject.SetActive(orders.NoticeIsError&&!string.IsNullOrEmpty(orders.Notice));expires=Time.unscaledTime+7;
+            label.text=orders.Notice;label.transform.parent.gameObject.SetActive(!orders.NoticeIsInline&&orders.NoticeIsError&&!string.IsNullOrEmpty(orders.Notice));expires=Time.unscaledTime+7;
         }
         private void Update() {if(label!=null&&Time.unscaledTime>expires) label.transform.parent.gameObject.SetActive(false);}
         private void OnDestroy() { if(orders!=null) orders.Changed-=Refresh; }

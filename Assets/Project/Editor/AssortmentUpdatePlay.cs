@@ -87,10 +87,13 @@ public static class AssortmentUpdatePlay
         {
             Require(product.Icon != null && product.ShelfDisplayPrefab != null && product.UnitWeightKg > 0 && product.UnitVolumeM3 > 0, "Incomplete product: " + product.Id);
             Require(product.SellPrice * product.BoxAmount > product.BuyPrice, "Invalid selling margin: " + product.Id);
-            var card = shop.GetComponentsInChildren<ProductShopItemCard>().Single(c => c.GetComponentsInChildren<TMPro.TMP_Text>().Any(t => t.text == product.DisplayName));
-            var button = card.GetComponentInChildren<Button>(); orders.money.SetMoney(product.BuyPrice - 1); button.onClick.Invoke();
-            Require(orders.Ledger.Entries.Count == 0 && inventory.GetCount(product) == 0, "Unaffordable order was granted: " + product.Id);
-            orders.money.SetMoney(product.BuyPrice); button.onClick.Invoke();
+            var browser=shop.ProductBrowser;
+            browser.ClearBasket(); browser.AddToCart(product,1);
+            orders.money.SetMoney(product.BuyPrice-1);
+            Require(!browser.SubmitOrder(),"Unaffordable basket was accepted.");
+            Require(orders.Ledger.Entries.Count==0&&inventory.GetCount(product)==0,"Unaffordable basket granted goods.");
+            orders.money.SetMoney(product.BuyPrice);
+            Require(browser.SubmitOrder(),"Paid basket order failed.");
             Require(orders.money.Money == 0 && inventory.GetCount(product) == 0, "Purchase bypassed delivery or charged incorrectly.");
             var paid = JsonUtility.FromJson<DeliverySaveData>(JsonUtility.ToJson(orders.Ledger.Capture())); orders.Ledger.Restore(paid);
             var entry = orders.Ledger.Entries.Single(); Require(entry.quantity == product.BoxAmount, "Carton save lost units.");

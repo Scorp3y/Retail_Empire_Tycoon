@@ -44,6 +44,15 @@ namespace RetailEmpireTycoon.StoreOperations
         private Vector3 _entry, _arrivalPoint, _staffRestPoint, _checkout;
         private StoreLevelId _worldLevel;
         public StaffRoster Staff => _staff;
+        public string StaffStatus(StaffRole role)
+        {
+            int count=_staff.Count(role);if(count==0)return "Not hired";
+            if(role==StaffRole.Driver)return Driver!=null?Driver.Status:"Waiting for delivery";
+            if(!IsOpen)return "Store closed";
+            if(!StaffWorking)return "On break";
+            int busy=0;foreach(var employee in _employees)if(employee!=null&&employee.Role==role&&employee.HasTask)busy++;
+            return busy+" working / "+(count-busy)+" waiting";
+        }
         public ShopBalance Balance => balance;
         public ProductInventory Warehouse => warehouse;
         public StoreNavigation Navigation { get; private set; }

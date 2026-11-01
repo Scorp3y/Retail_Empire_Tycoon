@@ -25,6 +25,7 @@ namespace RetailEmpireTycoon.Logistics
         public event Action Changed;
         public string Notice { get; private set; }
         public bool NoticeIsError {get;private set;}
+        public bool NoticeIsInline {get;private set;}
 
         private void Awake() { Ledger.Changed += Notify; }
         private void OnDestroy() { Ledger.Changed -= Notify; }
@@ -63,6 +64,38 @@ namespace RetailEmpireTycoon.Logistics
         }
 
         public bool Order(ProductItemData item) => item != null && Purchase(item.Id, DeliveryItemKind.Product, item.BoxAmount, item.BuyPrice, item.UnitWeightKg);
+        /// <summary>Pay and persist an entire product basket once, or restore both money and orders.</summary>
+        public bool OrderProducts(System.Collections.Generic.IReadOnlyDictionary<ProductItemData,int> basket)
+        {
+            NoticeIsInline=true;
+            if (basket == null || basket.Count == 0) return Reject("Your basket is empty.");
+            long total = 0;
+            var weights = new System.Collections.Generic.Dictionary<SupplierKind,float>();
+            foreach (var line in basket)
+            {
+                if (line.Key == null || line.Value < 1 || line.Value > 999 || productCatalog.GetById(line.Key.Id) != line.Key)
+                    return Reject("Invalid basket item.");
+                total += (long)line.Key.BuyPrice * line.Value;
+                var supplier = SupplierRouting.ForProduct(line.Key.StorageType);
+                weights.TryGetValue(supplier, out float weight);
+                weights[supplier] = weight + line.Key.UnitWeightKg * line.Key.BoxAmount * line.Value;
+            }
+            if (total > int.MaxValue || !money.CanSpend((int)total)) return Reject("Insufficient funds.");
+            foreach (var entry in weights)
+                if (WaitingWeightAt(entry.Key) + entry.Value > depotCapacityKg) return Reject(SupplierRouting.Name(entry.Key) + " depot is full.");
+            var before = Ledger.Capture(); int oldMoney = money.Money;
+            try
+            {
+                if (!money.TrySpend((int)total)) return false;
+                foreach (var line in basket) Ledger.Order(line.Key.Id, DeliveryItemKind.Product, checked(line.Key.BoxAmount * line.Value));
+                Persist(); Notice="Order paid. Collect goods from the listed suppliers."; NoticeIsError=false; Notify(); return true;
+            }
+            catch (Exception error)
+            {
+                Ledger.Restore(before); money.SetMoney(oldMoney); Debug.LogException(error,this);
+                return Reject("Order cancelled: payment refunded.");
+            }
+        }
         public bool Order(BuildItemData item)
         {
             if (item == null) return false;
@@ -71,6 +104,7 @@ namespace RetailEmpireTycoon.Logistics
         }
         private bool Purchase(string id, DeliveryItemKind kind, int quantity, int price, float unitWeight)
         {
+            NoticeIsInline=false;
             var supplier=SupplierFor(new DeliveryEntry{itemId=id,kind=kind});
             if (WaitingWeightAt(supplier) + unitWeight * quantity > depotCapacityKg) return Reject("This supplier depot is full. Collect your previous orders.");
             if (!money.CanSpend(price)) return Reject("Insufficient funds.");
@@ -91,6 +125,7 @@ namespace RetailEmpireTycoon.Logistics
 
         public bool Load(DeliveryEntry entry)
         {
+            NoticeIsInline=false;
             if (entry == null || entry.location != DeliveryLocation.Depot) return false;
             int quantity = Mathf.Min(PackageQuantity(entry), Ledger.Count(entry.itemId, entry.kind, DeliveryLocation.Depot));
             if (quantity <= 0) return false;
@@ -107,6 +142,7 @@ namespace RetailEmpireTycoon.Logistics
 
         public bool Unload()
         {
+            NoticeIsInline=false;
             var cargo = Ledger.Entries.Where(e => e.location == DeliveryLocation.Pickup).ToArray();
             if (cargo.Length == 0) return Reject("The pickup is empty.");
             var before = Ledger.Capture(); var productStock = products.BuildSaveData(); var buildStock = buildings.BuildSaveData();

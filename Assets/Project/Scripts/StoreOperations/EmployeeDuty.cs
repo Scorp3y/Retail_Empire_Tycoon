@@ -15,6 +15,7 @@ namespace RetailEmpireTycoon.StoreOperations
         private ProductItemData _product;
         private float _taskTime, _retry, _travelTime;
         public StaffRole Role { get; private set; }
+        public bool HasTask => _visit != null || _dirt != null || _shelf != null;
         public void Initialize(StoreOperations shop, ShopCharacter character, StaffRole role) { _shop = shop; _character = character; Role = role; }
         public void Advance(float seconds, bool working)
         {

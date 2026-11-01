@@ -60,6 +60,10 @@ namespace RetailEmpireTycoon.UI.Shop
         private readonly List<(Behaviour behaviour, bool wasEnabled)> _cameraState = new();
         private ViewMode _viewMode = ViewMode.MainTabs;
         private GameObject _staffPage;
+        private StoreProductBrowser browser;
+        private StoreBuildSections buildSections;
+        private bool openedOnce;
+        public StoreProductBrowser ProductBrowser => browser;
         [SerializeField] private RetailEmpireTycoon.Logistics.DeliveryOrders deliveryOrders;
         public Transform StaffHost => mainCategoriesPanel.transform;
         public Transform MainTabsHost => mainTabsPanel.transform;
@@ -97,6 +101,10 @@ namespace RetailEmpireTycoon.UI.Shop
                 if(!buildCatalog.Any(existing=>existing!=null&&existing.id==item.id))buildCatalog.Add(item);
             FindMissingRefs();
             PrepareCameraLock();
+            StoreCatalogLayout.Apply(this);
+            browser=gameObject.AddComponent<StoreProductBrowser>();
+            browser.Initialize(this,productCatalog,money,productInventory,deliveryOrders);
+            buildSections=gameObject.AddComponent<StoreBuildSections>();buildSections.Initialize(this);
         }
 
         private void OnEnable()
@@ -104,7 +112,7 @@ namespace RetailEmpireTycoon.UI.Shop
             FindMissingRefs();
             LockCamera(true);
             HookBackButton();
-            ShowMainTabs();
+            if(openedOnce) Refresh(); else {openedOnce=true;OpenProducts();}
 
             if (buildInventoryWindow != null)
                 buildInventoryWindow.SetActive(false);
@@ -258,9 +266,10 @@ namespace RetailEmpireTycoon.UI.Shop
             // Order the visible cards only; stable catalog entries and save identifiers remain unchanged.
             foreach (var item in buildCatalog.OrderBy(BuildDisplayPriority))
             {
-                if (item == null || item.hiddenFromShop || item.category != buildFilter)
+                if (item == null || item.hiddenFromShop || (buildFilter==BuildCategory.Shelf ? item.category!=BuildCategory.Shelf&&!item.isCheckout : item.category!=buildFilter||item.isCheckout))
                     continue;
 
+                if(buildSections!=null&&!buildSections.Includes(item))continue;
                 var card = Instantiate(buildCardPrefab, listRoot);
                 card.Bind(item, money, buildInventory, deliveryOrders);
                 shown++;
@@ -280,6 +289,7 @@ namespace RetailEmpireTycoon.UI.Shop
 
         private void RefreshProducts()
         {
+            if(browser!=null){ClearList();SetPanel(categoryViewPanel,false);browser.Show(true);return;}
             ClearList();
 
             if (listRoot == null || productCardPrefab == null)
@@ -319,6 +329,7 @@ namespace RetailEmpireTycoon.UI.Shop
 
         private void ClearList()
         {
+            if(browser!=null)browser.Show(false);
             if (listRoot == null)
                 return;
 

@@ -265,7 +265,7 @@ namespace RetailEmpireTycoon.StoreOperations
                 _ui.Icon(badge, role==StaffRole.Driver?ShopIcon.Pickup:(ShopIcon)((int)ShopIcon.Cashier + i), Vector2.zero, new Vector2(19, 19));
                 _staffLabels.Add(_ui.Label(row, "", new Vector2(82, -7), new Vector2(254, 58), 15));
                 _hireButtons.Add(_ui.Button(row, "Нанять", "Hire", new Vector2(350, -2), new Vector2(98, 28), () => shop.TryHire(role)));
-                var dismiss = _ui.Button(row, "Уволить", "Dismiss", new Vector2(350, -32), new Vector2(98, 28), () => shop.TryDismiss(role));
+                var dismiss = _ui.Button(row, "Подробнее", "Details", new Vector2(350, -32), new Vector2(98, 28), () => ShowStaffDetails(role));
                 dismiss.image.color = ShopUiTheme.Line; _dismissButtons.Add(dismiss);
                 var count = _ui.Label(row, "", new Vector2(464, -18), new Vector2(80, 34), 18);
                 count.gameObject.name = "Employee count";
@@ -282,13 +282,24 @@ namespace RetailEmpireTycoon.StoreOperations
             {
                 var role = (StaffRole)i;
                 _staffLabels[i].text = "<b>" + ShopText.Get(names[i], englishNames[i]) + "</b>\n" + ShopText.Get("Найм ", "Hire ") + MoneyFormat.Compact(shop.Balance.HireCost(role))
-                    + "  ·  " + MoneyFormat.Compact(shop.Balance.Wage(role)) + ShopText.Get("/мин", "/min");
+                    + "  ·  " + MoneyFormat.Compact(shop.Balance.Wage(role)) + ShopText.Get("/мин", "/min")+"\n<size=12>"+shop.StaffStatus(role)+"</size>";
                 var count = _staffLabels[i].transform.parent.Find("Employee count").GetComponent<TMP_Text>();
                 count.text = shop.Staff.Count(role) + " / " + StaffRoster.Limit(role, shop.Level);
                 _hireButtons[i].interactable = shop.Staff.CanHire(role, shop.Level) && shop.CanAffordHire(role);
+                _hireButtons[i].GetComponentInChildren<ShopLocalizedLabel>()?.Set("Hire",shop.Staff.CanHire(role, shop.Level)?shop.CanAffordHire(role)?"Hire":"Need funds":"Limit reached");
+                _hireButtons[i].GetComponentInChildren<TMP_Text>().fontSize=13;
                 _dismissButtons[i].interactable = shop.Staff.Count(role) > 0;
             }
             _staffNotice.text = shop.Driver!=null && shop.Driver.IsAway?shop.Driver.Status:ShopText.Get("Баланс: ", "Balance: ") + MoneyFormat.Compact(shop.Money);
+        }
+        private void ShowStaffDetails(StaffRole role)
+        {
+            var modal=_ui.Modal("Employee details",canvas.transform,new Vector2(480,280));
+            string status=shop.StaffStatus(role);
+            _ui.Heading(modal,role.ToString(),role.ToString(),new Vector2(20,-16),new Vector2(430,36),24);
+            _ui.Label(modal,$"Hired: {shop.Staff.Count(role)} / {StaffRoster.Limit(role,shop.Level)}\nWage: ${shop.Balance.Wage(role)}/min\n{status}",new Vector2(20,-68),new Vector2(440,110),18);
+            _ui.Button(modal,"Close",new Vector2(20,-220),new Vector2(150,38),()=>_ui.CloseModal(modal));
+            _ui.Button(modal,"Dismiss one",new Vector2(270,-220),new Vector2(190,38),()=>{shop.TryDismiss(role);_ui.CloseModal(modal);RefreshStaff();});
         }
         public void CloseStaff()
         {
