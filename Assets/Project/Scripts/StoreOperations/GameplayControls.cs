@@ -30,7 +30,9 @@ namespace RetailEmpireTycoon.StoreOperations
         private int _captureCancelFrame = -1;
         public bool CaptureCancelledThisFrame => _captureCancelFrame == Time.frameCount;
         public string BindingNotice { get; private set; }
-        public bool LegacyWindowVisible => hud.shopWindow.activeInHierarchy || hud.buildInventoryWindow.activeInHierarchy
+        public bool WorldMapOpen { get; private set; }
+        public void SetWorldMapOpen(bool open) { WorldMapOpen=open; }
+        public bool LegacyWindowVisible => WorldMapOpen || hud.shopWindow.activeInHierarchy || hud.buildInventoryWindow.activeInHierarchy
             || settings != null && settings.settingPanel.activeInHierarchy;
         public bool IsConstructionActive => building.mode != BuildMode.Normal || territoryMode.IsActive;
         public bool IsFloorNavigationActive => building.mode != BuildMode.Normal;
@@ -65,6 +67,7 @@ namespace RetailEmpireTycoon.StoreOperations
         }
         private void Update()
         {
+            if(WorldMapOpen)return;
             if (Capturing.HasValue)
             {
                 if (Input.GetKeyDown(KeyCode.Escape)) { _captureCancelFrame = Time.frameCount; CancelCapture(); return; }

@@ -17,39 +17,52 @@ namespace RetailEmpireTycoon.Logistics
             public Stop(int lane,float distance,Vector3 position){Lane=lane;Distance=distance;Position=position;}
         }
         private readonly TrafficRoadNetwork roads;
+        private readonly bool avoidStreetUTurns;
+        private readonly float stopMargin;
         private readonly List<int> lanes=new();
         private Vector3[] mapPoints;
         public IReadOnlyList<int> Lanes=>lanes;
         public Stop Start {get;private set;}
         public Stop End {get;private set;}
-        public DriverRoadRoute(TrafficRoadNetwork network){roads=network??throw new ArgumentNullException(nameof(network));}
+        public DriverRoadRoute(TrafficRoadNetwork network,bool avoidStreetUTurns=false,float stopMargin=10)
+        {
+            roads=network??throw new ArgumentNullException(nameof(network));this.avoidStreetUTurns=avoidStreetUTurns;
+            if(!float.IsFinite(stopMargin)||stopMargin<0)throw new ArgumentOutOfRangeException(nameof(stopMargin));this.stopMargin=stopMargin;
+        }
         public Stop Nearest(Vector3 position,Vector3? preferredHeading=null)
         {
             float best=float.PositiveInfinity;Stop result=default;
             for(int lane=0;lane<roads.Lanes.Count;lane++)
             {
-                var path=roads.Lanes[lane].Path;
-                for(float d=10;d<path.Length-10;d+=1)
-                {
-                    var point=path.Sample(d,out var tangent);float cost=(point-position).sqrMagnitude;
-                    if(preferredHeading.HasValue)cost+=8*(1-Vector3.Dot(tangent,preferredHeading.Value.normalized));
-                    if(cost>=best)continue;
-                    best=cost;result=new Stop(lane,d,point);
-                }
+                var candidate=NearestOnLane(lane,position);float cost=(candidate.Position-position).sqrMagnitude;
+                if(preferredHeading.HasValue)
+                {roads.Lanes[lane].Path.Sample(candidate.Distance,out var tangent);cost+=8*(1-Vector3.Dot(tangent,preferredHeading.Value.normalized));}
+                if(cost<best){best=cost;result=candidate;}
             }
             if(float.IsPositiveInfinity(best))throw new InvalidOperationException("No public lane has room for a delivery stop.");
             return result;
         }
         public bool Plan(Vector3 from,Vector3 to,Vector3? startHeading=null)
         {
-            Start=Nearest(from,startHeading);End=Nearest(to);lanes.Clear();mapPoints=null;
+            return Plan(Nearest(from,startHeading),Nearest(to));
+        }
+        /// <summary>Plans between explicit projected lanes, allowing a private entrance to evaluate either legal direction.</summary>
+        public bool Plan(Stop from,Stop to)
+        {
+            Stop Validate(Stop stop)
+            {
+                if(stop.Lane<0||stop.Lane>=roads.Lanes.Count||!float.IsFinite(stop.Distance)||stop.Distance<0||stop.Distance>roads.Lanes[stop.Lane].Path.Length)
+                    throw new ArgumentException("A route stop must lie on an authored lane.");
+                return new Stop(stop.Lane,stop.Distance,roads.Lanes[stop.Lane].Path.Sample(stop.Distance,out _));
+            }
+            Start=Validate(from);End=Validate(to);lanes.Clear();mapPoints=null;
             if(Start.Lane==End.Lane && End.Distance>=Start.Distance){lanes.Add(Start.Lane);return true;}
             int count=roads.Lanes.Count;
             var cost=Enumerable.Repeat(float.PositiveInfinity,count).ToArray();
             var previous=Enumerable.Repeat(-1,count).ToArray();var visited=new bool[count];
             // Seed exits rather than the starting lane so a stop behind the vehicle requires a legal loop.
             foreach(int next in roads.Departures(roads.Lanes[Start.Lane].to))
-            {cost[next]=roads.Lanes[Start.Lane].Path.Length-Start.Distance+roads.Turn(Start.Lane,next).Length;previous[next]=-2;}
+            {if(!Allowed(Start.Lane,next))continue;cost[next]=roads.Lanes[Start.Lane].Path.Length-Start.Distance+roads.Turn(Start.Lane,next).Length;previous[next]=-2;}
             for(int step=0;step<count;step++)
             {
                 int current=-1;
@@ -63,12 +76,33 @@ namespace RetailEmpireTycoon.Logistics
                 visited[current]=true;
                 foreach(int next in roads.Departures(roads.Lanes[current].to))
                 {
+                    if(!Allowed(current,next))continue;
                     float candidate=cost[current]+roads.Lanes[current].Path.Length+roads.Turn(current,next).Length;
                     if(candidate>=cost[next])continue;
                     cost[next]=candidate;previous[next]=current;
                 }
             }
             return false;
+        }
+        private bool Allowed(int incoming,int outgoing) => !avoidStreetUTurns
+            || roads.Lanes[incoming].from!=roads.Lanes[outgoing].to
+            || roads.Departures(roads.Lanes[incoming].to).Count==1;
+        public Stop NearestOnLane(int lane,Vector3 position)
+        {
+            if(lane<0||lane>=roads.Lanes.Count)throw new ArgumentOutOfRangeException(nameof(lane));
+            var samples=roads.Lanes[lane].points;float best=float.PositiveInfinity,accumulated=0;Stop result=default;
+            for(int i=1;i<samples.Length;i++)
+            {
+                var delta=samples[i]-samples[i-1];float length=delta.magnitude;if(length<.0001f)continue;
+                float t=Mathf.Clamp01(Vector3.Dot(position-samples[i-1],delta)/delta.sqrMagnitude);var p=samples[i-1]+delta*t;
+                if((p-position).sqrMagnitude<best){best=(p-position).sqrMagnitude;result=new Stop(lane,accumulated+length*t,p);}
+                accumulated+=length;
+            }
+            // Delivery AI must withdraw before automatic junction turning starts.
+            // Player GPS requests zero margin, as it displays rather than drives the car.
+            var path=roads.Lanes[lane].Path;float margin=Mathf.Min(stopMargin,path.Length*.25f);
+            float distance=Mathf.Clamp(result.Distance,margin,path.Length-margin);
+            return new Stop(lane,distance,path.Sample(distance,out _));
         }
         public Vector3[] MapPoints()
         {

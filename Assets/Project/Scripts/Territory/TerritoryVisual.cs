@@ -59,6 +59,17 @@ public sealed class TerritoryVisual : MonoBehaviour
     {
         _state = state;
 
+        // Land selection is rendered by the purchase-mode overlay. Legacy meshes
+        // stay disabled, including outside the mode and after save restoration.
+        if (Application.isPlaying)
+        {
+            if (_border != null) _border.enabled = false;
+            if (_fence != null) _fence.SetVisible(false);
+            if (_constructionBarrier != null) _constructionBarrier.SetVisible(false);
+            if (_fillRenderer != null) _fillRenderer.enabled = false;
+            return;
+        }
+
         _allowHover = _visible && state == TerritoryViewState.Available;
         bool wantBorder = _visible && state == TerritoryViewState.Available && _fence == null && _constructionBarrier == null;
 

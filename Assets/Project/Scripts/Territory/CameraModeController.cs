@@ -27,6 +27,7 @@ public sealed class CameraModeController : MonoBehaviour
     private Coroutine _routine;
     private CameraPose _savedPose;
     private bool _locked;
+    private bool _inPurchaseMode;
 
     public bool IsLocked => _locked;
 
@@ -48,11 +49,21 @@ public sealed class CameraModeController : MonoBehaviour
     public void EnterPurchaseMode()
     {
 
+        if (_inPurchaseMode) return;
+
         if (_routine != null) StopCoroutine(_routine);
 
-        SaveCurrentPose();
+        if (!_locked) SaveCurrentPose();
+        _inPurchaseMode = true;
         SetUserInputEnabled(false);
         _locked = true;
+        _routine = StartCoroutine(AnimateTo(AvailableLandPose()));
+    }
+
+    public void RefreshPurchaseView()
+    {
+        if (!_inPurchaseMode) return;
+        if (_routine != null) StopCoroutine(_routine);
         _routine = StartCoroutine(AnimateTo(AvailableLandPose()));
     }
 
@@ -68,18 +79,23 @@ public sealed class CameraModeController : MonoBehaviour
             else area = Rect.MinMaxRect(Mathf.Min(area.xMin,plot.bounds.xMin),Mathf.Min(area.yMin,plot.bounds.yMin),Mathf.Max(area.xMax,plot.bounds.xMax),Mathf.Max(area.yMax,plot.bounds.yMax));
         }
         if (!found) return _purchasePose;
+        // Include owned starter land and leave room for the information panel.
+        var initial = _plotLayout.initialBounds;
+        area = Rect.MinMaxRect(Mathf.Min(area.xMin,initial.xMin),Mathf.Min(area.yMin,initial.yMin),Mathf.Max(area.xMax,initial.xMax),Mathf.Max(area.yMax,initial.yMax));
         // Frame today's available plots, not the entire map: early purchases must remain easy to see and click.
         float halfHeight = Mathf.Tan(_purchasePose.Fov * Mathf.Deg2Rad * .5f);
         float aspect = _camera != null ? Mathf.Max(.6f,_camera.aspect) : 1.77f;
-        float distance = Mathf.Max(area.width / (2 * halfHeight * aspect), area.height * .9063f / (2 * halfHeight)) * 1.35f + 4;
+        float distance = Mathf.Max(area.width / (2 * halfHeight * aspect), area.height * .9063f / (2 * halfHeight)) * 1.8f + 4;
         var rotation = Quaternion.Euler(65,0,0);
-        var target = new Vector3(area.center.x,0,area.center.y);
+        var target = new Vector3(area.center.x + area.width * .16f,0,area.center.y - area.height * .12f);
         return new CameraPose {Position=target-rotation*Vector3.forward*distance,Euler=rotation.eulerAngles,Fov=_purchasePose.Fov};
     }
 
 
     public void ExitPurchaseMode()
     {
+        if (!_inPurchaseMode) return;
+        _inPurchaseMode = false;
         if (_routine != null) StopCoroutine(_routine);
         _routine = StartCoroutine(ExitRoutine());
     }

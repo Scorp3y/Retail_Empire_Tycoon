@@ -1,64 +1,58 @@
 using System;
-using RetailEmpireTycoon.StoreOperations;
+using System.Collections.Generic;
 using RetailEmpireTycoon.Logistics;
-using TMPro;
+using RetailEmpireTycoon.StoreOperations;
 using UnityEngine;
 
 namespace RetailEmpireTycoon.City
 {
-    public sealed class CityMapHud
+    /// <summary>Owns the driving map's lifetime, GPS selection and input hand-off to the full map.</summary>
+    public sealed class CityMapHud : IDisposable
     {
         private readonly ShopUi ui;
         private readonly RectTransform canvas;
-        private readonly TownWorldPlaces town;
         private readonly PickupDrive pickup;
-        private readonly DeliveryCheckpoint home;
         private readonly PickupCamera camera;
         private readonly Func<bool> mayOpen;
-        private readonly TMP_Text guidance;
-        private RectTransform panel;
-        private CityMapGraphic graphic;
-        private DeliveryCheckpoint destination;
-        public bool IsOpen => panel!=null;
-
-        public CityMapHud(ShopUi ui,RectTransform canvas,TownWorldPlaces town,PickupDrive pickup,DeliveryCheckpoint home,PickupCamera camera,Func<bool> mayOpen)
+        private TownMapWindow window;
+        private bool restoreInput;
+        private float nextNavigation;
+        public TownMapData Data { get; }
+        public TownNavigation Navigation { get; }
+        public TownMiniMap MiniMap { get; }
+        public TownMapWindow Window => window;
+        public bool IsOpen => window != null;
+        public CityMapHud(ShopUi ui, RectTransform canvas, TownWorldPlaces town, PickupDrive pickup, DeliveryCheckpoint home,
+            PickupCamera camera, Func<bool> mayOpen, DeliveryOrders orders = null, IEnumerable<DeliveryCheckpoint> unloading = null, Func<Vector3[]> homeAccess = null)
         {
-            this.ui=ui;this.canvas=canvas;this.town=town;this.pickup=pickup;this.home=home;this.camera=camera;this.mayOpen=mayOpen;
-            var button=ui.Button(canvas,"M — Town map",new Vector2(-220,-24),new Vector2(196,44),Toggle);
-            var rect=(RectTransform)button.transform;rect.anchorMin=rect.anchorMax=new Vector2(1,1);
-            guidance=ui.Label(canvas,"",new Vector2(-430,-79),new Vector2(406,55),18);
-            guidance.rectTransform.anchorMin=guidance.rectTransform.anchorMax=new Vector2(1,1);
+            this.ui = ui; this.canvas = canvas; this.pickup = pickup; this.camera = camera; this.mayOpen = mayOpen;
+            Data = new TownMapData(town, orders, home != null ? home.transform : null, unloading, homeAccess);
+            Navigation = new TownNavigation(Data);
+            MiniMap = new TownMiniMap(ui, canvas, Data, Navigation, new Vector2(24, -24), Toggle);
         }
         public void Tick()
         {
-            if(Input.GetKeyDown(KeyCode.M))Toggle();
-            if(IsOpen&&Input.GetKeyDown(KeyCode.Escape))Close();
-            if(graphic!=null)graphic.SetVerticesDirty();
-            guidance.text=destination==null?"Select a supplier on the map":$"{destination.displayName} • {Vector3.Distance(pickup.transform.position,destination.transform.position):0} m";
+            var position = Data.ToNative(pickup.transform.position); var forward = Data.Town.transform.InverseTransformDirection(pickup.transform.forward);
+            float heading = Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg, speed = pickup.Speed / Data.Town.transform.lossyScale.x;
+            if (Time.unscaledTime >= nextNavigation) { nextNavigation = Time.unscaledTime + .1f; Navigation.Tick(position, forward, speed, Time.unscaledTime); }
+            if (Input.GetKeyDown(KeyCode.M)) Toggle();
+            if (IsOpen && Input.GetKeyDown(KeyCode.Escape)) Close();
+            MiniMap.SetVisible(!IsOpen); MiniMap.Tick(position, heading, speed, true); window?.Tick(position, heading);
         }
         public void Toggle()
         {
-            if(IsOpen){Close();return;}if(!mayOpen())return;
-            pickup.Stop();pickup.InputEnabled=false;camera.SetInteractionBlocked(true);
-            panel=ui.Modal("Town map",canvas,new Vector2(1070,720));
-            ui.Heading(panel,"Town map","Town map",new Vector2(24,-18),new Vector2(850,48));
-            ui.Button(panel,"×",new Vector2(1000,-18),new Vector2(44,44),Close);
-            var mapRect=ui.Rect("Road network",panel,new Vector2(0,1),new Vector2(0,1),new Vector2(24,-92),new Vector2(700,555));
-            graphic=mapRect.gameObject.AddComponent<CityMapGraphic>();graphic.raycastTarget=false;
-            graphic.town=town;graphic.pickup=pickup;graphic.home=home;graphic.destination=destination;
-            int row=0;
-            foreach(var checkpoint in town.suppliers)
-            {
-                var selected=checkpoint;
-                ui.Button(panel,SupplierRouting.Name(selected.supplier),new Vector2(746,-92-row*57),new Vector2(298,46),()=>Select(selected));row++;
-            }
-            ui.Button(panel,"My store",new Vector2(746,-92-row*57),new Vector2(298,46),()=>Select(home));
-            ui.Label(panel,"Blue — you · Yellow — suppliers · Red — store.\nSelect a supplier to set a waypoint. Driving controls stay with the pickup.",new Vector2(24,-664),new Vector2(1020,42),16);
+            if (IsOpen) { Close(); return; } if (!mayOpen()) return;
+            restoreInput = pickup.InputEnabled; pickup.Stop(); pickup.InputEnabled = false; camera.SetInteractionBlocked(true);
+            window = new TownMapWindow(ui, canvas, Data, Navigation, Close); MiniMap.SetVisible(false);
+            var forward=Data.Town.transform.InverseTransformDirection(pickup.transform.forward);
+            window.Tick(Data.ToNative(pickup.transform.position),Mathf.Atan2(forward.x,forward.z)*Mathf.Rad2Deg);
         }
-        private void Select(DeliveryCheckpoint checkpoint) {destination=checkpoint;Close();}
-        private void Close()
+        public void Close()
         {
-            ui.CloseModal(panel);panel=null;graphic=null;pickup.InputEnabled=true;camera.SetInteractionBlocked(false);
+            if (window == null) return;
+            window.Dispose(); window = null; if (pickup != null) pickup.InputEnabled = restoreInput;
+            if (camera != null) camera.SetInteractionBlocked(false); MiniMap.SetVisible(true);
         }
+        public void Dispose() { Close(); Data.Dispose(); if (MiniMap.Root != null) UnityEngine.Object.Destroy(MiniMap.Root.gameObject); }
     }
 }

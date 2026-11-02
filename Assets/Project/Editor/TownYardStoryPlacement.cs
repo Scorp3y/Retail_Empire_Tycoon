@@ -302,6 +302,18 @@ internal sealed class TownYardStoryPlacement
         try
         {
             var scenery=root.GetComponentInChildren<TownExpansionScenery>(true);
+            // Ground copied by an earlier city pass belongs to the parcel too.
+            // Preserve those baked pieces when regenerating the decorative props.
+            var retainedGround=new Dictionary<TerritoryId,Transform[]>();
+            var temporary=new GameObject("Retained parcel ground");
+            temporary.transform.SetParent(scenery.transform.parent,false);
+            foreach(var plot in scenery.plots)
+            {
+                var pieces=plot.model.GetComponentsInChildren<MeshFilter>(true)
+                    .Where(f=>f.name.StartsWith("ParcelGround_",StringComparison.Ordinal)).Select(f=>f.transform).ToArray();
+                retainedGround[plot.territory]=pieces;
+                foreach(var piece in pieces)piece.SetParent(temporary.transform,true);
+            }
             for(int i=scenery.transform.childCount-1;i>=0;i--)Object.DestroyImmediate(scenery.transform.GetChild(i).gameObject);
             var groups=new List<TownPlotScenery>();
             foreach(var canvas in canvases)
@@ -310,8 +322,11 @@ internal sealed class TownYardStoryPlacement
                 var go=new GameObject("Yard story "+id,typeof(MeshFilter),typeof(MeshRenderer));go.transform.SetParent(scenery.transform,false);
                 go.GetComponent<MeshFilter>().sharedMesh=AssetDatabase.LoadAssetAtPath<Mesh>(Root+"/Meshes/"+id+"Story.asset");go.GetComponent<MeshRenderer>().sharedMaterial=surface;
                 foreach(var marker in canvas.Markers){var t=new GameObject(marker.id).transform;t.SetParent(go.transform,false);t.localPosition=marker.position;}
+                if(retainedGround.TryGetValue(canvas.Plot.territory,out var retained))
+                    foreach(var piece in retained)piece.SetParent(go.transform,true);
                 groups.Add(new TownPlotScenery{territory=canvas.Plot.territory,model=go});
             }
+            Object.DestroyImmediate(temporary);
             scenery.plots=groups.ToArray();PrefabUtility.SaveAsPrefabAsset(root,TownWorldAssembler.PrefabPath);AssetDatabase.SaveAssets();
         }
         finally{PrefabUtility.UnloadPrefabContents(root);}

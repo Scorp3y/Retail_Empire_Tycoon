@@ -40,6 +40,7 @@ namespace RetailEmpireTycoon.City
         private DeliveryCheckpoint activeSupplier;
         private DeliveryCheckpoint[] checkpoints;
         private CityMapHud map;
+        public CityMapHud Map => map;
         private PlayerVehicleFleet vehicleFleet;
         private readonly System.Collections.Generic.List<(DeliveryCheckpoint Point,Vector3 Gate,Quaternion Rotation,float Depth)> unloadingGates=new();
         private Vector3 storeEnvelopeCenter;
@@ -70,7 +71,7 @@ namespace RetailEmpireTycoon.City
             events.transform.SetParent(transform,false);
             events.AddComponent<EventSystem>();events.AddComponent<StandaloneInputModule>();
             StartCoroutine(EnableCityInput(events.GetComponent<EventSystem>()));
-            var header = ui.Rect("Trip status",canvasRoot,new Vector2(0,1),new Vector2(0,1),new Vector2(24,-24),new Vector2(580,118));
+            var header = ui.Rect("Trip status",canvasRoot,new Vector2(0,1),new Vector2(0,1),new Vector2(308,-24),new Vector2(580,118));
             ui.Panel(header,ShopUiTheme.Paper); status = ui.Label(header,"",new Vector2(18,-12),new Vector2(544,94),19);
             interact = ui.Button(canvasRoot,"",new Vector2(740,-976),new Vector2(440,60),Interact);
             var buttonRect = (RectTransform)interact.transform; buttonRect.anchorMin = buttonRect.anchorMax = new Vector2(.5f,0);
@@ -78,7 +79,18 @@ namespace RetailEmpireTycoon.City
             SyncFacade(shopScene); RefreshCargo();
             checkpoints=(town!=null?town.suppliers.Concat(town.showroomEntrances??Array.Empty<DeliveryCheckpoint>()):Array.Empty<DeliveryCheckpoint>())
                 .Concat(new[]{depot,home}).Concat(unloadingGates.Select(gate=>gate.Point)).Where(c=>c!=null).Distinct().ToArray();
-            if(town!=null)map=new CityMapHud(ui,canvasRoot,town,pickup,home,chaseCamera,()=>panel==null&&!trip.Transitioning);
+            if(town!=null)map=new CityMapHud(ui,canvasRoot,town,pickup,home,chaseCamera,()=>panel==null&&!trip.Transitioning,
+                orders,unloadingGates.Select(g=>g.Point),trip.MapHomeAccess);
+            if(map!=null)
+            {
+                var core=facadeRoot.Find("Shop interior is closed").GetComponent<BoxCollider>();
+                var corners=new System.Collections.Generic.List<Vector3>();
+                foreach(float x in new[]{-1f,1f})foreach(float z in new[]{-1f,1f})
+                    corners.Add(map.Data.ToNative(core.transform.TransformPoint(core.center+new Vector3(core.size.x*x/2,0,core.size.z*z/2))));
+                map.Data.SetStoreFootprint(Rect.MinMaxRect(corners.Min(p=>p.x),corners.Min(p=>p.z),corners.Max(p=>p.x),corners.Max(p=>p.z)));
+                map.Navigation.Tick(map.Data.ToNative(pickup.transform.position),pickup.transform.forward,0,Time.unscaledTime);
+                trip.RestoreNavigation(map.Navigation,map.Data);
+            }
         }
         private IEnumerator EnableCityInput(EventSystem events)
         {
@@ -89,6 +101,7 @@ namespace RetailEmpireTycoon.City
         {
             if (trip == null || trip.Transitioning || orders == null) return;
             map?.Tick();
+            status.transform.parent.gameObject.SetActive(false);
             if(map!=null&&map.IsOpen){interact.gameObject.SetActive(false);return;}
             nearest = checkpoints.Where(c=>c.CanUse(pickup)).OrderBy(c=>c.DistanceTo(pickup)).FirstOrDefault();
             var nearby=checkpoints.Where(c=>c.DistanceTo(pickup)<14).OrderBy(c=>c.DistanceTo(pickup)).FirstOrDefault();
@@ -225,6 +238,8 @@ namespace RetailEmpireTycoon.City
         }
         private void OnDestroy()
         {
+            if(trip!=null&&map!=null)trip.RememberNavigation(map.Navigation);
+            map?.Dispose();
             if(vehicleFleet!=null)vehicleFleet.Changed-=ApplySelectedVehicle;
             if(orders!=null)orders.Changed-=RefreshCargo;
         }
@@ -294,9 +309,6 @@ namespace RetailEmpireTycoon.City
             }
             foreach(var floors in shopScene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<FloorPainter>(true)))
                 foreach(var filter in floors.Surfaces) CopyExterior(filter,Map,geometryScale);
-            foreach(var barrier in shopScene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<TerritoryConstructionBarrier>(true)))
-                foreach(var filter in barrier.GetComponentsInChildren<MeshFilter>(true))
-                    if(trip.WasShopObjectActive(filter.gameObject))CopyExterior(filter,Map,geometryScale);
             foreach(var parking in shopScene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<PlacedObject>(true)).Where(p=>p.item!=null&&p.item.isParkingSpace&&p.GetComponentInParent<BuildPreview>()==null))
                 foreach(var filter in parking.GetComponentsInChildren<MeshFilter>(true)) CopyExterior(filter,Map,geometryScale);
             var gates = shopScene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<PlacedObject>(true))

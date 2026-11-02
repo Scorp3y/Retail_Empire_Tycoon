@@ -52,7 +52,7 @@ internal sealed class TownForgottenYardAuthoring
     {
         var rules=AssetDatabase.LoadAssetAtPath<TerritorySubdivisionRules>(RulesPath);
         if(rules==null){rules=ScriptableObject.CreateInstance<TerritorySubdivisionRules>();AssetDatabase.CreateAsset(rules,RulesPath);}
-        // Re-authoring must keep stable IDs and prices; use the original nine-region bounds.
+        // Keep stable ownership IDs and geometry. Prices use the shared fixed area/depth schedule.
         var regions=land.plots.GroupBy(p=>(int)p.id<9?p.id:rules.Parcels.Single(q=>q.Id==p.id).LegacyRegion)
             .OrderBy(g=>(int)g.Key).ToArray();
         var prices=new[]{1000,2000,3000,5000,4000,6500,8000,9500,11000};
@@ -71,7 +71,7 @@ internal sealed class TownForgottenYardAuthoring
                 parcels.Add(new TerritorySubdivisionRules.Parcel((TerritoryId)id++,region.Key,part,price));
             }
         }
-        rules.Configure(land.initialBounds,parcels);EditorUtility.SetDirty(rules);return rules;
+        rules.Configure(land.initialBounds,TerritorySubdivisionRules.PriceByExpansionDepth(land.initialBounds,parcels));EditorUtility.SetDirty(rules);return rules;
     }
 
     private void ConfigureZones(TerritoryPlotLayout land)

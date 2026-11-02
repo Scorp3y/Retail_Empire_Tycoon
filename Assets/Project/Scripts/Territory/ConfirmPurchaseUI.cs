@@ -11,6 +11,7 @@ public sealed class ConfirmPurchaseUI : MonoBehaviour
 
     private Action _onYes;
     private Action _onNo;
+    public bool IsOpen => _cg != null && _cg.interactable;
 
     private void Awake()
     {
@@ -22,6 +23,11 @@ public sealed class ConfirmPurchaseUI : MonoBehaviour
 
     public void Show(string message, Action onYes, Action onNo)
     {
+        // Confirmation must intercept clicks above the land-details canvas.
+        var canvas = _cg.GetComponent<Canvas>();
+        if (canvas == null) canvas = _cg.gameObject.AddComponent<Canvas>();
+        canvas.overrideSorting = true; canvas.sortingOrder = 100;
+        if (_cg.GetComponent<GraphicRaycaster>() == null) _cg.gameObject.AddComponent<GraphicRaycaster>();
         _onYes = onYes;
         _onNo = onNo;
 

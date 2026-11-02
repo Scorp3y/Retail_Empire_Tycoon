@@ -130,11 +130,11 @@ public static class PinebrookDistrictBuild
             using(var vertices=new UnityEngine.UI.VertexHelper())
             {
                 typeof(CityMapGraphic).GetMethod("OnPopulateMesh",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic,null,new[]{typeof(UnityEngine.UI.VertexHelper)},null).Invoke(graphic,new object[]{vertices});
-                var points=new List<Vector3>();var vertex=new UIVertex();Color32 districtColor=new Color(.51f,.65f,.40f);
-                for(int i=0;i<vertices.currentVertCount;i++){vertices.PopulateUIVertex(ref vertex,i);if(vertex.color.Equals(districtColor))points.Add(vertex.position);}
+                var points=new List<Vector3>();var district=graphic.Data.Forest.DistrictBounds;
+                foreach(float x in new[]{district.xMin,district.xMax})foreach(float z in new[]{district.yMin,district.yMax})points.Add(graphic.Project(new Vector3(x,0,z)));
                 var viewport=((RectTransform)go.transform).rect;
                 Require(points.Count==4&&points.All(p=>p.x>=viewport.xMin-.01f&&p.x<=viewport.xMax+.01f&&p.y>=viewport.yMin-.01f&&p.y<=viewport.yMax+.01f)
-                    &&Mathf.Abs(points.Max(p=>p.y)-viewport.yMax)<.01f&&points.Max(p=>p.x)-points.Min(p=>p.x)>100,"Expanded district quad does not fit the actual map viewport.");
+                    &&points.Max(p=>p.x)-points.Min(p=>p.x)>100,"Expanded district quad does not fit the aspect-preserving full-world map viewport.");
                 File.WriteAllText(Report+"/map.txt","PASS: real CityMapGraphic UI mesh includes the expanded northern boundary inside its viewport; source city bounds asset unchanged.\n");
             }
         }

@@ -31,6 +31,22 @@ namespace RetailEmpireTycoon.City
         private bool trafficEnabled;
         private PlayerVehicleFleet fleet;
         private PlayerVehicleAppearance parkedAppearance;
+        private StoreTownMapHud townMap;
+        public StoreTownMapHud TownMap => townMap;
+        private string navigationTarget;
+        private Vector3? navigationWaypoint;
+        public void RememberNavigation(TownNavigation navigation)
+        {
+            navigationTarget=navigation.Destination?.Id;
+            navigationWaypoint=navigation.Destination?.Category==TownMapCategory.Waypoint?navigation.Destination.Position:(Vector3?)null;
+        }
+        public void RestoreNavigation(TownNavigation navigation,TownMapData data)
+        {
+            navigation.Clear();
+            if(navigationWaypoint.HasValue)navigation.SetWaypoint(navigationWaypoint.Value);
+            else if(navigationTarget!=null)
+            {var point=data.Points.FirstOrDefault(p=>p.Id==navigationTarget);if(point!=null)navigation.Select(point);}
+        }
         public PlayerVehicleFleet Fleet
         {
             get
@@ -59,8 +75,26 @@ namespace RetailEmpireTycoon.City
             return shopRoots.TryGetValue(current.gameObject,out bool active)?active:current.gameObject.activeSelf;
         }
         private void Awake() { shopScene = gameObject.scene; ui = new ShopUi(Resources.Load<ShopUiTheme>("ShopUi/Theme")); }
+        private void Start()
+        {
+            var town=shopScene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<TownWorldPlaces>(true)).FirstOrDefault();
+            var mainCamera=shopScene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<MainCamera>(true)).FirstOrDefault();
+            if(town!=null&&uiRoot!=null&&parkedPickup!=null)townMap=new StoreTownMapHud(ui,uiRoot,town,this,mainCamera);
+        }
+        /// <summary>The private driveway is shared between the scaled store world and native City coordinates.</summary>
+        public Vector3[] MapHomeAccess()
+        {
+            var driver=GetComponent<Logistics.DriverDelivery>();
+            var parking=GetComponent<Parking.ParkingTraffic>();
+            if(driver==null||driver.traffic==null||parking==null||parking.roadEntry==null||parking.drivewayEntry==null||parkedPickup==null)return null;
+            Vector3 Native(Vector3 world){var p=driver.traffic.transform.InverseTransformPoint(world);p.y=0;return p;}
+            return new[]{Native(parking.roadEntry.position),Native(parking.drivewayEntry.position),Native(parkedPickup.transform.position)};
+        }
+        private void OnDestroy(){townMap?.Dispose();}
         private void Update()
         {
+            townMap?.Tick();
+            if(townMap!=null&&townMap.IsOpen)return;
             if (InCity || Transitioning || parkedPickup == null || confirmation != null) return;
             if (controls != null && (controls.LegacyWindowVisible || controls.IsConstructionActive)) return;
             if (work != null && work.IsActive) return;
@@ -84,6 +118,7 @@ namespace RetailEmpireTycoon.City
         {
             if (InCity || Transitioning) return;
             if(Fleet.DriverHasVehicle)return;
+            if(townMap!=null)RememberNavigation(townMap.Navigation);
             if (!Application.CanStreamedLevelBeLoaded(cityScene) || !Application.CanStreamedLevelBeLoaded(loadingScene))
             { Debug.LogError("City and Loading scenes must be enabled in Build Settings.",this); return; }
             // Save before suspending the scene; a failed save must not strand the player in transit.
@@ -155,6 +190,7 @@ namespace RetailEmpireTycoon.City
                 SceneManager.SetActiveScene(shopScene);
                 foreach (var pair in shopRoots) if (pair.Key != null) pair.Key.SetActive(pair.Value);
                 InCity = false; Time.timeScale = shopTimeScale;
+                if(townMap!=null)RestoreNavigation(townMap.Navigation,townMap.Data);
                 var traffic=GetComponent<RetailEmpireTycoon.Parking.ParkingTraffic>();if(traffic!=null) traffic.enabled=trafficEnabled;
             }
             loader.SetProgress(1); yield return null;

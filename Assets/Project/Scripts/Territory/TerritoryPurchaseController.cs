@@ -11,6 +11,7 @@ public sealed class TerritoryPurchaseController : MonoBehaviour
     [SerializeField] private TerritoryRaycaster _raycaster;
     [SerializeField] private CameraModeController _cameraMode;
     private bool _busy;
+    public bool IsBusy => _busy;
 
 
     private void Awake()
@@ -24,10 +25,10 @@ public sealed class TerritoryPurchaseController : MonoBehaviour
 
     public void RequestPurchase(TerritoryId id, int price)
     {
-        if (_busy || price < 0 || _progression == null || !_progression.IsTerritoryAvailable(id)) return;
+        if (_busy || _confirm == null || _confirm.IsOpen || price < 0 || _progression == null || !_progression.IsTerritoryAvailable(id)) return;
         if (_progression.LandRules != null) price = _progression.LandRules.PriceOf(id);
         _confirm.Show(
-            $"Are you sure you will buy this territory? {price}?",
+            $"Buy this land for ${price:N0}?\nYour store and fixtures will stay in place.",
             onYes: () => StartCoroutine(PurchaseRoutine(id, price)),
             onNo: () => _confirm.HideInstant()
         );
@@ -54,17 +55,12 @@ public sealed class TerritoryPurchaseController : MonoBehaviour
         if (_cameraMode != null)
             _cameraMode.enabled = false;
 
-        if (_fader != null)
-        {
-            _fader.SetInstant(1f);
-            yield return null;
-        }
+        // A purchase changes land rights, not the scene or the camera pose.
+        yield return null;
+        if (!_progression.IsTerritoryAvailable(id)) { RestoreInput(); yield break; }
 
         if (GameManager.Instance == null || !GameManager.Instance.SpendMoney(price))
         {
-            if (_fader != null)
-                yield return _fader.FadeIn();
-
             if (_cameraMode != null)
                 _cameraMode.enabled = true;
 
@@ -86,10 +82,7 @@ public sealed class TerritoryPurchaseController : MonoBehaviour
         if (_prefabSpawner != null && previousLevel != _progression.State.CurrentLevel)
             _prefabSpawner.Spawn(_progression.State.CurrentLevel);
 
-        FindObjectOfType<TerritoryPurchaseModeManager>(true)?.Exit();
-
-        if (_fader != null)
-            yield return _fader.FadeIn();
+        FindObjectOfType<TerritoryPurchaseModeManager>(true)?.PurchaseCompleted();
 
         if (_cameraMode != null)
             _cameraMode.enabled = true;
@@ -100,6 +93,14 @@ public sealed class TerritoryPurchaseController : MonoBehaviour
         if (_inputBlocker != null)
             _inputBlocker.SetBlocked(false);
 
+        _busy = false;
+    }
+
+    private void RestoreInput()
+    {
+        if (_cameraMode != null) _cameraMode.enabled = true;
+        if (_raycaster != null) _raycaster.enabled = true;
+        if (_inputBlocker != null) _inputBlocker.SetBlocked(false);
         _busy = false;
     }
 

@@ -9,13 +9,15 @@ public sealed class TerritoryZone : MonoBehaviour
 
     private StoreProgression _progression;
     private bool _purchaseMode;
+    public int PurchasePrice => _progression != null && _progression.LandRules != null
+        ? _progression.LandRules.PriceOf(Id) : Price;
 
 
     public void Bind(StoreProgression progression)
     {
         _progression = progression;
         var barrier = GetComponentInChildren<TerritoryConstructionBarrier>(true);
-        if (barrier != null) barrier.SetPrice(Price);
+        if (barrier != null) barrier.SetPrice(PurchasePrice);
         RefreshView();
     }
 
@@ -42,7 +44,8 @@ public sealed class TerritoryZone : MonoBehaviour
 
         if (_visual != null) _visual.SetState(state);
 
-        foreach (var c in GetComponentsInChildren<Collider>(true)) c.enabled = !purchased;
+        // Selection uses parcel bounds on the ground, not solid invisible walls.
+        foreach (var c in GetComponentsInChildren<Collider>(true)) c.enabled = false;
     }
 
     public bool CanPurchase()

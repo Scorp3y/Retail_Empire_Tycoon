@@ -24,7 +24,7 @@ namespace RetailEmpireTycoon.UI.Shop
         public BuildEditorHud construction;
         private RectTransform _root;
         private TMP_Text _balance;
-        private Button _territoryBack;
+        private Button _buildButton;
         private Button _warehouseButton,_shopButton;
         private void Start()
         {
@@ -42,13 +42,9 @@ namespace RetailEmpireTycoon.UI.Shop
             _warehouseButton=ui.IconButton(_root, ShopIcon.Warehouse, Vector2.zero, 48, OpenInventory);Edge(_warehouseButton,new Vector2(1,0),new Vector2(-73,16));
             _shopButton=ui.IconButton(_root, ShopIcon.Cart, Vector2.zero, 48, OpenShop);Edge(_shopButton,new Vector2(1,0),new Vector2(-130,16));
             var buildButton=ui.IconButton(_root,ShopIcon.Hammer,Vector2.zero,48,()=>construction.Toggle());
+            _buildButton=buildButton;
             buildButton.name="Open construction";Edge(buildButton,new Vector2(1,0),new Vector2(-16,16));
             construction.Launcher=buildButton;
-            _territoryBack = ui.Button(_root, "К магазину", "Back to store", Vector2.zero, new Vector2(190, 40), territory.Exit);
-            Edge(_territoryBack, new Vector2(.5f, 1), new Vector2(0, -62));
-            ui.Icon(_territoryBack.transform, ShopIcon.Back, new Vector2(-76, 0), new Vector2(20, 20));
-            _territoryBack.gameObject.name = "Return from territories";
-            _territoryBack.gameObject.SetActive(false);
         }
         private static void Edge(Button button, Vector2 anchor, Vector2 position)
         {
@@ -58,11 +54,11 @@ namespace RetailEmpireTycoon.UI.Shop
         private void Update()
         {
             if (_root == null) return;
-            // Territory selection needs the return button even though it locks building controls.
+            // Land selection owns its details and Done button.
             _root.gameObject.SetActive(!work.IsActive && (!controls.IsConstructionActive || territory.IsActive || construction!=null && construction.IsOpen));
-            _territoryBack.gameObject.SetActive(territory.IsActive);
             bool editing=construction!=null && construction.IsOpen;
-            _warehouseButton.gameObject.SetActive(!editing);_shopButton.gameObject.SetActive(!editing);
+            _warehouseButton.gameObject.SetActive(!editing&&!territory.IsActive);_shopButton.gameObject.SetActive(!editing&&!territory.IsActive);
+            _buildButton.gameObject.SetActive(!territory.IsActive);
         }
         private void OnMoney(int amount) { if (_balance != null) _balance.text = MoneyFormat.Compact(amount); }
         private void OpenShop() { bool visible = windows.shopWindow.activeSelf; controls.CloseWindows(); windows.shopWindow.SetActive(!visible); }

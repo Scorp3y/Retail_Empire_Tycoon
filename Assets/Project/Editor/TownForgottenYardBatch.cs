@@ -70,7 +70,8 @@ public static class TownForgottenYardBatch
             var click=zone.GetComponent<BoxCollider>();Require(click!=null&&Mathf.Abs(click.size.x-p.Bounds.width)<.001f&&Mathf.Abs(click.size.z-p.Bounds.height)<.001f,"Incorrect click area.");
             Require(zone.GetComponentInChildren<TextMesh>(true).text.StartsWith("EXPAND"),"New purchase sign must be English.");
         }
-        Require(rules.Parcels.Sum(p=>p.Price)==50000,"Total land price changed.");
+        var priced=RetailEmpireTycoon.Territory.TerritorySubdivisionRules.PriceByExpansionDepth(rules.InitialBounds,rules.Parcels);
+        Require(priced.All(p=>p.Price==rules.PriceOf(p.Id)),"Land price schedule differs from the catalogue.");
         var oldGroups=rules.Parcels.GroupBy(p=>p.LegacyRegion).ToArray();
         for(int mask=0;mask<512;mask++)
         {

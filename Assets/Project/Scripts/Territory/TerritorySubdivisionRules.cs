@@ -29,6 +29,26 @@ namespace RetailEmpireTycoon.Territory
         public bool Contains(TerritoryId id)=>parcels.Any(p=>p.Id==id);
         /// <summary>Returns the authoritative price; throws for an ID outside this catalogue.</summary>
         public int PriceOf(TerritoryId id)=>parcels.Single(p=>p.Id==id).Price;
+        /// <summary>Fixed prices by area and minimum expansion depth, independent of purchase order.</summary>
+        public static List<Parcel> PriceByExpansionDepth(Rect initial,IEnumerable<Parcel> definitions)
+        {
+            var remaining=definitions.ToList();var reached=new List<Rect>{initial};var result=new List<Parcel>();int depth=0;
+            while(remaining.Count>0)
+            {
+                depth++;
+                var next=remaining.Where(p=>reached.Any(r=>Adjacent(p.Bounds,r))).ToArray();
+                if(next.Length==0)throw new ArgumentException("Unreachable land cannot be priced.");
+                int rate=depth<=2?150:depth<=4?225:300;
+                foreach(var parcel in next)
+                {
+                    int price=Mathf.Max(100,Mathf.RoundToInt(parcel.Bounds.width*parcel.Bounds.height*rate/100f)*100);
+                    result.Add(new Parcel(parcel.Id,parcel.LegacyRegion,parcel.Bounds,price));
+                    remaining.Remove(parcel);
+                }
+                reached.AddRange(next.Select(p=>p.Bounds));
+            }
+            return result.OrderBy(p=>(int)p.Id).ToList();
+        }
         public void Configure(Rect initial,IEnumerable<Parcel> definitions)
         {
             if(definitions==null)throw new ArgumentNullException(nameof(definitions));
