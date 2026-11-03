@@ -19,6 +19,7 @@ namespace RetailEmpireTycoon.StoreOperations
         [SerializeField] private StoreProgression progression;
         [SerializeField] private WorkMinigame work;
         [SerializeField] private GameObject[] customerModels;
+        [SerializeField] private GameObject robberModel;
         private ShopperSelection customerSelection;
         private Parking.ParkingTraffic parking;
         public int CustomerAppearanceCount => customerSelection?.Count ?? 0;
@@ -80,6 +81,7 @@ namespace RetailEmpireTycoon.StoreOperations
             { Debug.LogError("Store operations are not configured. Run Retail Empire/Shop/Configure gameplay.", this); enabled = false; return; }
             Navigation = new StoreNavigation(building.grid, building.territory);
             parking=FindObjectOfType<Parking.ParkingTraffic>();
+            if (robberModel == null) robberModel = Resources.Load<GameObject>("Characters/Robber");
             var roster = Resources.Load<ShopperRoster>("Shoppers/Roster");
             int appearanceSeed = Environment.TickCount ^ GetInstanceID();
             if (roster != null)
@@ -283,10 +285,18 @@ namespace RetailEmpireTycoon.StoreOperations
                 shelf = candidate; break;
             }
             if (shelf == null) { Notice = "Customers cannot reach the shelves. Clear the aisles."; return false; }
-            var character = SpawnCharacter(customerSelection.Next(), arrival);
+            bool isThief = forceThief || UnityEngine.Random.value < balance.thiefChance;
+            var prefab = isThief ? robberModel : customerSelection.Next();
+            if (prefab == null)
+            {
+                Notice = "The robber character model is missing.";
+                Debug.LogError(Notice, this);
+                return false;
+            }
+            var character = SpawnCharacter(prefab, arrival);
             if (character == null) return false;
             if (!character.MoveTo(approach)) { Destroy(character.gameObject); Notice = "This shelf is inaccessible. Leave free cells in front of it."; return false; }
-            var visit = new ShopperVisit(character, shelf, Mathf.Min(balance.basketSize, shelf.CurrentAmount - Reserved(shelf)), forceThief || UnityEngine.Random.value < balance.thiefChance, balance.thiefClicks);
+            var visit = new ShopperVisit(character, shelf, Mathf.Min(balance.basketSize, shelf.CurrentAmount - Reserved(shelf)), isThief, balance.thiefClicks);
             visit.SetExit(arrival,byCar);result=visit;
             _visits.Add(visit); return true;
         }

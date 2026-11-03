@@ -104,7 +104,9 @@ namespace RetailEmpireTycoon.City
                 if(cars[i].gameObject.activeSelf!=inService)cars[i].gameObject.SetActive(inService);
                 var p=Sample(layout.railway.points,distance-i*carSpacing,out var forward);
                 cars[i].localPosition=p;cars[i].localRotation=Quaternion.LookRotation(forward);
+                if (inService) cars[i].GetComponent<RegionalTrainCar>()?.PlaceOnRail(this, distance-i*carSpacing);
             }
+            GetComponentInChildren<RegionalTrainArticulation>(true)?.Refresh();
         }
 
         public static float Length(Vector3[] points)

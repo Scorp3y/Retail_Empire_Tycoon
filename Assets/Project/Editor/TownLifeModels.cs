@@ -1,6 +1,7 @@
 using System;
 using RetailEmpireTycoon.City;
 using RetailEmpireTycoon.Editor.TownKit;
+using UnityEditor;
 using UnityEngine;
 
 /// <summary>Native low-poly articulated models, matching the existing town palette.</summary>
@@ -38,6 +39,8 @@ internal static class TownLifeModels
     internal static void Animal(Transform parent,bool chicken,bool rooster,int index,Action<Transform,string,TownMeshBuilder> part)
     {
         var actor=parent.gameObject.AddComponent<FarmAnimal>();actor.chicken=chicken;actor.seed=index;actor.pasture=new Rect(472,255,26,29);
+        var cowPrefab=!chicken?AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/FarmAnimalsV2/Prefabs/CowModel.prefab"):null;
+        if(cowPrefab!=null){AttachCowModel(actor,cowPrefab,2.02f);return;}
         var body=new TownMeshBuilder();
         if(!chicken)
         {
@@ -71,5 +74,34 @@ internal static class TownLifeModels
             var limb=new TownMeshBuilder();if(chicken){limb.Cylinder(new(0,-.13f,0),.025f,.025f,.26f,TownColor.Yellow,7);for(int j=-1;j<=1;j++)limb.Box(new(j*.035f,-.28f,.06f),new(.025f,.025f,.17f),TownColor.Yellow,Quaternion.Euler(0,j*18,0));}else{limb.Ellipsoid(new(0,-.17f,0),new(.13f,.27f,.14f),TownColor.White,8,5);limb.Cylinder(new(0,-.6f,0),.065f,.095f,.6f,TownColor.Cream);limb.Box(new(0,-.86f,.035f),new(.19f,.14f,.24f),TownColor.Charcoal);}
             part(leg,"Limb",limb);
         }
+    }
+    /// <summary>Retains pasture AI and binds its procedural pose to the authored cow joints.</summary>
+    internal static GameObject AttachCowModel(FarmAnimal actor,GameObject prefab,float height)
+    {
+        var model=(GameObject)PrefabUtility.InstantiatePrefab(prefab);model.transform.SetParent(actor.transform,false);
+        Transform Joint(string name)=>Array.Find(model.GetComponentsInChildren<Transform>(true),t=>t.name==name);
+        var bounds=AnimalBounds(model.transform);
+        model.transform.localScale=Vector3.one*(height/bounds.size.y);
+        actor.head=Joint("Head");actor.tail=Joint("Tail");
+        actor.legs=new[]{Joint("Leg_FL"),Joint("Leg_FR"),Joint("Leg_BL"),Joint("Leg_BR")};
+        var box=actor.GetComponent<BoxCollider>();if(box==null)box=actor.gameObject.AddComponent<BoxCollider>();
+        bounds=AnimalBounds(actor.transform);
+        box.center=new Vector3(bounds.center.x,height*.47f,bounds.center.z);
+        box.size=new Vector3(bounds.size.x*.87f,height*.90f,bounds.size.z*.90f);
+        return model;
+    }
+    internal static Bounds AnimalBounds(Transform root)
+    {
+        bool first=true;var result=new Bounds();
+        foreach(var filter in root.GetComponentsInChildren<MeshFilter>(true))
+        {
+            var matrix=root.worldToLocalMatrix*filter.transform.localToWorldMatrix;
+            foreach(var vertex in filter.sharedMesh.vertices)
+            {
+                var point=matrix.MultiplyPoint3x4(vertex);
+                if(first){result=new Bounds(point,Vector3.zero);first=false;}else result.Encapsulate(point);
+            }
+        }
+        return result;
     }
 }

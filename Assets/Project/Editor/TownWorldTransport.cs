@@ -190,30 +190,21 @@ internal sealed partial class TownWorldAssembler
         Model("CustomerParking",new Vector3(-200,0,200),90,"Station parking");
     }
 
-    private void PassengerTrain()
+    private void PassengerTrain() => CreatePassengerTrain(layout,root.transform);
+
+    // Rebuilding the town must use the same authored train as the saved scenes.
+    internal static TownRailTraffic CreatePassengerTrain(TownWorldLayout layout,Transform parent)
     {
-        var group=new GameObject("Passenger train service");group.transform.SetParent(root.transform,false);
-        var service=group.AddComponent<TownRailTraffic>();service.layout=layout;
-        var cars=new List<Transform>();
-        for(int carriage=0;carriage<4;carriage++)
-        {
-            var mesh=new TownMeshBuilder();bool engine=carriage==0;
-            mesh.Box(new Vector3(0,1.75f,0),new Vector3(2.6f,2.6f,10.5f),engine?TownColor.GreenStripe:TownColor.Cream);
-            mesh.Box(new Vector3(0,.65f,0),new Vector3(2.7f,.35f,10.7f),TownColor.Frame);
-            mesh.Box(new Vector3(0,3.12f,0),new Vector3(2.75f,.25f,10.6f),TownColor.Mint);
-            foreach(float x in new[]{-1.31f,1.31f})
-            {
-                mesh.Box(new Vector3(x,1.1f,0),new Vector3(.025f,.22f,10.3f),TownColor.Red);
-                for(int window=0;window<7;window++)mesh.Box(new Vector3(x,2.3f,-4.3f+window*1.4f),new Vector3(.03f,.95f,.95f),TownColor.Glass);
-            }
-            foreach(float z in new[]{-3.4f,3.4f})foreach(float x in new[]{-1.05f,1.05f})
-                mesh.Cylinder(new Vector3(x,.36f,z),.33f,.33f,.18f,TownColor.Rubber,10,Quaternion.Euler(0,0,90));
-            mesh.Box(new Vector3(0,2.25f,5.28f),new Vector3(2.1f,.85f,.035f),TownColor.Glass);
-            if(engine)foreach(float x in new[]{-.85f,.85f})mesh.Box(new Vector3(x,1.6f,5.31f),new Vector3(.32f,.23f,.04f),TownColor.Light);
-            var car=new GameObject(engine?"Locomotive":"Passenger carriage "+carriage,typeof(MeshFilter),typeof(MeshRenderer));
-            car.transform.SetParent(group.transform,false);car.GetComponent<MeshFilter>().sharedMesh=PersistMesh(mesh.Build(car.name),"TrainCar"+carriage);
-            car.GetComponent<MeshRenderer>().sharedMaterial=material;cars.Add(car.transform);
-        }
-        service.cars=cars.ToArray();service.Advance(.001f);
+        const string prefabPath="Assets/Art/RegionalTrainV2/Prefabs/RegionalTrain.prefab";
+        var prefab=AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+        if(prefab==null)throw new InvalidOperationException("Regional train prefab missing: "+prefabPath);
+        var group=new GameObject("Passenger train service");group.transform.SetParent(parent,false);
+        var service=group.AddComponent<TownRailTraffic>();
+        service.layout=layout;service.metresPerSecond=11;service.carSpacing=16;
+        var train=(GameObject)PrefabUtility.InstantiatePrefab(prefab);train.transform.SetParent(group.transform,false);
+        service.cars=train.GetComponentsInChildren<RegionalTrainCar>().OrderBy(c=>c.name).Select(c=>c.transform).ToArray();
+        if(service.cars.Length!=3)throw new InvalidOperationException("Regional train must contain three cars.");
+        train.GetComponent<RegionalTrainArticulation>().service=service;service.Advance(.001f);
+        return service;
     }
 }
