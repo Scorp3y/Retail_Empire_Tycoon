@@ -21,9 +21,10 @@ namespace RetailEmpireTycoon.UI.Shop
             if(vehicle!=null&&vehicle.icon!=null){icon.sprite=vehicle.icon;icon.enabled=true;}
             var fleet=trip!=null?trip.Fleet:null;string id=vehicle!=null?vehicle.id:PlayerVehicleFleet.StarterId;
             title.text = vehicle!=null?vehicle.displayName:"Delivery pickup";
-            float weight = vehicle!=null?vehicle.payloadKg:350, volume=vehicle!=null?vehicle.cargoM3:2;
+            float capacity = fleet?.TuningFor(id).CapacityMultiplier ?? 1;
+            float weight = (vehicle!=null?vehicle.payloadKg:350)*capacity, volume=(vehicle!=null?vehicle.cargoM3:2)*capacity;
             bool selected=fleet==null?vehicle==null:fleet.SelectedId==id,owned=fleet==null?vehicle==null:fleet.Owns(id);
-            details.text = $"{weight:0} kg\n{volume:0.#} m³\n"+(owned?"Owned":$"${vehicle.price:N0}");
+            details.text = $"{weight:0.#} kg\n{volume:0.##} m³\n"+(owned?"Owned":$"${vehicle.price:N0}");
             stateButton.onClick.RemoveAllListeners();
             stateButton.interactable = fleet!=null&&!selected&&(owned||orders.money.CanSpend(vehicle.price));
             string label=selected?"Selected":owned?"Select":"Buy vehicle";

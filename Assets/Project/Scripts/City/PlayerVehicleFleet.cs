@@ -11,6 +11,7 @@ namespace RetailEmpireTycoon.City
     {
         public string selectedId = PlayerVehicleFleet.StarterId;
         public List<string> ownedIds = new List<string>();
+        public List<VehicleTuningSaveEntry> tuning = new List<VehicleTuningSaveEntry>();
     }
 
     /// <summary>Owns purchases and selection. Cargo stays in the selected vehicle; exchange requires an empty hold.</summary>
@@ -19,15 +20,22 @@ namespace RetailEmpireTycoon.City
         public const string StarterId = "delivery_pickup";
         private readonly PlayerVehicleDefinition[] catalog;
         private readonly HashSet<string> owned = new HashSet<string>(StringComparer.Ordinal);
+        private readonly Dictionary<string, VehicleTuning> tuning = new Dictionary<string, VehicleTuning>(StringComparer.Ordinal);
         private readonly MoneyController money;
         private readonly DeliveryOrders orders;
         private readonly Action persist;
+        private bool committing;
         public event Action Changed;
+        public event Action TuningChanged;
         public IReadOnlyList<PlayerVehicleDefinition> Catalog => catalog;
         public string SelectedId { get; private set; } = StarterId;
         public PlayerVehicleDefinition Selected => catalog.FirstOrDefault(item => item.id == SelectedId);
         public string SelectedName => Selected != null ? Selected.displayName : "Delivery pickup";
         public string Notice { get; private set; }
+        public VehicleTuning SelectedTuning => TuningFor(SelectedId);
+        public VehicleTuning TuningFor(string id) => tuning.TryGetValue(id, out var value) ? value : default;
+        public int Balance => money.Money;
+        public const int PaintPrice = 450;
         public bool DriverHasVehicle {get;private set;}
         public void AssignDriver(bool assigned)=>DriverHasVehicle=assigned;
 
@@ -43,7 +51,13 @@ namespace RetailEmpireTycoon.City
             ApplyCapacity();
         }
         public bool Owns(string id) => id == StarterId || owned.Contains(id);
-        public VehicleFleetSaveData Capture() => new VehicleFleetSaveData { selectedId = SelectedId, ownedIds = owned.OrderBy(id => id).ToList() };
+        public VehicleFleetSaveData Capture() => new VehicleFleetSaveData
+        {
+            selectedId = SelectedId,
+            ownedIds = owned.OrderBy(id => id).ToList(),
+            tuning = tuning.OrderBy(pair => pair.Key)
+                .Select(pair => new VehicleTuningSaveEntry {id = pair.Key, tuning = pair.Value}).ToList()
+        };
         public void Restore(VehicleFleetSaveData data)
         {
             var restored = data?.ownedIds ?? new List<string>();
@@ -51,8 +65,55 @@ namespace RetailEmpireTycoon.City
             if (restored.Any(id => id != StarterId && !catalog.Any(item => item.id == id))
                 || selection != StarterId && (!restored.Contains(selection) || !catalog.Any(item => item.id == selection)))
                 throw new InvalidOperationException("Save refers to an unavailable player vehicle. Fleet was not changed.");
-            owned.Clear(); foreach (string id in restored.Where(id => id != StarterId)) owned.Add(id);
-            SelectedId = selection; ApplyCapacity(); Changed?.Invoke();
+            if (committing) throw new InvalidOperationException("Cannot restore the fleet during a purchase.");
+            RestoreState(data, restored, selection);
+            ApplyCapacity(); Changed?.Invoke();
+        }
+        private void RestoreState(VehicleFleetSaveData data, IEnumerable<string> vehicles, string selection)
+        {
+            owned.Clear(); foreach (string id in vehicles.Where(id => id != StarterId)) owned.Add(id);
+            SelectedId = selection;
+            tuning.Clear();
+            if (data?.tuning == null) return;
+            foreach (var entry in data.tuning)
+                if (entry != null && !string.IsNullOrEmpty(entry.id) && Owns(entry.id))
+                    tuning[entry.id] = entry.tuning.Normalized();
+        }
+        public int UpgradePrice(WorkshopCategory category)
+        {
+            int basePrice = category switch
+            {
+                WorkshopCategory.Engine => 900,
+                WorkshopCategory.Handling => 700,
+                WorkshopCategory.Cargo => 1100,
+                _ => 0
+            };
+            return basePrice * (SelectedTuning.Level(category) + 1);
+        }
+        public bool BuyUpgrade(WorkshopCategory category)
+        {
+            int price = UpgradePrice(category);
+            if (price == 0 || SelectedTuning.Level(category) >= VehicleTuning.MaxLevel)
+                return Reject("This upgrade is already at its maximum level.");
+            return InstallTuning(SelectedTuning.Upgrade(category), price, "Upgrade installed.");
+        }
+        public bool BuyPaint(UnityEngine.Color32? color)
+        {
+            var current = SelectedTuning;
+            var next = current.WithPaint(color);
+            if (current.painted == next.painted && current.rgb == next.rgb)
+                return Reject("This paint is already applied.");
+            return InstallTuning(next, color.HasValue ? PaintPrice : 0, "Paint applied.");
+        }
+        private bool InstallTuning(VehicleTuning next, int price, string success)
+        {
+            if (DriverHasVehicle) return Reject("Your driver is using this vehicle.");
+            if (!money.CanSpend(price)) return Reject("Insufficient funds.");
+            return Commit(() =>
+            {
+                if (!money.TrySpend(price)) throw new InvalidOperationException("Payment changed during purchase.");
+                tuning[SelectedId] = next;
+            }, success, tuningOnly: true);
         }
         public bool BuyAndSelect(string id)
         {
@@ -76,23 +137,29 @@ namespace RetailEmpireTycoon.City
             if (!orders.Ledger.Entries.Any(entry => entry.location == DeliveryLocation.Pickup)) return true;
             return Reject("Unload your current vehicle before exchanging it. Cargo is preserved.");
         }
-        private bool Commit(Action mutation, string success)
+        private bool Commit(Action mutation, string success, bool tuningOnly = false)
         {
+            if (committing) return false;
             var before = Capture(); int oldMoney = money.Money;
+            committing = true;
             try { mutation(); ApplyCapacity(); persist(); }
             catch (Exception error)
             {
-                owned.Clear(); foreach (string id in before.ownedIds) owned.Add(id);
-                SelectedId = before.selectedId; money.SetMoney(oldMoney); ApplyCapacity();
+                RestoreState(before, before.ownedIds, before.selectedId);
+                money.SetMoney(oldMoney); ApplyCapacity();
                 UnityEngine.Debug.LogException(error);
                 return Reject("Vehicle change could not be saved. Payment refunded.");
             }
-            Notice = success; Changed?.Invoke(); return true;
+            finally { committing = false; }
+            Notice = success;
+            if (tuningOnly) TuningChanged?.Invoke();
+            else Changed?.Invoke();
+            return true;
         }
         private void ApplyCapacity()
         {
-            orders.pickupCapacityKg = Selected != null ? Selected.payloadKg : 350;
-            orders.pickupCapacityM3 = Selected != null ? Selected.cargoM3 : 2;
+            orders.pickupCapacityKg = (Selected != null ? Selected.payloadKg : 350) * SelectedTuning.CapacityMultiplier;
+            orders.pickupCapacityM3 = (Selected != null ? Selected.cargoM3 : 2) * SelectedTuning.CapacityMultiplier;
         }
         private bool Reject(string message) { Notice = message; return false; }
     }

@@ -10,7 +10,7 @@ namespace RetailEmpireTycoon.City
         private readonly Dictionary<Collider, bool> originalColliders = new Dictionary<Collider, bool>();
         private GameObject current;
         private bool captured;
-        public void Show(PlayerVehicleDefinition vehicle, float worldScale)
+        public void Show(PlayerVehicleDefinition vehicle, float worldScale, VehicleTuning tuning = default)
         {
             if (!captured)
             {
@@ -21,7 +21,11 @@ namespace RetailEmpireTycoon.City
             if (current != null) { current.SetActive(false); Destroy(current); }
             foreach (var pair in originalRenderers) if (pair.Key != null) pair.Key.enabled = vehicle == null && pair.Value;
             foreach (var pair in originalColliders) if (pair.Key != null) pair.Key.enabled = vehicle == null && pair.Value;
-            if (vehicle == null) return;
+            if (vehicle == null)
+            {
+                VehiclePaint.Apply(gameObject, null, tuning.Paint);
+                return;
+            }
             current = Instantiate(vehicle.model, transform);
             var scale = transform.lossyScale;
             current.transform.localScale = new Vector3(worldScale / scale.x, worldScale / scale.y, worldScale / scale.z);
@@ -30,6 +34,7 @@ namespace RetailEmpireTycoon.City
             var body = current.AddComponent<BoxCollider>();
             body.center = new Vector3(0, vehicle.height * .5f + .1f, 0);
             body.size = new Vector3(vehicle.width, vehicle.height - .2f, vehicle.length);
+            VehiclePaint.Apply(current, vehicle, tuning.Paint);
         }
     }
 }

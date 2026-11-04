@@ -33,6 +33,8 @@ namespace RetailEmpireTycoon.City
         private readonly System.Collections.Generic.Dictionary<GameObject, bool> originalChildren = new System.Collections.Generic.Dictionary<GameObject, bool>();
         private Vector3 originalBoxCenter, originalBoxSize;
         private BoxCollider chassis;
+        private PlayerVehicleDefinition activeVehicle;
+        private float steeringMultiplier = 1;
         public float SteeringAngle { get; private set; }
         public int GroundedWheels { get; private set; }
         public float Speed => body == null ? 0 : body.velocity.magnitude;
@@ -71,13 +73,15 @@ namespace RetailEmpireTycoon.City
         {
             if (wheels.Length < 4) return;
             smoothThrottle = Mathf.MoveTowards(smoothThrottle, InputEnabled ? throttle : 0, 2.2f * Time.fixedDeltaTime);
-            smoothSteering = Mathf.MoveTowards(smoothSteering, InputEnabled ? steering : 0, 2.6f * Time.fixedDeltaTime);
+            smoothSteering = Mathf.MoveTowards(smoothSteering, InputEnabled ? steering : 0,
+                2.6f * steeringMultiplier * Time.fixedDeltaTime);
             float speed = Vector3.Dot(body.velocity, transform.forward);
             float limit = smoothThrottle >= 0 ? topSpeed : reverseSpeed;
             float desired = smoothThrottle * limit;
             bool reversing = speed * smoothThrottle < -.3f;
             float force = Mathf.Clamp((desired - speed) * 2, -acceleration, acceleration);
-            SteeringAngle = smoothSteering * Mathf.Lerp(42, 15, Mathf.Clamp01(Mathf.Abs(speed) / topSpeed));
+            SteeringAngle = smoothSteering * Mathf.Lerp(42 * steeringMultiplier, 15,
+                Mathf.Clamp01(Mathf.Abs(speed) / topSpeed));
             GroundedWheels = 0;
 
             foreach (var wheel in wheels)
@@ -131,6 +135,8 @@ namespace RetailEmpireTycoon.City
         public void SetVehicle(PlayerVehicleDefinition definition)
         {
             Stop();
+            activeVehicle = definition;
+            steeringMultiplier = 1;
             if (originalWheels == null)
             {
                 originalWheels = wheels; chassis = GetComponent<BoxCollider>();
@@ -170,5 +176,19 @@ namespace RetailEmpireTycoon.City
             topSpeed = definition.topSpeed; acceleration = definition.acceleration; CameraHeight = definition.height * .55f;
             Stop();
         }
+
+        public void ApplyTuning(VehicleTuning tuning)
+        {
+            topSpeed = (activeVehicle != null ? activeVehicle.topSpeed : 14) * tuning.SpeedMultiplier;
+            acceleration = (activeVehicle != null ? activeVehicle.acceleration : 5) * tuning.AccelerationMultiplier;
+            steeringMultiplier = tuning.SteeringMultiplier;
+            PreviewPaint(tuning.Paint);
+        }
+
+        public void PreviewPaint(Color32? color) =>
+            VehiclePaint.Apply(selectedModel != null ? selectedModel : gameObject, activeVehicle, color);
+
+        public Color32 FactoryColor =>
+            VehiclePaint.FactoryColor(selectedModel != null ? selectedModel : gameObject, activeVehicle);
     }
 }

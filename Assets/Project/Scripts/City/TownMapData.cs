@@ -131,6 +131,16 @@ namespace RetailEmpireTycoon.City
             // These are orientation landmarks, not invented interactable suppliers.
             AddLandmark("fuel", "Gas station", "Roadside landmark", "FuelShopDetailed", TownMapSymbol.Fuel);
             AddLandmark("station", "Railway station", "Passenger station", "Railway station", TownMapSymbol.Train);
+            var workshop = town.GetComponentsInChildren<GarageDoor>(true).FirstOrDefault(door => door.name == "Door_2");
+            if (workshop != null)
+            {
+                Vector3 At(float depth) => ToNative(workshop.transform.TransformPoint(0, 0, depth));
+                var destination = At(3);
+                var street = At(25);
+                var entrance = At(17);
+                points.Add(new TownMapPoint("auto_works", "AUTO WORKS", "Vehicle tuning and custom paint",
+                    TownMapCategory.Services, TownMapSymbol.Car, () => destination, () => new[] { street, entrance, destination }));
+            }
             if (Forest != null) points.Add(new TownMapPoint("pinebrook_park", "Brookside Park", "Pinebrook public park",
                 TownMapCategory.Landmark, TownMapSymbol.Park, () => new Vector3(108, 0, 386),
                 () => new[] { new Vector3(20, 0, 376) }));

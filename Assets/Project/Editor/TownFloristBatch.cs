@@ -142,18 +142,18 @@ public static class TownFloristBatch
         }
         catch(Exception error){Directory.CreateDirectory(Report);File.WriteAllText(Report+"/inspect.txt",error.ToString());Debug.LogException(error);EditorApplication.Exit(1);}
     }
-    internal static void Render(Scene scene,string path,Vector3 position,Vector3 target,float ortho=0)
+    internal static void Render(Scene scene,string path,Vector3 position,Vector3 target,float ortho=0,int width=1600,int height=1000)
     {
         var go=new GameObject("Florist review camera",typeof(Camera));SceneManager.MoveGameObjectToScene(go,scene);
         var camera=go.GetComponent<Camera>();camera.enabled=false;camera.transform.position=position;camera.transform.LookAt(target);
         camera.fieldOfView=50;camera.nearClipPlane=.1f;camera.farClipPlane=1500;camera.orthographic=ortho>0;camera.orthographicSize=ortho;
         var data=camera.GetUniversalAdditionalCameraData();data.renderPostProcessing=true;data.antialiasing=AntialiasingMode.SubpixelMorphologicalAntiAliasing;
-        var targetTexture=new RenderTexture(1600,1000,24);var previous=RenderTexture.active;Texture2D png=null;
+        var targetTexture=new RenderTexture(width,height,24);var previous=RenderTexture.active;Texture2D png=null;
         try
         {
             if(!targetTexture.Create())throw new InvalidOperationException("Native camera render target unavailable.");
             camera.targetTexture=targetTexture;camera.Render();RenderTexture.active=targetTexture;
-            png=new Texture2D(1600,1000,TextureFormat.RGBA32,false);png.ReadPixels(new Rect(0,0,1600,1000),0,0);png.Apply();File.WriteAllBytes(path,png.EncodeToPNG());
+            png=new Texture2D(width,height,TextureFormat.RGBA32,false);png.ReadPixels(new Rect(0,0,width,height),0,0);png.Apply();File.WriteAllBytes(path,png.EncodeToPNG());
         }
         finally{RenderTexture.active=previous;targetTexture.Release();Object.DestroyImmediate(targetTexture);if(png!=null)Object.DestroyImmediate(png);Object.DestroyImmediate(go);}
     }

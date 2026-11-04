@@ -249,6 +249,7 @@ namespace RetailEmpireTycoon.Logistics
             var root=new GameObject("Player vehicle — staff delivery");root.transform.SetParent(traffic.transform,false);
             root.transform.position=traffic.transform.TransformPoint(native);root.transform.rotation=rotation;
             var visual=Instantiate(selected!=null?selected.model:starterVehicleModel,root.transform);
+            VehiclePaint.Apply(visual, selected, trip.Fleet.SelectedTuning.Paint);
             var bindings=visual.GetComponent<PlayerVehicleModel>();
             var wheels=bindings!=null?bindings.wheels.Select(w=>new TrafficVehicle.Wheel{visual=w.pivot,front=w.front}).ToArray():visual.GetComponentsInChildren<Transform>().Where(t=>t.name.StartsWith("Wheel")).Select(t=>new TrafficVehicle.Wheel{visual=t,front=t.localPosition.z>0}).ToArray();
             float length=selected!=null?selected.length:4.4f,width=selected!=null?selected.width:1.9f;

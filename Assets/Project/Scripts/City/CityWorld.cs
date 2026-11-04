@@ -42,6 +42,9 @@ namespace RetailEmpireTycoon.City
         private CityMapHud map;
         public CityMapHud Map => map;
         private PlayerVehicleFleet vehicleFleet;
+        private GarageDoor[] workshopBays = Array.Empty<GarageDoor>();
+        private WorkshopWindow workshop;
+        private Renderer workshopExteriorLettering;
         private readonly System.Collections.Generic.List<(DeliveryCheckpoint Point,Vector3 Gate,Quaternion Rotation,float Depth)> unloadingGates=new();
         private Vector3 storeEnvelopeCenter;
 
@@ -50,9 +53,14 @@ namespace RetailEmpireTycoon.City
             this.trip = trip; this.orders = orders;
             vehicleFleet=trip.Fleet;
             vehicleFleet.Changed += ApplySelectedVehicle;
+            vehicleFleet.TuningChanged += ApplyVehicleTuning;
             ApplySelectedVehicle();
             if(town!=null)
             {
+                workshopBays = town.GetComponentsInChildren<GarageDoor>();
+                if (workshopBays.Length > 0)
+                    workshopExteriorLettering = workshopBays[0].transform.parent.parent
+                        .Find("Building/Reception/AUTO WORKS sign/Editable letters")?.GetComponent<Renderer>();
                 town.GetComponent<TownSignalChunks>()?.SetObserver(pickup.transform);
                 town.GetComponentInChildren<TownRoadTraffic>()?.SetObserver(pickup.transform);
                 town.GetComponentInChildren<TownPedestrianTraffic>()?.SetObserver(pickup.transform);
@@ -79,7 +87,7 @@ namespace RetailEmpireTycoon.City
             SyncFacade(shopScene); RefreshCargo();
             checkpoints=(town!=null?town.suppliers.Concat(town.showroomEntrances??Array.Empty<DeliveryCheckpoint>()):Array.Empty<DeliveryCheckpoint>())
                 .Concat(new[]{depot,home}).Concat(unloadingGates.Select(gate=>gate.Point)).Where(c=>c!=null).Distinct().ToArray();
-            if(town!=null)map=new CityMapHud(ui,canvasRoot,town,pickup,home,chaseCamera,()=>panel==null&&!trip.Transitioning,
+            if(town!=null)map=new CityMapHud(ui,canvasRoot,town,pickup,home,chaseCamera,()=>panel==null&&workshop==null&&!trip.Transitioning,
                 orders,unloadingGates.Select(g=>g.Point),trip.MapHomeAccess);
             if(map!=null)
             {
@@ -100,14 +108,22 @@ namespace RetailEmpireTycoon.City
         private void Update()
         {
             if (trip == null || trip.Transitioning || orders == null) return;
+            if (workshop != null)
+            {
+                if (Input.GetKeyDown(KeyCode.Escape)) CloseWorkshop();
+                return;
+            }
             map?.Tick();
             status.transform.parent.gameObject.SetActive(false);
             if(map!=null&&map.IsOpen){interact.gameObject.SetActive(false);return;}
             nearest = checkpoints.Where(c=>c.CanUse(pickup)).OrderBy(c=>c.DistanceTo(pickup)).FirstOrDefault();
             var nearby=checkpoints.Where(c=>c.DistanceTo(pickup)<14).OrderBy(c=>c.DistanceTo(pickup)).FirstOrDefault();
             string dockingHint=nearby!=null&&!nearby.CanUse(pickup)?nearby.UnavailableReason(pickup):string.Empty;
-            interact.gameObject.SetActive(nearest != null && panel == null);
-            if (nearest != null)
+            bool canTune = panel == null && CanTuneHere();
+            interact.gameObject.SetActive((canTune || nearest != null) && panel == null);
+            if (canTune)
+                interact.GetComponentInChildren<TMP_Text>().text = "E — AUTO WORKS";
+            else if (nearest != null)
                 interact.GetComponentInChildren<TMP_Text>().text = nearest.kind == CheckpointKind.Depot ? "E — "+SupplierRouting.Name(nearest.supplier)
                     : nearest.kind == CheckpointKind.Showroom ? "E — View vehicles"
                     : nearest.kind == CheckpointKind.Unload ? "E — Unload vehicle" : "E — Return to store";
@@ -120,6 +136,12 @@ namespace RetailEmpireTycoon.City
         }
         public void Interact()
         {
+            if (trip == null || trip.Transitioning || panel != null || workshop != null || map?.IsOpen == true) return;
+            if (CanTuneHere())
+            {
+                OpenWorkshop();
+                return;
+            }
             // Resolve from the current pose: button/input can arrive before the next world Update.
             if(checkpoints!=null)nearest=checkpoints.Where(c=>c.CanUse(pickup)).OrderBy(c=>c.DistanceTo(pickup)).FirstOrDefault();
             if (nearest == null || !nearest.CanUse(pickup) || panel != null || trip.Transitioning) return;
@@ -139,6 +161,32 @@ namespace RetailEmpireTycoon.City
                 ui.Button(panel,"Cancel","Cancel",new Vector2(22,-156),new Vector2(208,42),ClosePanel);
                 ui.Button(panel,"Return","Return",new Vector2(260,-156),new Vector2(218,42),()=>{ ClosePanel(); trip.Return(); });
             }
+        }
+
+        private bool CanTuneHere() => !vehicleFleet.DriverHasVehicle && workshopBays.Any(bay => bay.CanService(pickup));
+
+        private void OpenWorkshop()
+        {
+            pickup.Stop();
+            pickup.InputEnabled = false;
+            interact.gameObject.SetActive(false);
+            map?.MiniMap.SetVisible(false);
+            // Legacy TextMesh lettering draws over depth. Keep the exterior sign out of the interior view.
+            if (workshopExteriorLettering != null) workshopExteriorLettering.forceRenderingOff = true;
+            chaseCamera.EnterWorkshop(pickup);
+            workshop = new WorkshopWindow(ui, canvasRoot, vehicleFleet, pickup, chaseCamera, CloseWorkshop);
+        }
+
+        private void CloseWorkshop()
+        {
+            if (workshop == null) return;
+            workshop.Dispose();
+            workshop = null;
+            pickup.Stop();
+            pickup.InputEnabled = true;
+            chaseCamera.ExitWorkshop();
+            if (workshopExteriorLettering != null) workshopExteriorLettering.forceRenderingOff = false;
+            map?.MiniMap.SetVisible(true);
         }
         private void ShowDepot()
         {
@@ -218,8 +266,9 @@ namespace RetailEmpireTycoon.City
                 var preview=rect.gameObject.AddComponent<Image>();preview.sprite=definition.icon;preview.preserveAspect=true;
             }
             string name=definition!=null?definition.displayName:"Delivery pickup";
-            float kg=definition!=null?definition.payloadKg:350, volume=definition!=null?definition.cargoM3:2;
-            ui.Label(panel,$"{name}\n{kg:0} kg · {volume:0} m³",new Vector2(156,y-6),new Vector2(420,74),21);
+            float capacity=fleet.TuningFor(id).CapacityMultiplier;
+            float kg=(definition!=null?definition.payloadKg:350)*capacity, volume=(definition!=null?definition.cargoM3:2)*capacity;
+            ui.Label(panel,$"{name}\n{kg:0.#} kg · {volume:0.##} m³",new Vector2(156,y-6),new Vector2(420,74),21);
             bool selected=fleet.SelectedId==id, owned=fleet.Owns(id);
             string label=selected?"Selected":owned?"Select":$"Buy · ${definition.price:N0}";
             var button=ui.Button(panel,label,new Vector2(606,y-15),new Vector2(246,48),()=>
@@ -232,15 +281,20 @@ namespace RetailEmpireTycoon.City
         private void ApplySelectedVehicle()
         {
             pickup.SetVehicle(trip.Fleet.Selected);
+            ApplyVehicleTuning();
             chaseCamera.distance=Mathf.Max(8,(trip.Fleet.Selected!=null?trip.Fleet.Selected.length:4.4f)*1.15f);
             RefreshCargo();
             RefreshUnloadingZones();
         }
+        private void ApplyVehicleTuning() => pickup.ApplyTuning(vehicleFleet.SelectedTuning);
         private void OnDestroy()
         {
             if(trip!=null&&map!=null)trip.RememberNavigation(map.Navigation);
             map?.Dispose();
+            workshop?.Dispose();
+            if (workshop != null && workshopExteriorLettering != null) workshopExteriorLettering.forceRenderingOff = false;
             if(vehicleFleet!=null)vehicleFleet.Changed-=ApplySelectedVehicle;
+            if(vehicleFleet!=null)vehicleFleet.TuningChanged-=ApplyVehicleTuning;
             if(orders!=null)orders.Changed-=RefreshCargo;
         }
         private void ClosePanel() { ui.CloseModal(panel); panel = null; pickup.InputEnabled = true;chaseCamera.SetInteractionBlocked(false); }

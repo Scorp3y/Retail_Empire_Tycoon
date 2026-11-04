@@ -54,6 +54,7 @@ namespace RetailEmpireTycoon.City
                 if (fleet != null) return fleet;
                 fleet = new PlayerVehicleFleet(Resources.LoadAll<PlayerVehicleDefinition>("PlayerVehicles"), orders.money, orders, () => orders.save?.SaveGame());
                 fleet.Changed += RefreshParkedVehicle;
+                fleet.TuningChanged += RefreshParkedVehicle;
                 return fleet;
             }
         }
@@ -61,7 +62,7 @@ namespace RetailEmpireTycoon.City
         {
             if (parkedPickup == null) return;
             if (parkedAppearance == null) parkedAppearance = parkedPickup.AddComponent<PlayerVehicleAppearance>();
-            parkedAppearance.Show(Fleet.Selected, .5f);
+            parkedAppearance.Show(Fleet.Selected, .5f, Fleet.SelectedTuning);
         }
         public bool WasShopObjectActive(GameObject instance)
         {
