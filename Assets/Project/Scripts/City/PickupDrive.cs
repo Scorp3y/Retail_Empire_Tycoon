@@ -34,11 +34,13 @@ namespace RetailEmpireTycoon.City
         private Vector3 originalBoxCenter, originalBoxSize;
         private BoxCollider chassis;
         private PlayerVehicleDefinition activeVehicle;
+        private PlayerVehicleFleet fuelFleet;
         private float steeringMultiplier = 1;
         public float SteeringAngle { get; private set; }
         public int GroundedWheels { get; private set; }
         public float Speed => body == null ? 0 : body.velocity.magnitude;
         public Rigidbody Body => body;
+        internal void UseFuelFrom(PlayerVehicleFleet fleet) => fuelFleet = fleet;
         private void Awake()
         {
             body = GetComponent<Rigidbody>();
@@ -76,7 +78,11 @@ namespace RetailEmpireTycoon.City
             smoothSteering = Mathf.MoveTowards(smoothSteering, InputEnabled ? steering : 0,
                 2.6f * steeringMultiplier * Time.fixedDeltaTime);
             float speed = Vector3.Dot(body.velocity, transform.forward);
-            float limit = smoothThrottle >= 0 ? topSpeed : reverseSpeed;
+            if (InputEnabled && GroundedWheels > 0)
+                fuelFleet?.ConsumeFuel(Mathf.Abs(speed) * Time.fixedDeltaTime);
+            bool onReserve = fuelFleet != null && fuelFleet.FuelLitres <= 0;
+            // Reserve drive lets the player reach a station even after missing the low-fuel warning.
+            float limit = smoothThrottle >= 0 ? (onReserve ? topSpeed * .35f : topSpeed) : reverseSpeed;
             float desired = smoothThrottle * limit;
             bool reversing = speed * smoothThrottle < -.3f;
             float force = Mathf.Clamp((desired - speed) * 2, -acceleration, acceleration);

@@ -31,6 +31,7 @@ namespace RetailEmpireTycoon.City
         [SerializeField] private int sparseTrafficMaximum;
         [SerializeField] private float sparseTrafficSpawnInterval=8;
         private List<int>[] departures;
+        [NonSerialized] private Dictionary<(int, int), TrafficPolyline> turns;
         [NonSerialized] private bool[] sparseLanes;
         public IReadOnlyList<Junction> Junctions => junctions;
         public IReadOnlyList<Lane> Lanes => lanes;
@@ -72,7 +73,7 @@ namespace RetailEmpireTycoon.City
             foreach (var lane in connections)
                 if (lane.from < 0 || lane.from >= nodes.Length || lane.to < 0 || lane.to >= nodes.Length || lane.from == lane.to || lane.Path.Length < 1)
                     throw new ArgumentException("Invalid directed lane.");
-            junctions = nodes; lanes = connections; departures = null;sparseLanes=null;
+            junctions = nodes; lanes = connections; departures = null;sparseLanes=null;turns=null;
         }
 
         public IReadOnlyList<int> Departures(int node)
@@ -88,6 +89,8 @@ namespace RetailEmpireTycoon.City
 
         public TrafficPolyline Turn(int incoming, int outgoing)
         {
+            turns ??= new Dictionary<(int, int), TrafficPolyline>();
+            if (turns.TryGetValue((incoming, outgoing), out var cached)) return cached;
             var a = lanes[incoming].Path;
             var b = lanes[outgoing].Path;
             if (lanes[incoming].to != lanes[outgoing].from) throw new ArgumentException("Turn lanes must share a junction.");
@@ -95,14 +98,26 @@ namespace RetailEmpireTycoon.City
             var end = b.Sample(0, out var departure);
             // Cubic tangents keep the wheel direction continuous through the intersection.
             float control = Vector3.Distance(start, end) * .56f;
-            var points = new Vector3[19];
+            var points = new Vector3[33];
             for (int i = 0; i < points.Length; i++)
             {
                 float t = i / (float)(points.Length - 1), u = 1 - t;
                 points[i] = u*u*u*start + 3*u*u*t*(start+arrival*control)
                     + 3*u*t*t*(end-departure*control) + t*t*t*end;
             }
-            return new TrafficPolyline(points);
+            var path = new TrafficPolyline(points);
+            turns.Add((incoming, outgoing), path);
+            return path;
+        }
+
+        internal float TurnSpeed(int incoming, int outgoing)
+        {
+            var lane = lanes[incoming];
+            var next = lanes[outgoing];
+            lane.Path.Sample(lane.Path.Length, out var arrival);
+            next.Path.Sample(0, out var departure);
+            return Mathf.Min(Mathf.Min(lane.speedLimit, next.speedLimit),
+                Mathf.Lerp(3.5f, 8f, Mathf.InverseLerp(.2f, .96f, Vector3.Dot(arrival, departure))));
         }
     }
 

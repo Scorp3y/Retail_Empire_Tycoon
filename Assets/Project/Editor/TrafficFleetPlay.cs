@@ -66,7 +66,7 @@ public static class TrafficFleetPlay
             }
             if(phase==2)
             {
-                if(district>=districts.Length){Rules();SignalAndObstacleTest();CrossingTest();Finish(null);return;}
+                if(district>=districts.Length){Rules();RightOfWayTest();SignalAndObstacleTest();CrossingTest();Finish(null);return;}
                 var observer=traffic.transform.TransformPoint(districts[district]);
                 traffic.SetObserver(null);
                 int turns=0;float moved=0;bool steered=false;
@@ -89,6 +89,81 @@ public static class TrafficFleetPlay
             }
         }
         catch(Exception e){Finish(e);}
+    }
+
+    private static void RightOfWayTest()
+    {
+        var root = new GameObject("Disposable right of way test");
+        var graph = ScriptableObject.CreateInstance<TrafficRoadNetwork>();
+        try
+        {
+            var signal = Object.FindObjectsOfType<TownJunctionSignals>()[0];
+            var arms = new[] {Vector3.forward, Vector3.back, Vector3.right, Vector3.left};
+            var nodes = new TrafficRoadNetwork.Junction[5];
+            nodes[0] = new TrafficRoadNetwork.Junction();
+            var lanes = new TrafficRoadNetwork.Lane[8];
+            var signRoot = new GameObject("City junction equipment").transform;
+            signRoot.SetParent(root.transform, false);
+            var signJunction = new GameObject("Junction 0 0").transform;
+            signJunction.SetParent(signRoot, false);
+            for (int i = 0; i < arms.Length; i++)
+            {
+                var arm = arms[i];
+                var side = Vector3.Cross(Vector3.up, arm) * 1.8f;
+                nodes[i + 1] = new TrafficRoadNetwork.Junction {position = arm * 100};
+                lanes[i * 2] = new TrafficRoadNetwork.Lane
+                    {from = i + 1, to = 0, points = new[] {arm * 94.5f - side, arm * 5.5f - side}};
+                lanes[i * 2 + 1] = new TrafficRoadNetwork.Lane
+                    {from = 0, to = i + 1, points = new[] {arm * 5.5f + side, arm * 94.5f + side}};
+                var approach = new GameObject("Approach " + i).transform;
+                approach.SetParent(signJunction, false);
+                approach.rotation = Quaternion.LookRotation(arm);
+                new GameObject(i < 2 ? "PriorityRoadSign" : "YieldSign").transform.SetParent(approach, false);
+            }
+            graph.Configure(nodes, lanes);
+            var road = new GameObject("Traffic").transform;
+            road.SetParent(root.transform, false);
+            var harness = road.gameObject.AddComponent<TownRoadTraffic>();
+            harness.enabled = false;
+            var fleet = AssetDatabase.FindAssets("t:Prefab", new[] {TrafficFleetBatch.Root + "/Prefabs"})
+                .Select(guid => AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(guid)).GetComponent<TrafficVehicle>()).ToArray();
+            harness.Configure(graph, fleet, new[] {signal}, null, 3);
+            harness.Simulate(.02f, 0, Vector3.zero, false);
+            var secondary = harness.ActiveCars[0]; var north = harness.ActiveCars[1]; var south = harness.ActiveCars[2];
+            void Approach(TrafficVehicle car, int lane, int next, float beforeLine, float speed = 0)
+                => car.Place(graph, lane, lanes[lane].Path.Length - 7 - car.Length * .5f - beforeLine, next, speed);
+
+            Approach(secondary, 4, 7, .03f);
+            Approach(north, 0, 3, 7f, 7);
+            Approach(south, 2, 1, 30);
+            harness.Simulate(.02f, 0, Vector3.zero, false);
+            TrafficFleetBatch.Require(north.ReservedJunction == 0 && secondary.ReservedJunction < 0 && north.Speed >= 7,
+                "A moving priority-road car braked for an open junction or a queued side road.");
+
+            nodes[0].signalIndex = 0;
+            double green = 10 - signal.PhaseOffset;
+            Approach(secondary, 4, 7, .03f);
+            Approach(north, 0, 3, .04f);
+            Approach(south, 2, 1, .04f);
+            harness.Simulate(.02f, green, Vector3.zero, false);
+            TrafficFleetBatch.Require(north.ReservedJunction == 0 && south.ReservedJunction == 0 && secondary.ReservedJunction < 0,
+                "Opposite green through movements did not enter together, or a red car entered.");
+
+            Approach(north, 0, 3, 8f, 8);
+            Approach(south, 2, 1, 8f, 8);
+            harness.Simulate(.02f, green, Vector3.zero, false);
+            TrafficFleetBatch.Require(north.Speed >= 8 && south.Speed >= 8 && north.ReservedJunction == 0 && south.ReservedJunction == 0,
+                "A clear green approach still braked for the stop line.");
+
+            Approach(north, 0, 5, .02f); // Southbound left into the east arm.
+            Approach(south, 2, 1, 1.2f, 6);
+            harness.Simulate(.02f, green, Vector3.zero, false);
+            TrafficFleetBatch.Require(south.ReservedJunction == 0 && north.ReservedJunction < 0,
+                "A green left turn did not yield to oncoming traffic going straight.");
+            File.WriteAllText(TrafficFleetBatch.Report + "/right-of-way.txt",
+                "PASS signed priority before queue order, unobstructed straight traffic maintains speed on green in both directions, left turn yields to oncoming straight traffic.\n");
+        }
+        finally { Object.DestroyImmediate(root); Object.DestroyImmediate(graph); }
     }
     private static void RequireNoPenetrations()
     {

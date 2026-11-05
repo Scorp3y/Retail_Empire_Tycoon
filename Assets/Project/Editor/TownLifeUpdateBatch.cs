@@ -94,7 +94,7 @@ public static class TownLifeUpdateBatch
     }
     private static void Train(GameObject town)
     {
-        var service=town.GetComponentInChildren<TownRailTraffic>(true);service.serviceIntervalSeconds=420;service.metresPerSecond=11;service.carSpacing=12;
+        var service=town.GetComponentInChildren<TownRailTraffic>(true);service.serviceIntervalSeconds=360;service.metresPerSecond=11;service.carSpacing=12;
         for(int i=0;i<service.cars.Length;i++)
         {
             var f=service.cars[i].GetComponent<MeshFilter>();f.sharedMesh=Save(TownLifeModels.Train(i==0).Build(i==0?"Regional cab":"Passenger carriage"));
@@ -146,11 +146,11 @@ public static class TownLifeUpdateBatch
     private static bool In(Rect r,Vector3 p)=>r.Contains(new Vector2(p.x,p.z));
     private static void Validate()
     {
-        EditorSceneManager.OpenScene(CityUpdateSetup.CityPath);var town=Object.FindObjectOfType<TownWorldPlaces>();Require(town.GetComponentsInChildren<FarmAnimal>(true).Length==11,"Missing animated animals.");Require(town.GetComponentInChildren<TownRailTraffic>().serviceIntervalSeconds==420,"Train interval changed.");
+        EditorSceneManager.OpenScene(CityUpdateSetup.CityPath);var town=Object.FindObjectOfType<TownWorldPlaces>();Require(town.GetComponentsInChildren<FarmAnimal>(true).Length==11,"Missing animated animals.");Require(town.GetComponentInChildren<TownRailTraffic>().serviceIntervalSeconds==360,"Train interval changed.");
         var pickup=AssetDatabase.LoadAssetAtPath<GameObject>(PickupPath);Require(pickup.GetComponentsInChildren<WheelCollider>().Length==4&&pickup.GetComponent<PickupDrive>().wheels.All(w=>w.contact!=null&&w.visual!=null),"Incomplete wheel rig.");
-        var train=town.GetComponentInChildren<TownRailTraffic>();train.enabled=false;train.Advance(419);Require(!train.IsInService,"Train did not finish and hide before interval.");train.Advance(1);Require(train.IsInService,"No new departure at 420 s.");train.Advance(420);Require(train.IsInService,"No new departure at 840 s.");
+        var train=town.GetComponentInChildren<TownRailTraffic>();train.enabled=false;train.Advance(359);Require(!train.IsInService,"Train did not finish and hide before interval.");train.Advance(1);Require(train.IsInService,"No new departure at 360 s.");train.Advance(360);Require(train.IsInService,"No new departure at 720 s.");
         foreach(var f in town.GetComponentsInChildren<MeshFilter>(true))Require(f.sharedMesh==null||f.sharedMesh.vertices.All(TownBakeryQuarterPlacement.Finite),"Non-finite geometry.");
-        File.WriteAllText(Report+"/validation.txt","PASS: 11 articulated animals; four wheel contacts/visuals; train hidden between trips and departures at 420/840 seconds; native geometry finite.\n");
+        File.WriteAllText(Report+"/validation.txt","PASS: 11 articulated animals; four wheel contacts/visuals; train hidden between trips and departures at 360/720 seconds; native geometry finite.\n");
     }
     private static void Capture()
     {

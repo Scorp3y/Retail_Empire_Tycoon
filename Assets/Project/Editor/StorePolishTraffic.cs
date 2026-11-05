@@ -36,12 +36,13 @@ public static class StorePolishTraffic
         try
         {
             Require(Object.FindObjectOfType<SaveManager>(true)==null,"Player save writer present.");
-            var traffic=Object.FindObjectOfType<TownRoadTraffic>();Require(traffic.MaximumCars==29,"Traffic capacity was not reduced by 40%.");traffic.enabled=false;Object.FindObjectOfType<TownPedestrianTraffic>().enabled=false;
+            var traffic=Object.FindObjectOfType<TownRoadTraffic>();Require(traffic.MaximumCars==TownRoadTraffic.DefaultCapacity,"Unexpected town traffic capacity.");traffic.enabled=false;Object.FindObjectOfType<TownPedestrianTraffic>().enabled=false;
             var city=Object.FindObjectOfType<CityWorld>();if(city!=null){city.pickup.ReadKeyboard=false;city.pickup.InputEnabled=false;}
             Physics.simulationMode=SimulationMode.Script;
             var eye=traffic.transform.TransformPoint(new Vector3(-120,0,-144));
             int turns=0;var report=new StringBuilder();
-            object Call(string name,params object[] args)=>typeof(TownRoadTraffic).GetMethod(name,BindingFlags.NonPublic|BindingFlags.Instance).Invoke(traffic,args);
+            object Call(string name,params object[] args)=>typeof(TownRoadTraffic)
+                .GetMethod(name,BindingFlags.NonPublic|BindingFlags.Instance,null,args.Select(arg=>arg.GetType()).ToArray(),null).Invoke(traffic,args);
             for(int step=0;step<15000;step++)
             {
                 int before=traffic.ActiveCars.Sum(car=>car.CompletedTurns);
@@ -79,10 +80,12 @@ public static class StorePolishTraffic
         Require(leader.CompletedTurns>0,"A full exit blocked a car despite a free legal alternative.");
         File.WriteAllText(StorePolishBatch.Report+"/reroute.txt","PASS stopped leader abandons its blocked exit, selects a free legal turn without U-turning, and completes the junction.\n");
         var joining=Object.Instantiate(fleet[0]);
+        Require(!traffic.HasMergeGap(joining,2,obstacle.Distance),"Parking merge accepted an occupied lane.");
         bool accepted=false;
         for(int lane=0;lane<graph.Lanes.Count && !accepted;lane++)
-            accepted=traffic.TryJoinTraffic(joining,lane,graph.Lanes[lane].Path.Length*.5f);
-        Require(accepted && traffic.ActiveCars.Contains(joining) && traffic.PoolCount==2 && traffic.ActiveCars.Count==2,"Parking handoff exceeded pool capacity or replaced the visible visitor.");
+            accepted=traffic.TryJoinTraffic(joining,lane,graph.Lanes[lane].Path.Length*.5f,mergeSpeed:2);
+        Require(accepted && joining.Speed==2 && traffic.ActiveCars.Contains(joining) && traffic.PoolCount==2 && traffic.ActiveCars.Count==2,
+            "Parking handoff lost entry speed, exceeded pool capacity or replaced the visitor.");
         for(int step=0;step<200;step++){traffic.Simulate(.02f,20+step*.02,eye,false);Physics.Simulate(.02f);}
         Require(joining.Travelled>1,"Departing visitor did not continue in road traffic.");
         File.WriteAllText(StorePolishBatch.Report+"/handoff.txt","PASS same visitor car joins the road controller, keeps moving under road rules; pool and active count remain within the configured capacity.\n");

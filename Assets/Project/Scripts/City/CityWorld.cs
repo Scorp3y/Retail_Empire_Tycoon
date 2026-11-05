@@ -34,6 +34,8 @@ namespace RetailEmpireTycoon.City
         private RectTransform canvasRoot, panel;
         private TMP_Text status;
         private Button interact;
+        private TMP_Text interactLabel;
+        private float fuelNoticeUntil;
         private DeliveryCheckpoint nearest;
         private int page;
         private bool buying;
@@ -52,6 +54,7 @@ namespace RetailEmpireTycoon.City
         {
             this.trip = trip; this.orders = orders;
             vehicleFleet=trip.Fleet;
+            pickup.UseFuelFrom(vehicleFleet);
             vehicleFleet.Changed += ApplySelectedVehicle;
             vehicleFleet.TuningChanged += ApplyVehicleTuning;
             ApplySelectedVehicle();
@@ -82,6 +85,7 @@ namespace RetailEmpireTycoon.City
             var header = ui.Rect("Trip status",canvasRoot,new Vector2(0,1),new Vector2(0,1),new Vector2(308,-24),new Vector2(580,118));
             ui.Panel(header,ShopUiTheme.Paper); status = ui.Label(header,"",new Vector2(18,-12),new Vector2(544,94),19);
             interact = ui.Button(canvasRoot,"",new Vector2(740,-976),new Vector2(440,60),Interact);
+            interactLabel = interact.GetComponentInChildren<TMP_Text>();
             var buttonRect = (RectTransform)interact.transform; buttonRect.anchorMin = buttonRect.anchorMax = new Vector2(.5f,0);
             buttonRect.pivot = new Vector2(.5f,0); buttonRect.anchoredPosition = new Vector2(0,24);
             SyncFacade(shopScene); RefreshCargo();
@@ -91,6 +95,8 @@ namespace RetailEmpireTycoon.City
                 orders,unloadingGates.Select(g=>g.Point),trip.MapHomeAccess);
             if(map!=null)
             {
+                map.MiniMap.AddDrivingReadout(ui);
+                map.MiniMap.SetDrivingReadout(vehicleFleet.FuelLitres, vehicleFleet.Balance);
                 var core=facadeRoot.Find("Shop interior is closed").GetComponent<BoxCollider>();
                 var corners=new System.Collections.Generic.List<Vector3>();
                 foreach(float x in new[]{-1f,1f})foreach(float z in new[]{-1f,1f})
@@ -113,6 +119,7 @@ namespace RetailEmpireTycoon.City
                 if (Input.GetKeyDown(KeyCode.Escape)) CloseWorkshop();
                 return;
             }
+            map?.MiniMap.SetDrivingReadout(vehicleFleet.FuelLitres, vehicleFleet.Balance);
             map?.Tick();
             status.transform.parent.gameObject.SetActive(false);
             if(map!=null&&map.IsOpen){interact.gameObject.SetActive(false);return;}
@@ -120,11 +127,16 @@ namespace RetailEmpireTycoon.City
             var nearby=checkpoints.Where(c=>c.DistanceTo(pickup)<14).OrderBy(c=>c.DistanceTo(pickup)).FirstOrDefault();
             string dockingHint=nearby!=null&&!nearby.CanUse(pickup)?nearby.UnavailableReason(pickup):string.Empty;
             bool canTune = panel == null && CanTuneHere();
-            interact.gameObject.SetActive((canTune || nearest != null) && panel == null);
+            bool atPump = town != null && town.IsAtFuelPump(pickup);
+            interact.gameObject.SetActive((canTune || atPump || nearest != null) && panel == null);
             if (canTune)
-                interact.GetComponentInChildren<TMP_Text>().text = "E — AUTO WORKS";
+                interactLabel.text = "E — AUTO WORKS";
+            else if (atPump)
+                interactLabel.text = pickup.Speed > .45f ? "Stop at the pump to refuel"
+                    : Time.unscaledTime < fuelNoticeUntil ? vehicleFleet.Notice
+                    : vehicleFleet.RefillPrice == 0 ? "Tank is full" : $"E — Refuel · ${vehicleFleet.RefillPrice:N0}";
             else if (nearest != null)
-                interact.GetComponentInChildren<TMP_Text>().text = nearest.kind == CheckpointKind.Depot ? "E — "+SupplierRouting.Name(nearest.supplier)
+                interactLabel.text = nearest.kind == CheckpointKind.Depot ? "E — "+SupplierRouting.Name(nearest.supplier)
                     : nearest.kind == CheckpointKind.Showroom ? "E — View vehicles"
                     : nearest.kind == CheckpointKind.Unload ? "E — Unload vehicle" : "E — Return to store";
             status.text = $"{trip.Fleet.SelectedName}: {orders.PickupWeightKg:0.#} / {orders.pickupCapacityKg:0} kg • {orders.PickupVolumeM3:0.##} / {orders.pickupCapacityM3:0.#} m³\n"
@@ -140,6 +152,15 @@ namespace RetailEmpireTycoon.City
             if (CanTuneHere())
             {
                 OpenWorkshop();
+                return;
+            }
+            if (town != null && town.IsAtFuelPump(pickup))
+            {
+                if (pickup.Speed <= .45f)
+                {
+                    vehicleFleet.Refuel();
+                    fuelNoticeUntil = Time.unscaledTime + 2.5f;
+                }
                 return;
             }
             // Resolve from the current pose: button/input can arrive before the next world Update.

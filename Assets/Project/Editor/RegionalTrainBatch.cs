@@ -203,7 +203,7 @@ public static class RegionalTrainBatch
     {
         var scene = EditorSceneManager.OpenScene(CityUpdateSetup.CityPath);
         var train = Object.FindObjectOfType<TownRailTraffic>();
-        Require(train.cars.Length == 4 && train.serviceIntervalSeconds == 420, "Existing service changed.");
+        Require(train.cars.Length == 4 && train.serviceIntervalSeconds == 360, "Existing service changed.");
         foreach (var car in train.cars)
         {
             var filters = car.GetComponentsInChildren<MeshFilter>();
@@ -213,25 +213,25 @@ public static class RegionalTrainBatch
         Require(Quaternion.Angle(train.cars[3].GetChild(0).localRotation, Quaternion.Euler(0, 180, 0)) < .01f, "Tail cab faces the wrong direction.");
         train.enabled = false;
         train.Advance((train.layout.stationDistance - train.TravelDistance) / train.metresPerSecond + .01f);
-        Require(train.IsWaiting && Mathf.Abs(train.TravelDistance - train.layout.stationDistance) < .01f, "Station stop failed.");
+        Require(train.TravelDistance > train.layout.stationDistance, "Train did not pass the station.");
         RenderSettings.fog = false;
         var head = train.cars[0].position;
         TownFloristBatch.Render(scene, Pictures + "/UnityTrain.png", head + new Vector3(18, 8, 22), head + new Vector3(-11, 1.5f, 0));
         TownFloristBatch.Render(scene, Pictures + "/UnityCab.png", head + new Vector3(8, 4, 7), head + new Vector3(1, 1.5f, 0));
         TownFloristBatch.Render(scene, Pictures + "/UnityStation.png", head + new Vector3(37, 28, -54), head + new Vector3(-10, 0, -13));
-        train.Advance((float)(419 - train.ServiceClock));
+        train.Advance((float)(359 - train.ServiceClock));
         Require(!train.IsInService && train.cars.All(c => !c.gameObject.activeSelf), "Train not hidden between trips.");
         train.Advance(1.01f);
-        Require(train.IsInService && Math.Abs(train.NextDeparture - 840) < .01, "420-second departure failed.");
+        Require(train.IsInService && Math.Abs(train.NextDeparture - 720) < .01, "360-second departure failed.");
         float position = train.TravelDistance;
         train.SetCrossingHold(true); train.Advance(5);
         Require(Mathf.Abs(position - train.TravelDistance) < .001f, "Occupied crossing hold failed.");
-        train.SetCrossingHold(false); train.Advance((float)(840.01 - train.ServiceClock));
-        Require(train.IsInService && Math.Abs(train.NextDeparture - 1260) < .01, "840-second departure failed.");
+        train.SetCrossingHold(false); train.Advance((float)(720.01 - train.ServiceClock));
+        Require(train.IsInService && Math.Abs(train.NextDeparture - 1080) < .01, "720-second departure failed.");
         scene = EditorSceneManager.OpenScene(CityUpdateSetup.GamePath);
         var scaled = Object.FindObjectOfType<TownRailTraffic>();
         Require(scaled != null && scaled.cars.All(c => c.GetComponentsInChildren<MeshFilter>().Length == 1), "Store-view town lost train modules.");
-        File.WriteAllText(Report + "/validation.txt", "PASS: actual imported FBX units/axes; four native one-draw modules; rear-facing tail cab; station stop; hidden idle; 420/840-second repeated departures; occupied crossing hold; shared model in City and reduced-scale Game views.\n");
+        File.WriteAllText(Report + "/validation.txt", "PASS: actual imported FBX units/axes; four native one-draw modules; rear-facing tail cab; continuous station passage; hidden idle; 360/720-second repeated departures; occupied crossing hold; shared model in City and reduced-scale Game views.\n");
     }
 
     public static void Play()

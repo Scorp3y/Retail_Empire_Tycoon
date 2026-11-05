@@ -14,6 +14,7 @@ namespace RetailEmpireTycoon.Parking
         private float accessDistance;
         public int LaneIndex {get;private set;}
         public float ExitDistance {get;private set;}
+        public float MergeDistance {get;private set;}
         public int SpawnLane {get;private set;}
         public float SpawnDistance {get;private set;}
         public float AccessDistance=>accessDistance;
@@ -46,8 +47,7 @@ namespace RetailEmpireTycoon.Parking
             foreach(var collider in Physics.OverlapBox(first+Vector3.up*.4f,new Vector3(width*.5f+.15f,.3f,length*.5f+.4f),rotation,~0,QueryTriggerInteraction.Ignore))
                 if(collider.GetComponentInParent<TrafficVehicle>()!=null)return Reject("Street spawn is occupied.");
             arrival.Add(first);arrival.Add(first+initialDirection);
-            departure.Add(streetEntry.position+Vector3.up*.02f);
-            AddSamples(departure,accessDistance,end);
+            AddDepartureMerge(end);
             Status="Ready";return true;
         }
         private bool Reject(string reason){Status=reason;return false;}
@@ -113,6 +113,27 @@ namespace RetailEmpireTycoon.Parking
         {
             var point=traffic.transform.TransformPoint(path.Sample(distance,out _));
             point.y=.02f;return point;
+        }
+        private void AddDepartureMerge(float endDistance)
+        {
+            var start = streetEntry.position;
+            start.y = .02f;
+            var inward = drivewayEntry.position - streetEntry.position;
+            inward.y = 0;
+            MergeDistance = Mathf.Min(endDistance, accessDistance + 5);
+            var end = World(MergeDistance);
+            lane.Sample(MergeDistance, out var direction);
+            var exitHeading = traffic.transform.TransformDirection(direction);
+            exitHeading.y = 0;
+            float handle = Vector3.Distance(start, end) * .42f;
+            var firstControl = start - inward.normalized * handle;
+            var lastControl = end - exitHeading.normalized * handle;
+            for (int i = 0; i < 10; i++)
+            {
+                float t = i / 10f, u = 1 - t;
+                departure.Add(u*u*u*start + 3*u*u*t*firstControl + 3*u*t*t*lastControl + t*t*t*end);
+            }
+            AddSamples(departure,MergeDistance,endDistance);
         }
         private void AddSamples(List<Vector3> points,float start,float end)
         {

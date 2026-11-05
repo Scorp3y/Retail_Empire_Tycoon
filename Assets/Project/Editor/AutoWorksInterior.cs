@@ -6,16 +6,15 @@ internal sealed partial class AutoWorksModel
     private void BuildInterior()
     {
         var floor = Group(interior, "Concrete and bay markings");
-        Surface(floor, Finish.Concrete).Ground(-24, -8, 35, 14, .003f, White);
+        foreach (var patch in OutsidePits(Rect.MinMaxRect(East, Rear, West, Facade)))
+            Surface(floor, Finish.Concrete).Ground(patch.center.x, patch.center.y, patch.width, patch.height, .003f, White);
         foreach (float x in new[] {-9.7f, -18.9f, -29.1f, -38.3f})
             Surface(floor, Finish.Yellow).Ground(x, -7.65f, .105f, 11.6f, .007f, White);
         foreach (float x in BayX)
         {
             Surface(floor, Finish.Yellow).Ground(x, -13.07f, 4.2f, .10f, .007f, White);
-            Surface(floor, Finish.Steel).Ground(x, -8, .25f, 6.4f, .008f, White);
-            for (int i = 0; i < 32; i++)
-                Surface(floor, Finish.Roof).Ground(x, -11.08f + i * .20f, .225f, .05f, .011f, White);
         }
+        BuildInspectionPits();
         var frame = Group(interior, "Steel frames");
         foreach (float x in new[] {East + .55f, -35.6f, -29.8f, -24f, -18.2f, -12.4f, West - .55f})
         {

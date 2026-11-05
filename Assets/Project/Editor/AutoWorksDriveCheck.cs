@@ -86,6 +86,7 @@ public static class AutoWorksDriveCheck
         foreach (var traffic in Object.FindObjectsOfType<TownRoadTraffic>()) traffic.enabled = false;
         foreach (var traffic in Object.FindObjectsOfType<TrafficVehicle>()) traffic.gameObject.SetActive(false);
         Physics.SyncTransforms();
+        VerifyPitSurfaces();
         equipment = facility.GetComponentsInChildren<BoxCollider>()
             .Where(c => c.transform.IsChildOf(facility.Find("Props/Workshop wall equipment")) ||
                 c.name == "Steel column collider")
@@ -112,6 +113,34 @@ public static class AutoWorksDriveCheck
         File.AppendAllText(Report, "PASS: the real lights and emissive surfaces switch off and on.\n");
         // Run through the normal WheelCollider controller, at fixed-size steps.
         Time.timeScale = 5;
+    }
+
+    private static void VerifyPitSurfaces()
+    {
+        var supports = facility.Find("Yard/Load-bearing pit grating").GetComponentsInChildren<BoxCollider>();
+        Require(supports.Length == 3, "Three inspection pits need load-bearing grates.");
+        foreach (var grate in supports)
+        {
+            foreach (float offset in new[] {-2.3f, 0, 2.3f})
+            {
+                var point = grate.bounds.center + Vector3.forward * offset + Vector3.up * 1.5f;
+                Require(Physics.Raycast(point, Vector3.down, out var top, 4, ~0, QueryTriggerInteraction.Ignore) &&
+                    top.collider == grate && Mathf.Abs(top.point.y - facility.position.y) < .002f,
+                    "Pit wheel support does not match the floor.");
+                grate.enabled = false;
+                try
+                {
+                    Physics.SyncTransforms();
+                    Require(Physics.Raycast(point, Vector3.down, out var bottom, 4, ~0, QueryTriggerInteraction.Ignore) &&
+                        bottom.collider.name == "Pit bottom" && Mathf.Abs(top.point.y - bottom.point.y - AutoWorksModel.PitDepth) < .004f,
+                        $"Pit depth check at {point:F3} reached {bottom.collider?.name ?? "no collider"} at {bottom.point.y:F3}. " +
+                        string.Join(", ", Physics.RaycastAll(point, Vector3.down, 4, ~0, QueryTriggerInteraction.Ignore)
+                            .Select(hit => hit.collider.name + " " + hit.point.y.ToString("F3"))));
+                }
+                finally { grate.enabled = true; Physics.SyncTransforms(); }
+            }
+        }
+        File.AppendAllText(Report, "PASS: all three grates meet the slab at floor height; nine rays confirmed real 1.45 m recesses below.\n");
     }
 
     private static void Step()

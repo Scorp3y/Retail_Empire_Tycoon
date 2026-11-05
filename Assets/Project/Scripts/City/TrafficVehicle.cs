@@ -19,6 +19,7 @@ namespace RetailEmpireTycoon.City
         [SerializeField] private Wheel[] wheels = Array.Empty<Wheel>();
         private TrafficRoadNetwork network;
         private TrafficPolyline turn;
+        private TrafficPolyline previousPath;
         private Rigidbody body;
         private float distance, wheelRoll, steering;
         private int laneIndex, nextLane;
@@ -37,7 +38,7 @@ namespace RetailEmpireTycoon.City
         public int ReservedJunction { get; set; } = -1;
         public float HoldSeconds { get; set; }
         public Vector3 LocalPosition => network == null ? transform.localPosition : CurrentPath.Sample(distance,out _);
-        public Vector3 Forward { get { if(network==null)return transform.localRotation*Vector3.forward;CurrentPath.Sample(distance,out var direction);return direction; } }
+        public Vector3 Forward { get; private set; } = Vector3.forward;
         private TrafficPolyline CurrentPath => turn ?? network.Lanes[laneIndex].Path;
 
         public void Configure(string id, float bodyLength, float bodyWidth, float axleDistance, float radius, Wheel[] bindings)
@@ -48,12 +49,14 @@ namespace RetailEmpireTycoon.City
             designId=id; length=bodyLength; width=bodyWidth; wheelbase=axleDistance; wheelRadius=radius; wheels=bindings;
         }
 
-        public void Place(TrafficRoadNetwork roads, int lane, float metres, int departure)
+        public void Place(TrafficRoadNetwork roads, int lane, float metres, int departure, float mergeSpeed = 0)
         {
-            network=roads; laneIndex=lane; nextLane=departure; distance=metres; turn=null;
-            Speed=0; wheelRoll=steering=0; Travelled=0; CompletedTurns=0; ReservedJunction=-1; HoldSeconds=0;
+            network=roads; laneIndex=lane; nextLane=departure; distance=metres; turn=null; previousPath=null;
+            Speed=Mathf.Clamp(mergeSpeed, 0, roads.Lanes[lane].speedLimit);
+            if (mergeSpeed <= 0) wheelRoll=steering=0;
+            Travelled=0; CompletedTurns=0; ReservedJunction=-1; HoldSeconds=0;
             body=GetComponent<Rigidbody>();
-            Pose(false);
+            Pose(0);
         }
         public void ChooseDeparture(int lane) => nextLane=lane;
 
@@ -62,7 +65,7 @@ namespace RetailEmpireTycoon.City
         {
             wheelRoll=Mathf.Repeat(wheelRoll+signedMetres/wheelRadius*Mathf.Rad2Deg,360);
             steering=Mathf.MoveTowards(steering,Mathf.Clamp(steerDegrees,-32,32),90*seconds);
-            foreach(var wheel in wheels)wheel.visual.localRotation=Quaternion.Euler(0,wheel.front?steering:0,0)*Quaternion.Euler(wheelRoll,0,0);
+            PoseWheels();
         }
 
         /// <summary>allowedMetres is front-bumper clearance after all road rules; movement never exceeds it.</summary>
@@ -70,11 +73,11 @@ namespace RetailEmpireTycoon.City
         {
             if (seconds <= 0 || float.IsNaN(seconds) || float.IsInfinity(seconds)) return;
             float clearance=Mathf.Max(0, allowedMetres);
-            float limit=IsTurning ? 3.8f : network.Lanes[laneIndex].speedLimit;
-            // Slow before a turn, not after entering its curve.
-            if (!IsTurning && Remaining < 16) limit=Mathf.Min(limit, Mathf.Sqrt(3.8f*3.8f+4*Remaining));
-            float target=Mathf.Min(limit, Mathf.Sqrt(2*4*clearance));
-            Speed=Mathf.MoveTowards(Speed,target,(target<Speed ? 5 : 1.8f)*seconds);
+            float curveSpeed = nextLane >= 0 ? network.TurnSpeed(laneIndex, nextLane) : network.Lanes[laneIndex].speedLimit;
+            float limit = IsTurning ? curveSpeed : Mathf.Min(network.Lanes[laneIndex].speedLimit,
+                Mathf.Sqrt(curveSpeed * curveSpeed + 3.6f * Remaining));
+            float target=Mathf.Min(limit, Mathf.Min(Mathf.Sqrt(2*4*clearance), clearance / .65f));
+            Speed=Mathf.MoveTowards(Speed,target,(target<Speed ? 4.3f : 1.8f)*seconds);
             float travel=Mathf.Min(clearance,Speed*seconds);
             if (travel < .0001f) { Speed=0; HoldSeconds+=seconds; return; }
             HoldSeconds=0; Travelled+=travel;
@@ -86,26 +89,50 @@ namespace RetailEmpireTycoon.City
                 if (distance < CurrentPath.Length-.00001f) break;
                 if (turn == null)
                 {
+                    previousPath=CurrentPath;
                     turn=network.Turn(laneIndex,nextLane); distance=0;
                 }
                 else
                 {
+                    previousPath=turn;
                     laneIndex=nextLane; nextLane=-1; turn=null; distance=0; CompletedTurns++;
                     // The controller selects the next departure before the next simulation step.
                     if (remaining > 0) { distance=Mathf.Min(remaining,CurrentPath.Length-.001f); remaining=0; }
                 }
             }
             wheelRoll=Mathf.Repeat(wheelRoll+travel/wheelRadius*Mathf.Rad2Deg,360);
-            Pose(true);
+            Pose(seconds);
         }
-        private void Pose(bool interpolate)
+        private Vector3 RoutePosition(float metres)
         {
-            var position=CurrentPath.Sample(distance,out var forward);
-            CurrentPath.Sample(Mathf.Min(distance+wheelbase,CurrentPath.Length),out var ahead);
-            float turnAngle=Vector3.SignedAngle(forward,ahead,Vector3.up);
-            steering=Mathf.MoveTowards(steering,Mathf.Clamp(turnAngle,-32,32),5);
-            var rotation=Quaternion.LookRotation(forward,Vector3.up);
-            if (body != null && Application.isPlaying && interpolate)
+            var path = CurrentPath;
+            if (metres < 0 && previousPath != null) return previousPath.Sample(previousPath.Length + metres, out _);
+            if (metres > path.Length && nextLane >= 0)
+            {
+                var next = IsTurning ? network.Lanes[nextLane].Path : network.Turn(laneIndex, nextLane);
+                return next.Sample(metres - path.Length, out _);
+            }
+            float within = Mathf.Clamp(metres, 0, path.Length);
+            return path.Sample(within, out var direction) + direction * (metres - within);
+        }
+
+        private void Pose(float seconds)
+        {
+            var position = CurrentPath.Sample(distance, out _);
+            // Sample either side of a joint. Segment boundaries and lane transitions share
+            // the same heading instead of snapping to the next segment's tangent.
+            var before = RoutePosition(distance - .8f);
+            var after = RoutePosition(distance + .8f);
+            Forward = (after - before).normalized;
+            var halfAxle = wheelbase * .5f;
+            var rear = RoutePosition(distance - halfAxle);
+            var front = RoutePosition(distance + halfAxle);
+            var rearTangent = RoutePosition(distance - halfAxle + .55f) - rear;
+            var frontTangent = front - RoutePosition(distance + halfAxle - .55f);
+            float targetSteer = Vector3.SignedAngle(rearTangent, frontTangent, Vector3.up);
+            steering = Mathf.Lerp(steering, Mathf.Clamp(targetSteer, -32, 32), 1 - Mathf.Exp(-11 * seconds));
+            var rotation=Quaternion.LookRotation(Forward,Vector3.up);
+            if (body != null && Application.isPlaying && seconds > 0)
             {
                 body.MovePosition(transform.parent.TransformPoint(position));
                 body.MoveRotation(transform.parent.rotation*rotation);
@@ -115,8 +142,19 @@ namespace RetailEmpireTycoon.City
                 transform.localPosition=position; transform.localRotation=rotation;
                 if (body != null) { body.position=transform.position; body.rotation=transform.rotation; }
             }
+            PoseWheels();
+        }
+
+        private void PoseWheels()
+        {
+            float curvature = Mathf.Tan(steering * Mathf.Deg2Rad) / wheelbase;
             foreach (var wheel in wheels)
-                wheel.visual.localRotation=Quaternion.Euler(0,wheel.front ? steering : 0,0)*Quaternion.Euler(wheelRoll,0,0);
+            {
+                float angle = wheel.front
+                    ? Mathf.Atan2(wheelbase * curvature, 1 - wheel.visual.localPosition.x * curvature) * Mathf.Rad2Deg
+                    : 0;
+                wheel.visual.localRotation = Quaternion.Euler(0, angle, 0) * Quaternion.Euler(wheelRoll, 0, 0);
+            }
         }
     }
 }

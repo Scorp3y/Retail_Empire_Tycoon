@@ -128,8 +128,8 @@ namespace RetailEmpireTycoon.City
                         return access.Length == 0 ? access : new[] { entry }.Concat(access).ToArray();
                     }, gate));
             }
-            // These are orientation landmarks, not invented interactable suppliers.
-            AddLandmark("fuel", "Gas station", "Roadside landmark", "FuelShopDetailed", TownMapSymbol.Fuel);
+            points.Add(new TownMapPoint("fuel", "Gas station", "Stop between the pumps and press E to refuel",
+                TownMapCategory.Services, TownMapSymbol.Fuel, () => TownWorldPlaces.FuelStop, TownWorldPlaces.FuelAccess));
             AddLandmark("station", "Railway station", "Passenger station", "Railway station", TownMapSymbol.Train);
             var workshop = town.GetComponentsInChildren<GarageDoor>(true).FirstOrDefault(door => door.name == "Door_2");
             if (workshop != null)

@@ -16,14 +16,18 @@ internal sealed partial class AutoWorksModel
         var panelSeam = new TownMeshBuilder();
         const float glassWidth = .63f;
         const float windowHeight = .43f;
-        const float panelWidth = Width - .016f;
+        const float panelWidth = Width + .04f;
         const float gap = .009f;
         float band = (GarageDoor.SectionHeight - gap - windowHeight) * .5f;
         BeveledBox(basicPanel, Vector3.zero, new Vector3(panelWidth, GarageDoor.SectionHeight - gap, .115f), .025f);
         foreach (float dy in new[] {-.245f, .225f})
             BeveledBox(basicPanel, new Vector3(0, dy, .058f), new Vector3(panelWidth - .05f, .033f, .027f), .007f);
         foreach (float dy in new[] {-1f, 1f})
-            BeveledBox(glazedPanel, new Vector3(0, (windowHeight + band) / 2 * dy, 0), new Vector3(panelWidth, band, .115f), .017f);
+        {
+            float extension = dy > 0 ? .023f : 0;
+            BeveledBox(glazedPanel, new Vector3(0, ((windowHeight + band) / 2 + extension / 2) * dy, 0),
+                new Vector3(panelWidth, band + extension, .115f), .017f);
+        }
         float left = -panelWidth * .5f;
         for (int i = 0; i < 6; i++)
         {
@@ -34,8 +38,13 @@ internal sealed partial class AutoWorksModel
             left = x + glassWidth / 2;
         }
         BeveledBox(glazedPanel, new Vector3((left + panelWidth / 2) / 2, 0, 0), new Vector3(panelWidth / 2 - left, windowHeight, .115f), .011f);
-        panelSeam.Quad(new Vector3(-2.65f,-.415f,.060f),new Vector3(2.65f,-.415f,.060f),
-            new Vector3(2.65f,-.401f,.060f),new Vector3(-2.65f,-.401f,.060f),White);
+        float half = panelWidth / 2, bottom = -GarageDoor.SectionHeight / 2 - .012f;
+        var a = new Vector3(-half, bottom, .006f);
+        var b = new Vector3(half, bottom, .006f);
+        var c = b + Vector3.up * .042f;
+        var d = a + Vector3.up * .042f;
+        panelSeam.Quad(a, b, c, d, White);
+        panelSeam.Quad(b, a, d, c, White);
         var seamMesh = SaveMesh(panelSeam, "Section_gasket_module");
         var panelMesh = SaveMesh(basicPanel, "Section_module");
         var topMesh = SaveMesh(glazedPanel, "Glazed_section_module");
@@ -43,6 +52,12 @@ internal sealed partial class AutoWorksModel
         for (int bay = 0; bay < BayX.Length; bay++)
         {
             float x = BayX[bay];
+            // Fill the setback between the masonry and the guide tracks, outside the clear opening.
+            foreach (float side in new[] {-1f, 1f})
+                Box(rails, Finish.Olive, x + side * (Width / 2 + .14f), Height / 2, -1.50f,
+                    .28f, Height, .40f);
+            Box(rails, Finish.Plaster, x, (Height + Eaves) / 2, -1.393f,
+                Width, Eaves - Height, .155f);
             var door = Group(doors, "Door_" + (bay + 1), false);
             door.localPosition = new Vector3(x, 0, DoorPlane);
             var sensor = Solid(door, "8 m approach trigger", new Vector3(0, 2.34f, Facade - DoorPlane + 4f),
@@ -58,7 +73,7 @@ internal sealed partial class AutoWorksModel
                 bool top = i == GarageDoor.SectionCount - 1;
                 AttachMesh(section, "Olive leaf", top ? topMesh : panelMesh, Finish.Olive, false);
                 if (top) AttachMesh(section, "Glazing", glassMesh, Finish.Glass, false);
-                else if (i > 0) AttachMesh(section, "Panel seam", seamMesh, Finish.Steel, false);
+                AttachMesh(section, "Panel seam", seamMesh, Finish.Steel, false);
                 GarageDoor.SetSectionPose(section, i, 0);
                 sections.Add(section);
             }
@@ -86,8 +101,8 @@ internal sealed partial class AutoWorksModel
                     Beam(rails, Finish.Steel, At(Mathf.Lerp(GarageDoor.BendStart, bendEnd, part / 7f)),
                         At(Mathf.Lerp(GarageDoor.BendStart, bendEnd, (part + 1) / 7f)), .089f);
                 Beam(rails, Finish.Steel, At(bendEnd), At(GarageDoor.OpenTravel + Height + .12f), .089f);
-                foreach (float d in new[] {bendEnd + .72f, bendEnd + 3.75f})
-                    Beam(rails, Finish.Steel, At(d), At(d) + Vector3.up * .28f, .056f);
+                foreach (float distance in new[] {bendEnd + .72f, bendEnd + 3.75f})
+                    Beam(rails, Finish.Steel, At(distance), At(distance) + Vector3.up * .28f, .056f);
             }
         }
     }

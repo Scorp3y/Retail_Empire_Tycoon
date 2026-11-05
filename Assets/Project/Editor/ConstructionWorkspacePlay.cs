@@ -69,10 +69,11 @@ public static class ConstructionWorkspacePlay
         var parking=Object.FindObjectOfType<ParkingTraffic>();parking.enabled=false;
         var roads=Object.FindObjectOfType<RetailEmpireTycoon.City.TownRoadTraffic>();roads.enabled=false;
         foreach(var roadCar in roads.ActiveCars)roadCar.gameObject.SetActive(false);
-        Require(roads.MaximumCars==29,"Shared town retained its old traffic capacity.");
+        Require(roads.MaximumCars==RetailEmpireTycoon.City.TownRoadTraffic.DefaultCapacity,"Unexpected shared town traffic capacity.");
         for(int i=0;i<5;i++)yield return null;
         if(Frontage){FrontageMigration(starter);foreach(var step in GroundOnlyTransports(starter))yield return step;}
         Physics.simulationMode=SimulationMode.Script;
+        VerifyFrontageDecor(starter);
         Require(Mathf.Abs(starter.building.grid.cellSize-ShopProportions.CellSize)<.00001f && Mathf.Abs(GridSystem.StoreyHeight-1.65f)<.0001f,"Construction grid/storeys were not enlarged.");
         var bays=Object.FindObjectsOfType<ParkingBay>().Where(bay=>bay.GetComponentInParent<BuildPreview>()==null).ToArray();
         Require(bays.Length==3 && bays.All(bay=>Mathf.Abs(bay.width-1.943271f)<.005f && Mathf.Abs(bay.length-3.923667f)<.005f),"Parking must match the updated 1.1x kit.");
@@ -243,6 +244,41 @@ public static class ConstructionWorkspacePlay
         starter.cityTrip.Return();while(starter.cityTrip.Transitioning)yield return null;
         Require(!starter.cityTrip.InCity,"Return from City failed.");
         File.WriteAllText(Report+"/city.txt","PASS actual Game -> City -> Game; no automatic roof; scaled wall top "+expectedTop+"; uniform world scale, player-built surfaces only.\n");
+    }
+
+    private static void VerifyFrontageDecor(StarterStoreInitialization starter)
+    {
+        if (!starter.CreateNewGame().frontageDecorGranted) return; // Older assembly stages predate this furniture.
+        var frontage = Object.FindObjectsOfType<PlacedObject>().Where(item => item.item != null &&
+            item.item.id.StartsWith("frontage_", StringComparison.Ordinal)).ToArray();
+        Require(frontage.Length == 6, "Starter frontage must have six editable pieces.");
+        var bench = frontage.Single(item => item.item.id == "frontage_bench");
+        var anchor = bench.anchorCell;
+        var item = bench.item;
+        var editor = starter.building.GetComponent<BuildEditingController>();
+        editor.ReadPointerInput = false;
+        editor.Begin();
+        Require(editor.Select(bench) && editor.DeleteSelected(), "Outdoor bench cannot be returned to construction storage.");
+        editor.Finish();
+        starter.building.EnterBuildMode(item);
+        Require(starter.building.CanPlaceAt(anchor).ok && starter.building.TryPlaceAt(anchor), "Outdoor bench cannot be built back on its original spot.");
+        starter.building.ExitBuildMode();
+
+        var legacy = JsonUtility.FromJson<GameData>(JsonUtility.ToJson(starter.blueprint.initialState));
+        starter.UpgradeUnmodifiedLayout(legacy);
+        starter.UpgradeUnmodifiedLayout(legacy);
+        Require(legacy.placedObjects.Count(placed => placed.itemId.StartsWith("frontage_", StringComparison.Ordinal)) == 6,
+            "The unchanged legacy frontage did not get exactly one set of props.");
+        var customized = JsonUtility.FromJson<GameData>(JsonUtility.ToJson(starter.blueprint.initialState));
+        customized.placedObjects.First(placed => placed.itemId == "wall_01").x += 20;
+        starter.UpgradeUnmodifiedLayout(customized);
+        Require(!customized.placedObjects.Any(placed => placed.itemId.StartsWith("frontage_", StringComparison.Ordinal)) &&
+            customized.buildInventory.Where(entry => entry.itemId.StartsWith("frontage_", StringComparison.Ordinal)).Sum(entry => entry.count) == 6,
+            "A customized frontage received props outside the player's inventory.");
+        Directory.CreateDirectory("Docs/TownFlowUpdate");
+        var focus = starter.blueprint.cameraFocus + Vector3.back * 5;
+        TownFloristBatch.Render(EditorSceneManager.GetActiveScene(), "Docs/TownFlowUpdate/StarterDecor.png", focus + new Vector3(-10, 7, -9), focus);
+        File.WriteAllText("Docs/TownFlowUpdate/Decor.txt", "PASS six editable props; bench removed and rebuilt; unchanged legacy save migrated once; custom layout received six pieces in storage.\n");
     }
     private static System.Collections.Generic.IEnumerable<object> GroundOnlyTransports(StarterStoreInitialization starter)
     {

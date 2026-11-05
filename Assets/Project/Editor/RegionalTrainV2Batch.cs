@@ -259,7 +259,7 @@ public static class RegionalTrainV2Batch
         try
         {
             var service=town.GetComponentInChildren<TownRailTraffic>(true);Check(service!=null,"Existing rail service missing");
-            string before=Signature(town,service.transform);var layout=service.layout;float speed=service.metresPerSecond,wait=service.stationWaitSeconds,interval=service.serviceIntervalSeconds;
+            string before=Signature(town,service.transform);var layout=service.layout;float speed=service.metresPerSecond,interval=service.serviceIntervalSeconds;
             var existing=service.GetComponentInChildren<RegionalTrainArticulation>(true);
             if(existing!=null) Object.DestroyImmediate(existing.gameObject);
             else foreach(var car in service.cars)
@@ -270,7 +270,7 @@ public static class RegionalTrainV2Batch
             var train=(GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(Root+"/Prefabs/RegionalTrain.prefab"));train.transform.SetParent(service.transform,false);
             service.cars=Enumerable.Range(1,3).Select(i=>Find(train.transform,"Car"+i)).ToArray();service.carSpacing=16;
             train.GetComponent<RegionalTrainArticulation>().service=service;service.Advance(.0001f);
-            Check(service.layout==layout&&speed==service.metresPerSecond&&wait==service.stationWaitSeconds&&interval==service.serviceIntervalSeconds,"Service contract changed");
+            Check(service.layout==layout&&speed==service.metresPerSecond&&interval==service.serviceIntervalSeconds,"Service contract changed");
             Check(Signature(town,service.transform)==before,"Objects outside train changed");
             PrefabUtility.SaveAsPrefabAsset(town,TownWorldAssembler.PrefabPath);
             File.WriteAllText(Report+"/protection.txt","PASS: component/transform signature outside rail service unchanged; service component retained, layout/speed/wait/interval retained; only cars/spacing replaced.\n");
@@ -297,7 +297,7 @@ public static class RegionalTrainV2Batch
     {
         var scene=EditorSceneManager.OpenScene(CityUpdateSetup.CityPath);
         var service=Object.FindObjectOfType<TownRailTraffic>();
-        Check(service.cars.Length==3&&service.carSpacing==16&&service.serviceIntervalSeconds==420,"Wrong assembly/timetable");
+        Check(service.cars.Length==3&&service.carSpacing==16&&service.serviceIntervalSeconds==360,"Wrong assembly/timetable");
         Check(Object.FindObjectOfType<TownLevelCrossing>().train==service,"Crossing reference lost");
         Check(!service.cars.SelectMany(c=>c.GetComponentsInChildren<MeshFilter>(true)).Any(f=>!AssetDatabase.GetAssetPath(f.sharedMesh).StartsWith(Root+"/Meshes/")),"Old train mesh retained");
         service.enabled=false;service.Advance(.001f);CheckPose(service);
@@ -306,7 +306,7 @@ public static class RegionalTrainV2Batch
         service.SetCrossingHold(true);rotation=wheel.localRotation;float held=service.TravelDistance;service.Advance(2);
         Check(service.TravelDistance==held&&Quaternion.Angle(rotation,wheel.localRotation)<.01f,"Stopped wheels moved");service.SetCrossingHold(false);
         service.Advance((service.layout.stationDistance-service.TravelDistance)/service.metresPerSecond+.001f);
-        Check(service.IsWaiting,"Station stop missing");CheckPose(service);rotation=wheel.localRotation;service.Advance(1);Check(Quaternion.Angle(rotation,wheel.localRotation)<.01f,"Station wheels moved");
+        CheckPose(service);rotation=wheel.localRotation;float atPlatform=service.TravelDistance;service.Advance(1);Check(service.TravelDistance>atPlatform&&Quaternion.Angle(rotation,wheel.localRotation)>1,"Train paused at the platform");
         RenderSettings.fog=false;
         var head=service.cars[0].position;var forward=service.cars[0].forward;var right=service.cars[0].right;var center=head-forward*16;
         TownFloristBatch.Render(scene,Report+"/UnityTrain.png",center+forward*37+right*38+Vector3.up*22,center+Vector3.up*1.6f,22);
@@ -316,16 +316,16 @@ public static class RegionalTrainV2Batch
         for(int i=1;i<points.Length-1;i++){cumulative+=Vector3.Distance(points[i-1],points[i]);if(Vector3.Angle(points[i]-points[i-1],points[i+1]-points[i])>2){curve=cumulative;break;}}
         if(curve>service.TravelDistance)
         {
-            service.Advance(service.stationWaitSeconds+(curve-service.TravelDistance)/service.metresPerSecond);CheckPose(service);
+            service.Advance((curve-service.TravelDistance)/service.metresPerSecond);CheckPose(service);
             head=service.cars[0].position;center=head-service.cars[0].forward*16;
             TownFloristBatch.Render(scene,Report+"/UnityCurve.png",center+service.cars[0].right*34+Vector3.up*29,center,23);
         }
-        service.Advance((float)(419-service.ServiceClock));Check(!service.IsInService&&service.cars.All(c=>!c.gameObject.activeSelf),"Idle train not hidden");
+        service.Advance((float)(359-service.ServiceClock));Check(!service.IsInService&&service.cars.All(c=>!c.gameObject.activeSelf),"Idle train not hidden");
         Check(service.GetComponentInChildren<RegionalTrainArticulation>(true).links.All(l=>!l.root.gameObject.activeSelf),"Idle gangways remain visible");
-        service.Advance(1.01f);Check(service.IsInService&&Math.Abs(service.NextDeparture-840)<.01,"420 second departure failed");
-        service.Advance(420);Check(service.IsInService&&Math.Abs(service.NextDeparture-1260)<.01,"840 second departure failed");
+        service.Advance(1.01f);Check(service.IsInService&&Math.Abs(service.NextDeparture-720)<.01,"360 second departure failed");
+        service.Advance(360);Check(service.IsInService&&Math.Abs(service.NextDeparture-1080)<.01,"720 second departure failed");
         EditorSceneManager.OpenScene(CityUpdateSetup.GamePath);service=Object.FindObjectOfType<TownRailTraffic>();service.enabled=false;service.Advance(.001f);CheckPose(service);
-        File.WriteAllText(Report+"/validation.txt","PASS: City + scaled Game; 24 wheels; native rail-head height/gauge and bogie pivots; curve/gradient pose; connected gangways; wheel rotation and stationary holds; station wait; crossing reference; hidden idle; 420/840 second departures; new meshes only.\n");
+        File.WriteAllText(Report+"/validation.txt","PASS: City + scaled Game; 24 wheels; native rail-head height/gauge and bogie pivots; curve/gradient pose; connected gangways; wheel rotation and stationary holds; continuous station passage; crossing reference; hidden idle; 360/720 second departures; new meshes only.\n");
     }
     public static void Play()
     {
@@ -340,7 +340,7 @@ public static class RegionalTrainV2Batch
             Prepare();
             var layout=AssetDatabase.LoadAssetAtPath<TownWorldLayout>(AssetDatabase.GUIDToAssetPath(AssetDatabase.FindAssets("t:TownWorldLayout")[0]));
             var service=TownWorldAssembler.CreatePassengerTrain(layout,null);group=service.gameObject;
-            Check(service.cars.Length==3&&service.metresPerSecond==11&&service.serviceIntervalSeconds==420,"New world generator used old train");
+            Check(service.cars.Length==3&&service.metresPerSecond==11&&service.serviceIntervalSeconds==360,"New world generator used old train");
             CheckPose(service);
             File.WriteAllText(Report+"/generator.txt","PASS: original town-generation entry point now instantiates the authored three-car train with bound bogies, wheels and gangways; no whole-world rebuild required.\n");
             Object.DestroyImmediate(group);EditorApplication.Exit(0);

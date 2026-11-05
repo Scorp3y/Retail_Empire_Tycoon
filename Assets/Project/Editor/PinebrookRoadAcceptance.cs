@@ -48,7 +48,7 @@ internal static class PinebrookRoadAcceptance
             }
         }
         Require(free>occupied&&plan.parking.Any(l=>l.occupied.Length==0),"Parking needs varied occupancy and an entirely free visitor lot.");
-        var traffic=town.GetComponentInChildren<TownRoadTraffic>();Require(traffic.Network.SparseTrafficMaximum==4&&traffic.MaximumCars==29,"Local density changed the global town pool.");
+        var traffic=town.GetComponentInChildren<TownRoadTraffic>();Require(traffic.Network.SparseTrafficMaximum==4&&traffic.MaximumCars==TownRoadTraffic.DefaultCapacity,"Local density changed the global town pool.");
         File.WriteAllText(PinebrookDistrictBuild.Report+"/roads-and-parking.txt",$"PASS: {crossings.Length} non-overlapping crossings fully on asphalt; full-width gateway connection; {plan.parking.Length} connected visitor lots, {free} free and {occupied} occupied bays; {drivewayProbes} unobstructed access probes; local ambient traffic capped at four, global pool remains 29.\n");
         void Asphalt(Vector3 p)
         {

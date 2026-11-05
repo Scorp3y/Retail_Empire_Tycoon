@@ -64,7 +64,7 @@ internal sealed class TownCityCorrectionsGeometry
     {
         int count=0;foreach(var v in Views)for(int i=0;i<v.Indices.Length;i+=3)if(!v.Removed.Contains(i)&&predicate(v,i)){v.Removed.Add(i);count++;}return count;
     }
-    internal int MatchAndRemove(Mesh template,Matrix4x4 pose,Transform scope)
+    internal int MatchAndRemove(Mesh template,Matrix4x4 pose,Transform scope,bool allowMissing=false)
     {
         var world=template.vertices.Select(pose.MultiplyPoint3x4).ToArray();var uv=template.uv;var idx=template.triangles;
         var views=Views.Where(v=>v.Filter.transform.IsChildOf(scope)).ToArray();
@@ -93,11 +93,11 @@ internal sealed class TownCityCorrectionsGeometry
                     if(match)break;
                 }
             }
-            if(!match)throw new InvalidOperationException("Cannot identify complete native model triangle "+i/3+" in "+scope.name+" / "+template.name);
+            if(!match&&!allowMissing)throw new InvalidOperationException("Cannot identify complete native model triangle "+i/3+" in "+scope.name+" / "+template.name);
         }
         foreach(var p in found)p.V.Removed.Add(p.T);return found.Count;
     }
-    internal int ClipGround(Rect cut,float maximum=.25f,Func<View,int,bool> allowed=null)
+    internal int ClipGround(Rect cut,float maximum=.25f,Func<View,int,bool> allowed=null,float minimum=.005f)
     {
         int count=0;
         foreach(var v in Views)
@@ -107,7 +107,7 @@ internal sealed class TownCityCorrectionsGeometry
           {
             if(v.Removed.Contains(i)||allowed!=null&&!allowed(v,i))continue;
             var points=new[]{v.World[v.Indices[i]],v.World[v.Indices[i+1]],v.World[v.Indices[i+2]]};
-            if(points.Max(p=>p.y)>maximum||points.Max(p=>p.y)<.005f||points.Min(p=>p.y)<-.01f||!Overlaps(cut,points))continue;
+            if(points.Max(p=>p.y)>maximum||points.Max(p=>p.y)<minimum||points.Min(p=>p.y)<-.01f||!Overlaps(cut,points))continue;
             var polygon=points.Select((p,j)=>{var a=v.Vertices[v.Indices[i+j]];return new Vertex(p,v.Filter.transform.TransformDirection(a.N),a.U,new Vector2(p.x,p.z));}).ToList();
             var fragments=new List<List<Vertex>>();var inside=polygon;
             for(int edge=0;edge<4;edge++)
@@ -127,7 +127,7 @@ internal sealed class TownCityCorrectionsGeometry
             for(int t=0;t<previous.Length;t+=3)
             {
                 var poly=previous.Skip(t).Take(3).Select(a=>new Vertex(v.Filter.transform.TransformPoint(a.P),v.Filter.transform.TransformDirection(a.N),a.U,a.V)).ToList();var points=poly.Select(a=>a.P).ToArray();
-                if(points.Max(p=>p.y)>maximum||points.Max(p=>p.y)<.005f||points.Min(p=>p.y)<-.01f||!Overlaps(cut,points)){v.Added.AddRange(previous.Skip(t).Take(3));continue;}
+                if(points.Max(p=>p.y)>maximum||points.Max(p=>p.y)<minimum||points.Min(p=>p.y)<-.01f||!Overlaps(cut,points)){v.Added.AddRange(previous.Skip(t).Take(3));continue;}
                 var outside=new List<List<Vertex>>();var inside=poly;
                 for(int edge=0;edge<4;edge++)
                 {

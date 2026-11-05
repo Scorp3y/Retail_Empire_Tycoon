@@ -16,13 +16,25 @@ MonoBehaviour:
     usesModularStore: 1
     shopProportionsVersion: 2
     starterSiteVersion: 2
+    frontageDecorGranted: 0
     playerMoney: 300000
     vehicles:
       selectedId: delivery_pickup
       ownedIds: []
+      tuning: []
+      fuel: []
     deliveries:
       version: 1
       entries: []
+    driverJourney:
+      active: 0
+      returning: 0
+      supplier: 0
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      stage: 0
+      accessPath: []
+      accessDistance: 0
     shopOperations:
       isOpen: 0
       reputation: 3
@@ -50842,13 +50854,25 @@ MonoBehaviour:
       usesModularStore: 1
       shopProportionsVersion: 2
       starterSiteVersion: 1
+      frontageDecorGranted: 0
       playerMoney: 6000
       vehicles:
         selectedId: delivery_pickup
         ownedIds: []
+        tuning: []
+        fuel: []
       deliveries:
         version: 1
         entries: []
+      driverJourney:
+        active: 0
+        returning: 0
+        supplier: 0
+        position: {x: 0, y: 0, z: 0}
+        rotation: {x: 0, y: 0, z: 0, w: 1}
+        stage: 0
+        accessPath: []
+        accessDistance: 0
       shopOperations:
         isOpen: 0
         reputation: 3
@@ -64957,13 +64981,25 @@ MonoBehaviour:
       usesModularStore: 1
       shopProportionsVersion: 2
       starterSiteVersion: 2
+      frontageDecorGranted: 0
       playerMoney: 6000
       vehicles:
         selectedId: delivery_pickup
         ownedIds: []
+        tuning: []
+        fuel: []
       deliveries:
         version: 1
         entries: []
+      driverJourney:
+        active: 0
+        returning: 0
+        supplier: 0
+        position: {x: 0, y: 0, z: 0}
+        rotation: {x: 0, y: 0, z: 0, w: 1}
+        stage: 0
+        accessPath: []
+        accessDistance: 0
       shopOperations:
         isOpen: 0
         reputation: 3
@@ -79986,3 +80022,58 @@ MonoBehaviour:
       width: 36
       height: 30
     buildingShift: {x: 0, y: -2}
+  frontageDecorations:
+  - itemId: frontage_street_lamp
+    x: 5
+    floor: 0
+    z: -16
+    rotated: 0
+    facing: 0
+    wallModuleVersion: 0
+    playerParking: 0
+    parkingModuleVersion: 0
+  - itemId: frontage_planter
+    x: 8
+    floor: 0
+    z: -16
+    rotated: 0
+    facing: 0
+    wallModuleVersion: 0
+    playerParking: 0
+    parkingModuleVersion: 0
+  - itemId: frontage_bench
+    x: 14
+    floor: 0
+    z: -16
+    rotated: 0
+    facing: 2
+    wallModuleVersion: 0
+    playerParking: 0
+    parkingModuleVersion: 0
+  - itemId: frontage_bin
+    x: 22
+    floor: 0
+    z: -16
+    rotated: 0
+    facing: 0
+    wallModuleVersion: 0
+    playerParking: 0
+    parkingModuleVersion: 0
+  - itemId: frontage_planter
+    x: 35
+    floor: 0
+    z: -16
+    rotated: 0
+    facing: 0
+    wallModuleVersion: 0
+    playerParking: 0
+    parkingModuleVersion: 0
+  - itemId: frontage_street_lamp
+    x: 39
+    floor: 0
+    z: -16
+    rotated: 0
+    facing: 0
+    wallModuleVersion: 0
+    playerParking: 0
+    parkingModuleVersion: 0

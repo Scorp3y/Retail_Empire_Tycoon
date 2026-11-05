@@ -265,12 +265,9 @@ public static class TownWorldValidation
             Capture(city,"TownFarm",new Vector3(505,58,257),new Vector3(565,1,340),0,false);
             Capture(city,"TownPark",new Vector3(-12,23,137),new Vector3(24,1,171),0,false);
             var train=city.town.GetComponentInChildren<TownRailTraffic>();
-            if(train.IsWaiting)train.Advance(train.stationWaitSeconds);
-            train.Advance(10000);
-            if(train.IsWaiting){train.Advance(train.stationWaitSeconds);train.Advance(10000);}
-            Require(train.TravelDistance<0,"Live train did not leave the map before restarting.");
-            train.Advance(100);yield return null;
-            Require(train.IsWaiting&&Vector3.Distance(train.cars[0].localPosition,new Vector3(-190,2.2f,228))<.1f,"Live train did not position at its station.");
+            train.Advance((float)(train.NextDeparture - train.ServiceClock) + .01f);
+            train.Advance((train.layout.stationDistance - train.TravelDistance) / train.metresPerSecond + .1f);
+            Require(train.IsInService && train.TravelDistance > train.layout.stationDistance, "Live train did not pass its station.");
             Capture(city,"TownRailway",new Vector3(-226,18,252),new Vector3(-185,3,222),0,false);
             Capture(city,"TownBridge",new Vector3(283,25,-78),new Vector3(331,1,-37),0,false);
             city.pickup.Body.position=new Vector3(-120,.12f,-20);city.pickup.Body.rotation=Quaternion.identity;city.pickup.Stop();
@@ -628,9 +625,10 @@ public static class TownWorldValidation
             }
         }
         var test=new GameObject("QA railway journey");var rail=test.AddComponent<TownRailTraffic>();rail.enabled=false;rail.layout=layout;
-        rail.Advance(100);Require(rail.IsWaiting&&Mathf.Abs(rail.TravelDistance-layout.stationDistance)<.01f,"Train did not stop at station.");
-        rail.Advance(rail.stationWaitSeconds);rail.Advance(1);Require(!rail.IsWaiting&&rail.TravelDistance>layout.stationDistance,"Train did not resume.");
-        rail.Advance(10000);Require(rail.TravelDistance<0,"Train did not restart outside map.");Object.Destroy(test);
+        rail.Advance((layout.stationDistance - rail.TravelDistance) / rail.metresPerSecond + 1);
+        Require(rail.IsInService && rail.TravelDistance > layout.stationDistance, "Train did not pass the station.");
+        rail.Advance((float)(rail.NextDeparture - rail.ServiceClock) - 1);
+        Require(!rail.IsInService, "Train did not clear the map before the next departure."); Object.Destroy(test);
         var savedPosition=city.pickup.Body.position;var savedRotation=city.pickup.Body.rotation;
         city.pickup.Stop();city.pickup.Body.position=new Vector3(313,2.4f,-40);city.pickup.Body.rotation=Quaternion.Euler(0,90,0);
         for(int frame=0;frame<20;frame++)yield return new WaitForFixedUpdate();

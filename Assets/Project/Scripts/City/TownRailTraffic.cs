@@ -10,12 +10,10 @@ namespace RetailEmpireTycoon.City
         public Transform[] cars=Array.Empty<Transform>();
         public float metresPerSecond=9;
         public float carSpacing=12;
-        public float stationWaitSeconds=12;
         private float distance=35;
-        private float waiting;
-        private bool stoppedAtStation;
         private bool heldAtCrossing;
-        [Min(60)] public float serviceIntervalSeconds=420;
+        public const float DefaultServiceInterval = 360;
+        [Min(60)] public float serviceIntervalSeconds=DefaultServiceInterval;
         private double clock,nextDeparture;
         private bool scheduleInitialized;
         private bool inService=true;
@@ -23,11 +21,22 @@ namespace RetailEmpireTycoon.City
         public double NextDeparture=>nextDeparture;
         public double ServiceClock=>clock;
         public float TravelDistance=>distance;
-        public bool IsWaiting=>waiting>0;
         public bool IsHeldAtCrossing=>heldAtCrossing;
 
         /// <summary>The single authored level crossing can hold the train before an occupied road deck.</summary>
         public void SetCrossingHold(bool hold)=>heldAtCrossing=hold;
+
+        internal void ContinueServiceFrom(TownRailTraffic source)
+        {
+            if (source == null || source.layout != layout) return;
+            clock = source.clock;
+            nextDeparture = source.nextDeparture;
+            scheduleInitialized = source.scheduleInitialized;
+            inService = source.inService;
+            distance = source.distance;
+            heldAtCrossing = false; // The destination crossing will evaluate its own traffic.
+            PlaceCars();
+        }
 
         private void Update()=>Advance(Time.deltaTime);
 
@@ -61,43 +70,29 @@ namespace RetailEmpireTycoon.City
                     clock = Math.Max(clock, nextDeparture);
                     inService = true;
                     distance = -carSpacing;
-                    stoppedAtStation = false;
                     nextDeparture += interval;
-                }
-                if (waiting > 0)
-                {
-                    double pause = Math.Min(remaining, waiting);
-                    waiting = Mathf.Max(0, waiting - (float)pause);
-                    clock += pause;
-                    remaining -= pause;
-                    continue;
                 }
                 if (heldAtCrossing)
                 {
                     clock += remaining;
                     break;
                 }
-                float destination = !stoppedAtStation ? layout.stationDistance : exitDistance;
-                double travelTime = Math.Max(0, (double)(destination - distance) / speed);
+                double travelTime = Math.Max(0, (double)(exitDistance - distance) / speed);
                 double travel = Math.Min(remaining, travelTime);
                 distance += speed * (float)travel;
                 clock += travel;
                 remaining -= travel;
                 if (travel < travelTime) break;
-                distance = destination;
-                if (!stoppedAtStation)
-                {
-                    stoppedAtStation = true;
-                    waiting = Mathf.Max(0, stationWaitSeconds);
-                }
-                else
-                {
-                    inService = false;
-                    distance = -1000;
-                    if (nextDeparture < clock)
-                        nextDeparture += Math.Ceiling((clock - nextDeparture) / interval) * interval;
-                }
+                inService = false;
+                distance = -1000;
+                if (nextDeparture < clock)
+                    nextDeparture += Math.Ceiling((clock - nextDeparture) / interval) * interval;
             }
+            PlaceCars();
+        }
+
+        private void PlaceCars()
+        {
             for(int i=0;i<cars.Length;i++)
             {
                 if(cars[i]==null)continue;

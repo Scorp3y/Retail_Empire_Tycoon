@@ -29,7 +29,101 @@ public static class AutoWorksAuthoring
         var model = AutoWorksModel.Save();
         ValidatePrefab(model);
         Install(model);
+        InstallPitTerrain();
     });
+
+    private static void InstallPitTerrain()
+    {
+        string path = TownWorldAssembler.PrefabPath;
+        var original = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+        var root = PrefabUtility.LoadPrefabContents(path);
+        var changed = new HashSet<string>();
+        var cuts = AutoWorksModel.BayX.Select(x =>
+        {
+            var local = AutoWorksModel.InspectionPit(x);
+            var p = AutoWorksModel.TownPosition;
+            return Rect.MinMaxRect(p.x - local.xMax, p.z - local.yMax, p.x - local.xMin, p.z - local.yMin);
+        }).ToArray();
+        const string output = AutoWorksModel.Root + "/TownCuts";
+        try
+        {
+            var workshop = root.transform.Find(TownSpecialPlan.WorkshopRoot + "/AutoWorks");
+            var terrain = root.transform.Find("Ground and courtyards/River-cut town terrain");
+            Require(workshop != null && terrain != null, "Cannot locate the installed workshop and native town ground.");
+            var filters = root.GetComponentsInChildren<MeshFilter>()
+                .Where(f => !f.transform.IsChildOf(workshop) && f.sharedMesh != null && f.TryGetComponent<MeshRenderer>(out var renderer) &&
+                    cuts.Any(c => c.Overlaps(Rect.MinMaxRect(renderer.bounds.min.x, renderer.bounds.min.z, renderer.bounds.max.x, renderer.bounds.max.z))))
+                .ToArray();
+            int visible = 0;
+            foreach (var filter in filters)
+            {
+                var geometry = new TownCityCorrectionsGeometry(new[] {filter});
+                int triangles = cuts.Sum(c => geometry.ClipGround(c, minimum: -.01f));
+                if (triangles == 0) continue;
+                var indices = SiblingPath(filter.transform, root.transform);
+                Mark(FindAtPath(original.transform, indices).GetComponent<MeshFilter>(), changed);
+                geometry.Views[0].Save("InspectionPit_surface_" + string.Join("_", indices), output);
+                visible += triangles;
+            }
+            int physical = 0;
+            foreach (var collider in root.GetComponentsInChildren<MeshCollider>())
+            {
+                if (!collider.enabled || collider.isTrigger || collider.sharedMesh == null || collider.transform.IsChildOf(workshop))
+                    continue;
+                var bounds = TownResidentialPlacement.ColliderBounds(collider);
+                var footprint = Rect.MinMaxRect(bounds.min.x, bounds.min.z, bounds.max.x, bounds.max.z);
+                if (bounds.min.y > .25f || bounds.max.y < -.01f || !cuts.Any(c => c.Overlaps(footprint)))
+                    continue;
+
+                // Use the original hierarchy so mesh clipping gets the same world matrix as collision.
+                var temporary = new GameObject("Inspection pit collision cutting reference", typeof(MeshFilter));
+                try
+                {
+                    temporary.transform.SetParent(collider.transform, false);
+                    var filter = temporary.GetComponent<MeshFilter>();
+                    filter.sharedMesh = collider.sharedMesh;
+                    var geometry = new TownCityCorrectionsGeometry(new[] {filter});
+                    int triangles = cuts.Sum(c => geometry.ClipGround(c, minimum: -.01f));
+                    if (triangles == 0) continue;
+                    var indices = SiblingPath(collider.transform, root.transform);
+                    Mark(FindAtPath(original.transform, indices).GetComponent<MeshCollider>(), changed);
+                    string meshName = collider.transform == terrain ? "InspectionPit_terrain_collision" :
+                        "InspectionPit_collision_" + string.Join("_", indices);
+                    geometry.Views[0].Save(meshName, output);
+                    collider.sharedMesh = filter.sharedMesh;
+                    physical += triangles;
+                }
+                finally { Object.DestroyImmediate(temporary); }
+            }
+            if (changed.Count > 0)
+            {
+                var before = Records(path);
+                Require(PrefabUtility.SaveAsPrefabAsset(root, path) != null, "Could not save the pit cuts.");
+                AssetDatabase.SaveAssets();
+                var after = Records(path);
+                foreach (var pair in before)
+                    if (!changed.Contains(pair.Key))
+                        Require(after.TryGetValue(pair.Key, out string value) && value == pair.Value,
+                            "Unrelated town record changed during pit cutting: " + pair.Key);
+            }
+            File.WriteAllText(Report + "/PitTerrain.txt",
+                $"Three scoped openings. Source triangles cut: {visible} visual, {physical} collision. Town records modified: {changed.Count}.\n");
+        }
+        finally { PrefabUtility.UnloadPrefabContents(root); }
+    }
+
+    private static Stack<int> SiblingPath(Transform node, Transform root)
+    {
+        var indices = new Stack<int>();
+        for (; node != root; node = node.parent) indices.Push(node.GetSiblingIndex());
+        return indices;
+    }
+
+    private static Transform FindAtPath(Transform node, IEnumerable<int> indices)
+    {
+        foreach (int index in indices) node = node.GetChild(index);
+        return node;
+    }
 
     private static void Install(GameObject model)
     {
@@ -231,11 +325,13 @@ public static class AutoWorksAuthoring
         Shot("01-Overview", new Vector3(-23, 60, 77), new Vector3(0, 1, 0), 32);
         Shot("02-Facade", new Vector3(1, 13, 21), new Vector3(-1, 2.9f, -2), 12.5f, 1800, 520);
         Shot("03-Doors-Closed", new Vector3(-30, 10.4f, 21), new Vector3(-24, 2.6f, -1), 9.6f, 1600, 730);
+        Shot("10-Closed-door-inside", new Vector3(-20.1f, 2.8f, -6.2f), new Vector3(-24.3f, 2.25f, -1.56f));
         SetPreviewDoors(model, true);
         Shot("04-Doors-Open", new Vector3(-30, 10.4f, 21), new Vector3(-24, 2.6f, -1), 9.6f, 1600, 730);
         Shot("05-Interior", new Vector3(-23.8f, 2.38f, -.15f), new Vector3(-26.3f, 2.6f, -13));
         Shot("07-Tools", new Vector3(-15, 2.64f, -3.2f), new Vector3(-7.35f, 1.6f, -8.5f));
         Shot("09-Workshop-Details", new Vector3(-16.8f, 2.8f, -8.6f), new Vector3(-23.8f, 1.75f, -14.5f));
+        Shot("11-Inspection-pits", new Vector3(-20, 4.65f, -4.2f), new Vector3(-23.7f, -.37f, -8.2f));
         Shot("06-Canopy", new Vector3(27, 2.7f, 7.3f), new Vector3(31.3f, 1.6f, -9));
         // The editor's one-shot camera can reuse the wrong material constants after loading the font atlas.
         bool batching = GraphicsSettings.useScriptableRenderPipelineBatching;

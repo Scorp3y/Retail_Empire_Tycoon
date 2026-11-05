@@ -24,9 +24,52 @@ namespace RetailEmpireTycoon.BuildSystem
         [SerializeField] private StarterConstructionStock constructionStock = new StarterConstructionStock();
         [SerializeField] private StarterSiteRevision siteRevision = new StarterSiteRevision();
         [SerializeField] private StarterForecourtRevision forecourtRevision = new StarterForecourtRevision();
+        [SerializeField] private List<PlacedBuildSaveData> frontageDecorations = new();
         public StarterForecourtRevision ForecourtRevision=>forecourtRevision;
         public StarterSiteRevision SiteRevision=>siteRevision;
         public StarterConstructionStock ConstructionStock=>constructionStock;
+
+        // Grant once after the historical layout migrations. Custom frontages receive the
+        // same pieces in storage, so no new prop can obstruct their doors or construction.
+        internal void GrantFrontageDecor(GameData data, GridSystem grid, BuildItemCatalog catalog, bool newGame = false)
+        {
+            if (!data.usesModularStore || data.frontageDecorGranted || frontageDecorations.Count == 0) return;
+            bool DefaultWall(PlacedBuildSaveData p) => p.floor == 0 &&
+                (p.itemId == "wall_01" || p.itemId == "wallcorner_01" || p.itemId == "door_01" || p.itemId == "unloading_gate_01");
+            string WallKey(PlacedBuildSaveData p) => $"{p.itemId}:{p.x}:{p.z}:{p.facing}";
+            bool standardLayout = newGame || data.starterSiteVersion == StarterForecourtRevision.Version &&
+                data.placedObjects.Where(DefaultWall).Select(WallKey).OrderBy(key => key)
+                    .SequenceEqual(initialState.placedObjects.Where(DefaultWall).Select(WallKey).OrderBy(key => key));
+            var occupied = new HashSet<Vector3Int>();
+            if (standardLayout && !newGame)
+            {
+                foreach (var placed in data.placedObjects.Where(item => item.floor == 0))
+                {
+                    var item = catalog.GetById(placed.itemId);
+                    if (item == null) { standardLayout = false; break; }
+                    occupied.UnionWith(grid.GetFootprintCells(new Vector3Int(placed.x, 0, placed.z),
+                        item.footprint, placed.rotated, item.pivotOffset));
+                }
+            }
+            foreach (var decor in frontageDecorations)
+            {
+                bool canPlace = standardLayout;
+                if (canPlace && !newGame)
+                {
+                    var item = catalog.GetById(decor.itemId);
+                    canPlace = item != null && !grid.GetFootprintCells(new Vector3Int(decor.x, 0, decor.z),
+                        item.footprint, decor.rotated, item.pivotOffset).Any(occupied.Contains);
+                }
+                if (canPlace) data.placedObjects.Add(JsonUtility.FromJson<PlacedBuildSaveData>(JsonUtility.ToJson(decor)));
+                else
+                {
+                    var entry = data.buildInventory.FirstOrDefault(item => item.itemId == decor.itemId);
+                    if (entry == null) data.buildInventory.Add(new BuildInventorySaveEntry {itemId = decor.itemId, count = 1});
+                    else entry.count++;
+                }
+            }
+            data.frontageDecorGranted = true;
+        }
         // Historical migrations compare X/Z only. A multi-storey layout is custom and must never be flattened.
         private static bool HasUpperConstruction(GameData data) => data.floorTiles.Any(f=>f.floor!=0)||data.placedObjects.Any(p=>p.floor!=0);
 
@@ -122,6 +165,7 @@ namespace RetailEmpireTycoon.BuildSystem
             var result = JsonUtility.FromJson<GameData>(JsonUtility.ToJson(initialState));
             result.usesModularStore = true;
             result.playerMoney = startingMoney;
+            GrantFrontageDecor(result, null, null, newGame: true);
             constructionStock.AddTo(result, new System.Random());
             return result;
         }

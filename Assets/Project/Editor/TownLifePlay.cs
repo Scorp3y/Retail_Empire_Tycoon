@@ -25,9 +25,9 @@ public static class TownLifePlay
             {
                 var city=Object.FindObjectOfType<CityWorld>();car=city.pickup;car.ReadKeyboard=false;car.InputEnabled=true;
                 var train=city.town.GetComponentInChildren<TownRailTraffic>();train.enabled=false;var crossing=city.town.GetComponentInChildren<TownLevelCrossing>();crossing.enabled=false;train.SetCrossingHold(false);
-                train.Advance((float)(419-train.ServiceClock));TownLifeUpdateBatch.Require(!train.IsInService,"Service did not hide in its interval");train.Advance(1.01f);TownLifeUpdateBatch.Require(train.IsInService&&Math.Abs(train.NextDeparture-840)<.01,"No scheduled 420-second departure");
+                train.Advance((float)(359-train.ServiceClock));TownLifeUpdateBatch.Require(!train.IsInService,"Service did not hide in its interval");train.Advance(1.01f);TownLifeUpdateBatch.Require(train.IsInService&&Math.Abs(train.NextDeparture-720)<.01,"No scheduled 360-second departure");
                 float position=train.TravelDistance;train.SetCrossingHold(true);train.Advance(5);TownLifeUpdateBatch.Require(Mathf.Abs(position-train.TravelDistance)<.001,"Train ignored crossing hold");train.SetCrossingHold(false);
-                train.Advance((float)(840.01-train.ServiceClock));TownLifeUpdateBatch.Require(train.IsInService&&Math.Abs(train.NextDeparture-1260)<.01,"Second scheduled departure failed");
+                train.Advance((float)(720.01-train.ServiceClock));TownLifeUpdateBatch.Require(train.IsInService&&Math.Abs(train.NextDeparture-1080)<.01,"Second scheduled departure failed");
                 foreach(var a in city.town.GetComponentsInChildren<FarmAnimal>())
                 {
                     var start=a.transform.localPosition;var head=a.head.localRotation;for(int i=0;i<450;i++)a.Advance(1f/15,i/15f);
@@ -66,5 +66,5 @@ public static class TownLifePlay
         }
         catch(Exception e){Finish(e);}
     }
-    private static void Finish(Exception e){SessionState.SetBool(Active,false);File.WriteAllText(TownLifeUpdateBatch.Report+"/play.txt",e==null?"PASS: actual wheel/suspension/Rigidbody hill, descent, steering, braking and impact tests; 11 moving articulated animals inside pasture; scheduled train passes at 420/840 s and occupied-crossing hold. No player save used.\n":"FAILED\n"+e);if(e==null)TownLifeUpdateBatch.Receipt("play");else Debug.LogException(e);EditorApplication.Exit(e==null?0:1);}
+    private static void Finish(Exception e){SessionState.SetBool(Active,false);File.WriteAllText(TownLifeUpdateBatch.Report+"/play.txt",e==null?"PASS: actual wheel/suspension/Rigidbody hill, descent, steering, braking and impact tests; 11 moving articulated animals inside pasture; scheduled train passes at 360/720 s and occupied-crossing hold. No player save used.\n":"FAILED\n"+e);if(e==null)TownLifeUpdateBatch.Receipt("play");else Debug.LogException(e);EditorApplication.Exit(e==null?0:1);}
 }

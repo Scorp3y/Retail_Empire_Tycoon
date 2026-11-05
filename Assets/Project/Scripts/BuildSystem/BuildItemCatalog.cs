@@ -13,6 +13,8 @@ namespace RetailEmpireTycoon.BuildSystem
             StoreAssortmentPack.Load()?.IncludeFixtures(items);
             foreach(var item in Resources.LoadAll<BuildItemData>("MultiStorey"))
                 if(!items.Exists(existing=>existing!=null&&existing.id==item.id))items.Add(item);
+            foreach (var item in Resources.LoadAll<BuildItemData>("FrontageDecor"))
+                if (!items.Exists(existing => existing != null && existing.id == item.id)) items.Add(item);
         }
 
         public BuildItemData GetById(string id)
@@ -30,7 +32,7 @@ namespace RetailEmpireTycoon.BuildSystem
                     return item;
             }
 
-            var extension=Resources.Load<BuildItemData>("MultiStorey/"+id);
+            var extension=Resources.Load<BuildItemData>("MultiStorey/"+id) ?? Resources.Load<BuildItemData>("FrontageDecor/"+id);
             if(extension!=null)return extension;
             Debug.LogWarning("[BuildItemCatalog] Item not found: " + id);
             return null;

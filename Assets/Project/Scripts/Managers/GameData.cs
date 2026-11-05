@@ -9,6 +9,7 @@ public class GameData
     public bool usesModularStore;
     public int shopProportionsVersion;
     public int starterSiteVersion;
+    public bool frontageDecorGranted;
     public int playerMoney = StartingCapital;
     public RetailEmpireTycoon.City.VehicleFleetSaveData vehicles = new RetailEmpireTycoon.City.VehicleFleetSaveData();
     public RetailEmpireTycoon.Logistics.DeliverySaveData deliveries = new RetailEmpireTycoon.Logistics.DeliverySaveData();

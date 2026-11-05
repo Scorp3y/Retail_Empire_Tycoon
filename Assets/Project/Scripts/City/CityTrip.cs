@@ -32,6 +32,7 @@ namespace RetailEmpireTycoon.City
         private PlayerVehicleFleet fleet;
         private PlayerVehicleAppearance parkedAppearance;
         private StoreTownMapHud townMap;
+        private TownRailTraffic shopRail, cityRail;
         public StoreTownMapHud TownMap => townMap;
         private string navigationTarget;
         private Vector3? navigationWaypoint;
@@ -79,6 +80,7 @@ namespace RetailEmpireTycoon.City
         private void Start()
         {
             var town=shopScene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<TownWorldPlaces>(true)).FirstOrDefault();
+            shopRail = town != null ? town.GetComponentInChildren<TownRailTraffic>() : null;
             var mainCamera=shopScene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<MainCamera>(true)).FirstOrDefault();
             if(town!=null&&uiRoot!=null&&parkedPickup!=null)townMap=new StoreTownMapHud(ui,uiRoot,town,this,mainCamera);
         }
@@ -166,7 +168,10 @@ namespace RetailEmpireTycoon.City
         {
             var worldScene = SceneManager.GetSceneByName(cityScene);
             if (!outbound)
+            {
+                if (shopRail != null) shopRail.ContinueServiceFrom(cityRail);
                 foreach (var root in worldScene.GetRootGameObjects()) root.SetActive(false);
+            }
             var loadingOperation = SceneManager.LoadSceneAsync(loadingScene,LoadSceneMode.Additive);
             while (!loadingOperation.isDone) yield return null;
             var loading = SceneManager.GetSceneByName(loadingScene);
@@ -181,6 +186,8 @@ namespace RetailEmpireTycoon.City
                 operation.allowSceneActivation = true; while (!operation.isDone) yield return null;
                 worldScene = SceneManager.GetSceneByName(cityScene); SceneManager.SetActiveScene(worldScene);
                 var city = worldScene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<CityWorld>(true)).Single();
+                cityRail = city.town != null ? city.town.GetComponentInChildren<TownRailTraffic>() : null;
+                if (cityRail != null) cityRail.ContinueServiceFrom(shopRail);
                 city.Enter(this,orders,shopScene); InCity = true;
             }
             else

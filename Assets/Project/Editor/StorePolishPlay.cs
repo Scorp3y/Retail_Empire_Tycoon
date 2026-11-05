@@ -53,7 +53,7 @@ public static class StorePolishPlay
         var parking=Object.FindObjectOfType<ParkingTraffic>();parking.enabled=false;
         var roads=Object.FindObjectOfType<RetailEmpireTycoon.City.TownRoadTraffic>();roads.enabled=false;
         foreach(var roadCar in roads.ActiveCars)roadCar.gameObject.SetActive(false);
-        Require(roads.MaximumCars==29,"Shared town retained its old traffic capacity.");
+        Require(roads.MaximumCars==RetailEmpireTycoon.City.TownRoadTraffic.DefaultCapacity,"Unexpected shared town traffic capacity.");
         for(int i=0;i<5;i++)yield return null;
         Physics.simulationMode=SimulationMode.Script;
         Require(Mathf.Abs(starter.building.grid.cellSize-ShopProportions.CellSize)<.00001f && GridSystem.StoreyHeight==1.5f,"Construction grid/storeys were not enlarged.");

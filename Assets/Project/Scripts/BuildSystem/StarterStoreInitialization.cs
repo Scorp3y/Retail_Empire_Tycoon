@@ -37,6 +37,7 @@ namespace RetailEmpireTycoon.BuildSystem
                 Debug.Log("Unmodified starter store moved behind the sidewalk; stock and custom parking preserved.");
             if(blueprint!=null && blueprint.ForecourtRevision.TryApply(data,building.grid,catalog))
                 Debug.Log("Unmodified starter frontage updated; customized shops preserved.");
+            blueprint?.GrantFrontageDecor(data, building.grid, catalog);
         }
         public void ConfigureSite(bool modularStore)
         {

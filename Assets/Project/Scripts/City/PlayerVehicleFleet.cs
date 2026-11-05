@@ -12,6 +12,14 @@ namespace RetailEmpireTycoon.City
         public string selectedId = PlayerVehicleFleet.StarterId;
         public List<string> ownedIds = new List<string>();
         public List<VehicleTuningSaveEntry> tuning = new List<VehicleTuningSaveEntry>();
+        public List<VehicleFuelSaveEntry> fuel = new List<VehicleFuelSaveEntry>();
+    }
+
+    [Serializable]
+    public sealed class VehicleFuelSaveEntry
+    {
+        public string id;
+        public float litres;
     }
 
     /// <summary>Owns purchases and selection. Cargo stays in the selected vehicle; exchange requires an empty hold.</summary>
@@ -21,6 +29,7 @@ namespace RetailEmpireTycoon.City
         private readonly PlayerVehicleDefinition[] catalog;
         private readonly HashSet<string> owned = new HashSet<string>(StringComparer.Ordinal);
         private readonly Dictionary<string, VehicleTuning> tuning = new Dictionary<string, VehicleTuning>(StringComparer.Ordinal);
+        private readonly Dictionary<string, float> fuel = new Dictionary<string, float>(StringComparer.Ordinal);
         private readonly MoneyController money;
         private readonly DeliveryOrders orders;
         private readonly Action persist;
@@ -36,6 +45,11 @@ namespace RetailEmpireTycoon.City
         public VehicleTuning TuningFor(string id) => tuning.TryGetValue(id, out var value) ? value : default;
         public int Balance => money.Money;
         public const int PaintPrice = 450;
+        public const float TankLitres = 55f;
+        private const float LitresPerMetre = .0016f;
+        private const int PricePerLitre = 2;
+        public float FuelLitres => fuel.TryGetValue(SelectedId, out float litres) ? litres : TankLitres;
+        public int RefillPrice => UnityEngine.Mathf.CeilToInt((TankLitres - FuelLitres) * PricePerLitre);
         public bool DriverHasVehicle {get;private set;}
         public void AssignDriver(bool assigned)=>DriverHasVehicle=assigned;
 
@@ -56,7 +70,9 @@ namespace RetailEmpireTycoon.City
             selectedId = SelectedId,
             ownedIds = owned.OrderBy(id => id).ToList(),
             tuning = tuning.OrderBy(pair => pair.Key)
-                .Select(pair => new VehicleTuningSaveEntry {id = pair.Key, tuning = pair.Value}).ToList()
+                .Select(pair => new VehicleTuningSaveEntry {id = pair.Key, tuning = pair.Value}).ToList(),
+            fuel = fuel.OrderBy(pair => pair.Key)
+                .Select(pair => new VehicleFuelSaveEntry {id = pair.Key, litres = pair.Value}).ToList()
         };
         public void Restore(VehicleFleetSaveData data)
         {
@@ -73,11 +89,34 @@ namespace RetailEmpireTycoon.City
         {
             owned.Clear(); foreach (string id in vehicles.Where(id => id != StarterId)) owned.Add(id);
             SelectedId = selection;
+            fuel.Clear();
+            if (data?.fuel != null)
+                foreach (var entry in data.fuel)
+                    if (entry != null && !string.IsNullOrEmpty(entry.id) && Owns(entry.id) && float.IsFinite(entry.litres))
+                        fuel[entry.id] = UnityEngine.Mathf.Clamp(entry.litres, 0, TankLitres);
             tuning.Clear();
             if (data?.tuning == null) return;
             foreach (var entry in data.tuning)
                 if (entry != null && !string.IsNullOrEmpty(entry.id) && Owns(entry.id))
                     tuning[entry.id] = entry.tuning.Normalized();
+        }
+        internal void ConsumeFuel(float metres)
+        {
+            if (metres <= 0 || !float.IsFinite(metres) || FuelLitres <= 0) return;
+            fuel[SelectedId] = UnityEngine.Mathf.Max(0, FuelLitres - metres * LitresPerMetre);
+        }
+
+        internal bool Refuel()
+        {
+            if (DriverHasVehicle) return Reject("Your driver is using this vehicle.");
+            int price = RefillPrice;
+            if (price == 0) return Reject("Tank is full.");
+            if (!money.CanSpend(price)) return Reject("Insufficient funds for a refill.");
+            return Commit(() =>
+            {
+                if (!money.TrySpend(price)) throw new InvalidOperationException("Payment changed during refill.");
+                fuel.Remove(SelectedId);
+            }, "Tank refilled.", notifyFleet: false);
         }
         public int UpgradePrice(WorkshopCategory category)
         {
@@ -137,7 +176,7 @@ namespace RetailEmpireTycoon.City
             if (!orders.Ledger.Entries.Any(entry => entry.location == DeliveryLocation.Pickup)) return true;
             return Reject("Unload your current vehicle before exchanging it. Cargo is preserved.");
         }
-        private bool Commit(Action mutation, string success, bool tuningOnly = false)
+        private bool Commit(Action mutation, string success, bool tuningOnly = false, bool notifyFleet = true)
         {
             if (committing) return false;
             var before = Capture(); int oldMoney = money.Money;
@@ -153,7 +192,7 @@ namespace RetailEmpireTycoon.City
             finally { committing = false; }
             Notice = success;
             if (tuningOnly) TuningChanged?.Invoke();
-            else Changed?.Invoke();
+            else if (notifyFleet) Changed?.Invoke();
             return true;
         }
         private void ApplyCapacity()

@@ -60,7 +60,7 @@ namespace RetailEmpireTycoon.Parking
             public List<Vector3> exitRoute;
             public int streetDepartureStart;
             public int departureLane;
-            public float departureDistance;
+            public float departureDistance, mergeDistance;
             public bool arrivingOnStreet;
         }
         private void Update()
@@ -127,7 +127,7 @@ namespace RetailEmpireTycoon.Parking
                 streetAccess.GuideArrival(driver);
                 moving=new Visit{id=id,bay=bay,car=car,route=route,exitRoute=exit,width=width,length=length,wheels=driver,
                     arrivingOnStreet=true,streetDepartureStart=streetDepartureStart,
-                    departureLane=streetAccess.LaneIndex,departureDistance=streetAccess.ExitDistance};
+                    departureLane=streetAccess.LaneIndex,departureDistance=streetAccess.ExitDistance,mergeDistance=streetAccess.MergeDistance};
                 visits.Add(moving);ArrivalState="Arriving from street";nextArrival=clock+arrivalInterval;break;
             }
         }
@@ -183,7 +183,8 @@ namespace RetailEmpireTycoon.Parking
                 {
                     // Recycle only out of view. The car has already travelled down the street, not vanished at the entrance.
                     if(!Visible(moving.car,moving.length))Release(moving);
-                    else if(streetTraffic.TryJoinTraffic(moving.wheels,moving.departureLane,moving.departureDistance))
+                    else if(streetTraffic.TryJoinTraffic(moving.wheels,moving.departureLane,moving.departureDistance,
+                        mergeSpeed: moving.speed / streetTraffic.transform.lossyScale.x))
                     {
                         var finished=moving;finished.car=null;Release(finished);
                     }
@@ -196,6 +197,16 @@ namespace RetailEmpireTycoon.Parking
                     moving.parked=true;moving.parkedAt=clock;reservations.EndManeuver(moving.bay.GetInstanceID());moving=null;
                 }
                 return;
+            }
+            if (moving.leaving && moving.next == moving.streetDepartureStart)
+            {
+                streetTraffic.RequestPrivateMerge(moving.wheels, moving.departureLane, moving.mergeDistance);
+                if (!streetTraffic.HasMergeGap(moving.wheels, moving.departureLane, moving.mergeDistance))
+                {
+                    moving.speed = 0;
+                    moving.wheels.AnimateParkingWheels(0, 0, seconds);
+                    return;
+                }
             }
             var car=moving.car; var target=moving.route[moving.next]; var delta=target-car.transform.position; delta.y=0;
             if(delta.sqrMagnitude<.001f) { moving.next++; return; }
@@ -215,7 +226,9 @@ namespace RetailEmpireTycoon.Parking
             moving.blockedSince=0;
             if(delta.sqrMagnitude<.001f) { moving.next++; return; }
             bool onStreet=moving.leaving && moving.next>=moving.streetDepartureStart;
-            moving.speed=Mathf.MoveTowards(moving.speed,onStreet?2.5f:.55f,onStreet?1.2f*seconds:.7f*seconds);
+            float streetSpeed = onStreet ? streetTraffic.Network.Lanes[moving.departureLane].speedLimit
+                * streetTraffic.transform.lossyScale.x * .75f : .55f;
+            moving.speed=Mathf.MoveTowards(moving.speed,streetSpeed,onStreet?1.2f*seconds:.7f*seconds);
             var position=Vector3.MoveTowards(car.transform.position,target,moving.speed*seconds);
             bool reversing=moving.leaving&&moving.next<=1;
             var facing=Quaternion.LookRotation(reversing?-delta:delta);
@@ -227,6 +240,7 @@ namespace RetailEmpireTycoon.Parking
         private void Release(Visit visit)
         {
             if(visit.arrivingOnStreet)streetTraffic.WithdrawParkingCar(visit.wheels);
+            if (visit.wheels != null) streetTraffic.CancelPrivateMerge(visit.wheels);
             if(visit.shopper!=null && !visit.shopper.IsFinished)store?.CancelParkingVisit(visit.shopper);
             reservations.Release(visit.id);
             if(visit.car!=null) Destroy(visit.car); visits.Remove(visit); if(moving==visit) moving=null;

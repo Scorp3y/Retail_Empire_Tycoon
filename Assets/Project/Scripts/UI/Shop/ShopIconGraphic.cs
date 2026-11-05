@@ -4,7 +4,7 @@ using UnityEngine.UI;
 namespace RetailEmpireTycoon.UI.Shop
 {
     public enum ShopIcon { Cart, Warehouse, Settings, Territory, OpenLock, ClosedLock, Staff, Equipment, Products, Back, Close, Check, Sound, Save, Exit, Cashier, Guard, Stocker, Cleaner, Star, Coin, Pause, Play, Pickup, Decoration,
-        Hammer, Move, RotateLeft, RotateRight, ArrowUp, ArrowDown, Floor, Ceiling, Erase, Parking }
+        Hammer, Move, RotateLeft, RotateRight, ArrowUp, ArrowDown, Floor, Ceiling, Erase, Parking, Fuel }
 
     /// <summary>Navigation symbols share a normalized silhouette and scale without blurry bitmap resizing.</summary>
     [RequireComponent(typeof(CanvasRenderer))]
@@ -25,6 +25,12 @@ namespace RetailEmpireTycoon.UI.Shop
             mesh.Clear(); _mesh = mesh; _rect = GetPixelAdjustedRect();
             switch (icon)
             {
+                case ShopIcon.Fuel:
+                    Box(.16f,.16f,.47f,.70f); Box(.23f,.58f,.33f,.18f,ShopUiTheme.Paper);
+                    Line(.10f,.16f,.69f,.16f,.08f);
+                    Line(.63f,.37f,.77f,.28f,.07f); Line(.77f,.28f,.88f,.36f,.07f);
+                    Line(.88f,.36f,.88f,.65f,.07f); Line(.88f,.65f,.76f,.78f,.07f);
+                    break;
                 case ShopIcon.Hammer:
                     ConstructionHammer();break;
                 case ShopIcon.Move:

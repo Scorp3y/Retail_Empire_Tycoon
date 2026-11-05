@@ -75,12 +75,32 @@ public static class WorkshopTuningValidation
         var fleet = trip.Fleet;
         fleet.Restore(null);
         Require(fleet.SelectedTuning.engine == 0 && orders.pickupCapacityKg == 350, "Legacy save did not retain stock behavior.");
+        var shopRail = Object.FindObjectOfType<TownRailTraffic>();
+        shopRail.Advance(45);
+        double shopClock = shopRail.ServiceClock;
         trip.Begin();
         while (trip.Transitioning || !trip.InCity) yield return null;
         var city = Object.FindObjectOfType<CityWorld>();
+        var cityRail = city.town.GetComponentInChildren<TownRailTraffic>();
+        Require(cityRail.ServiceClock >= shopClock && cityRail.ServiceClock - shopClock < 5,
+            "Entering City restarted the shared train schedule.");
         var car = city.pickup;
         car.ReadKeyboard = false;
         city.chaseCamera.ReadMouse = false;
+        if (data.frontageDecorGranted)
+        {
+            var lamp = starter.catalog.GetById("frontage_street_lamp").prefab.GetComponentInChildren<MeshFilter>().sharedMesh;
+            var lamps = city.facadeRoot.GetComponentsInChildren<MeshFilter>().Where(filter => filter.sharedMesh == lamp).ToArray();
+            Require(lamps.Length == 2 && lamps.All(filter =>
+                Mathf.Abs(filter.GetComponent<MeshRenderer>().bounds.size.y - 2.75f) < .02f),
+                "The City facade did not copy the editable street lamps at their authored scale.");
+            Directory.CreateDirectory("Docs/TownFlowUpdate");
+            var centre = (lamps[0].transform.position + lamps[1].transform.position) * .5f;
+            TownFloristBatch.Render(city.gameObject.scene, "Docs/TownFlowUpdate/CityDecor.png",
+                centre + new Vector3(-17, 12, -16), centre + Vector3.forward * 4);
+        }
+        var fuelCheck = VerifyFuel(city, fleet, orders.money);
+        while (fuelCheck.MoveNext()) yield return fuelCheck.Current;
         var door = city.town.GetComponentsInChildren<GarageDoor>().Single(d => d.name == "Door_2");
         Require(city.Map.Data.Points.Any(p => p.Id == "auto_works" && p.Access.Length == 3), "Workshop map marker missing.");
         car.Body.position = door.transform.TransformPoint(0, .05f, 11);
@@ -162,7 +182,63 @@ public static class WorkshopTuningValidation
             "Selecting the starter did not restore its own upgrades.");
         orders.money.SetMoney(0);
         Require(!fleet.BuyUpgrade(WorkshopCategory.Engine) && fleet.SelectedTuning.engine == 1, "Insufficient funds still allowed an upgrade.");
+        double cityClock = cityRail.ServiceClock;
+        trip.Return();
+        while (trip.Transitioning || trip.InCity) yield return null;
+        Require(shopRail.ServiceClock >= cityClock && shopRail.ServiceClock - cityClock < 5,
+            "Returning to the shop restarted the shared train schedule.");
+        File.AppendAllText(Report + "/Result.txt", "\nTrain schedule continued in both directions across the scene transitions.\n");
         File.AppendAllText(Report + "/Result.txt", "\nReal Game to City, map point, bay check, menu and camera, engine, handling, cargo, RGB preview/cancel/purchase, insufficient funds, JSON and per-vehicle upgrades checked.\n");
+    }
+
+    private static IEnumerator VerifyFuel(CityWorld city, PlayerVehicleFleet fleet, RetailEmpireTycoon.Economy.MoneyController wallet)
+    {
+        var car = city.pickup;
+        var station = city.Map.Data.Points.Single(p => p.Id == "fuel");
+        Require(fleet.FuelLitres == PlayerVehicleFleet.TankLitres && fleet.RefillPrice == 0, "An old save must start with a full tank.");
+        city.Map.Navigation.Select(station);
+        city.Map.Navigation.Tick(city.Map.Data.ToNative(car.transform.position), car.transform.forward, 0, Time.unscaledTime);
+        Require(station.Category == TownMapCategory.Services && station.Access.Length == 4 &&
+            city.Map.Navigation.State == TownNavigationState.Following, "The gas station does not route through its entrance.");
+        var low = fleet.Capture();
+        low.fuel.Add(new VehicleFuelSaveEntry {id = fleet.SelectedId, litres = 10});
+        fleet.Restore(JsonUtility.FromJson<VehicleFleetSaveData>(JsonUtility.ToJson(low)));
+        int balance = wallet.Money;
+        var start = station.Position + Vector3.back * 11.5f;
+        var transform = city.town.transform;
+        car.Body.position = transform.TransformPoint(start + Vector3.up * .2f);
+        car.Body.rotation = transform.rotation;
+        car.Stop();
+        Physics.SyncTransforms();
+        for (float until = Time.fixedTime + .6f; Time.fixedTime < until;) yield return null;
+        city.Interact();
+        Require(car.InputEnabled && fleet.FuelLitres == 10 && wallet.Money == balance, "Refuelling was allowed away from the gas station.");
+        car.SetInput(.42f, 0, false);
+        float timeout = Time.fixedTime + 9;
+        while (city.Map.Data.ToNative(car.transform.position).z < station.Position.z - 1 && Time.fixedTime < timeout)
+            yield return null;
+        var reached = city.Map.Data.ToNative(car.transform.position);
+        Require(Vector3.Distance(reached, station.Position) < 2 && fleet.FuelLitres < 10,
+            $"Pickup reached {reached}, body {car.Body.position}, target {station.Position}, {car.Speed:F2} m/s, {car.GroundedWheels} grounded wheels, {fleet.FuelLitres:F3} L.");
+        city.Interact();
+        Require(fleet.FuelLitres < 10 && wallet.Money == balance, "Fuel purchase was allowed while moving.");
+        car.Stop();
+        wallet.SetMoney(0);
+        city.Interact();
+        Require(fleet.FuelLitres < 10 && wallet.Money == 0, "An unaffordable refill changed the tank.");
+        wallet.SetMoney(balance);
+        int price = fleet.RefillPrice;
+        city.Interact();
+        Require(fleet.FuelLitres == PlayerVehicleFleet.TankLitres && wallet.Money == balance - price, "A parked refill did not commit once.");
+        city.Interact();
+        Require(wallet.Money == balance - price, "Pressing refuel on a full tank charged again.");
+        yield return null;
+        var hud = city.Map.MiniMap.Root.Find("Fuel and balance");
+        Require(hud != null && hud.GetComponentsInChildren<TMPro.TMP_Text>().Any(label => label.text == "55 / 55 L") &&
+            hud.GetComponentsInChildren<TMPro.TMP_Text>().Any(label => label.text == $"${wallet.Money:N0}"), "The driving HUD did not display current fuel and balance.");
+        TakeScreenshot("04-Fuel");
+        wallet.SetMoney(balance);
+        File.WriteAllText(Report + "/Fuel.txt", "PASS: legacy full tank, JSON fuel, gas station GPS, physical approach and fuel consumption, stopped-only refill, funds and duplicate protection, live HUD.\n");
     }
 
     private static Button ButtonNamed(string text) => Object.FindObjectsOfType<Button>()

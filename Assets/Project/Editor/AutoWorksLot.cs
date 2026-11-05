@@ -4,7 +4,9 @@ internal sealed partial class AutoWorksModel
 {
     private void BuildLot()
     {
-        Block(yard, "Continuous yard and hall collision", Finish.Asphalt, new Vector3(0, -.075f, -1.05f), new Vector3(84, .15f, 33.9f));
+        foreach (var patch in OutsidePits(Rect.MinMaxRect(-42, -18, 42, 15.9f)))
+            Block(yard, "Yard and hall floor", Finish.Asphalt,
+                new Vector3(patch.center.x, -.075f, patch.center.y), new Vector3(patch.width, .15f, patch.height));
         Block(yard, "West apron edge", Finish.Asphalt, new Vector3(10.55f, -.075f, 16.95f), new Vector3(62.9f, .15f, 2.1f));
         Block(yard, "East apron edge", Finish.Asphalt, new Vector3(-34.55f, -.075f, 16.95f), new Vector3(14.9f, .15f, 2.1f));
         Box(yard, Finish.Concrete, 17.3f, .0155f, -1.85f, 41.8f, .021f, 1.80f);
@@ -18,12 +20,12 @@ internal sealed partial class AutoWorksModel
         DressYard();
 
         FenceRun(new Vector3(40.77f, 0, 17.48f), new Vector3(-20.5f, 0, 17.48f), true, "West frontage");
-        FenceRun(new Vector3(-27.5f, 0, 17.48f), new Vector3(-40.78f, 0, 17.48f), true, "East frontage");
-        FenceRun(new Vector3(40.9f, 0, 17.47f), new Vector3(40.9f, 0, -12f), false, "West side");
-        FenceRun(new Vector3(-41.87f, 0, 17.47f), new Vector3(-41.87f, 0, -15.2f), false, "East side");
-        FenceRun(new Vector3(24, 0, -16), new Vector3(8, 0, -16), false, "West rear");
-        FenceRun(new Vector3(6, 0, -16), new Vector3(-41.85f, 0, -16), false, "East rear");
-        foreach (float x in new[] {40.74f, -20.25f, -27.75f, -40.75f})
+        FenceRun(new Vector3(-27.5f, 0, 17.48f), new Vector3(-41.87f, 0, 17.48f), true, "East frontage");
+        FenceRun(new Vector3(40.9f, 0, 17.47f), new Vector3(40.9f, 0, -16f), false, "West side");
+        FenceRun(new Vector3(-41.87f, 0, 17.47f), new Vector3(-41.87f, 0, -16f), false, "East side");
+        FenceRun(new Vector3(40.9f, 0, -16), new Vector3(8, 0, -16), false, "West rear");
+        FenceRun(new Vector3(6, 0, -16), new Vector3(-41.87f, 0, -16), false, "East rear");
+        foreach (float x in new[] {40.74f, -20.25f, -27.75f, -41.65f})
         {
             Box(fence, Finish.Brick, x, .785f, 17.48f, .49f, 1.57f, .49f, .021f);
             BrickFront(fence, x, .49f, 0, 1.56f, 17.727f);
@@ -108,14 +110,15 @@ internal sealed partial class AutoWorksModel
             Box(run, Finish.Steel, -length / 2 + k * length / bays, (bottom + 1.46f) / 2, 0,
                 .112f, 1.46f - bottom, .127f, .011f);
         var rods = Surface(run, Finish.Steel);
-        for (float x = -length / 2 + .395f; x < length / 2 - .08f; x += .395f)
+        float barSpacing = brick ? .395f : .45f;
+        for (float x = -length / 2 + barSpacing; x < length / 2 - .08f; x += barSpacing)
         {
-            // A triangular steel profile gives the distant bars a lit edge without capped box geometry.
-            Vector3 Point(int i, float y) => new(x + (i % 3 == 0 ? -.023f : i % 3 == 2 ? .023f : 0), y,
-                i % 3 == 1 ? .029f : -.022f);
-            for (int side = 0; side < 3; side++)
-                rods.Quad(Point(side, bottom + .04f), Point(side + 1, bottom + .04f),
-                    Point(side + 1, 1.4f), Point(side, 1.4f), White);
+            // Thin infill bars are welded to the rails. The separate posts retain full profiles.
+            var a = new Vector3(x - .023f, bottom + .04f, -.018f);
+            var b = new Vector3(x + .023f, bottom + .04f, .018f);
+            var rise = Vector3.up * (1.36f - bottom);
+            rods.Quad(a, b, b + rise, a + rise, White);
+            rods.Quad(b, a, a + rise, b + rise, White);
         }
     }
 
