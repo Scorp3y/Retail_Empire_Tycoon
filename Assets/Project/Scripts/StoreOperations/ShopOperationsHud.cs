@@ -29,7 +29,12 @@ namespace RetailEmpireTycoon.StoreOperations
         private readonly LegacyUiVisibility _legacyUi = new LegacyUiVisibility();
         private RectTransform _status, _actions, _staff, _bindings, _tasks;
         private TMP_Text _staffNotice, _bindingNotice;
-        private Button _openButton, _cashierButton, _cleanButton;
+        private TMP_Text _storeToastText;
+        private CanvasGroup _storeToast;
+        private float _toastUntil;
+        private float _shownRating = -1;
+        private ShopStatisticsPanel _statistics;
+        private Button _cashierButton, _cleanButton;
         private readonly Dictionary<ShopperVisit, RectTransform> _thiefBars = new Dictionary<ShopperVisit, RectTransform>();
         private readonly List<TMP_Text> _staffLabels = new List<TMP_Text>();
         private readonly List<Button> _hireButtons = new List<Button>();
@@ -37,7 +42,6 @@ namespace RetailEmpireTycoon.StoreOperations
         private readonly List<Button> _bindingButtons = new List<Button>();
         private bool _savedInput;
         private readonly List<Image> _stars = new List<Image>();
-        private ShopIconGraphic _lockIcon;
         private const string HintsPreference = "ShopUi.ShowHints";
         private bool _hintsVisible;
         private readonly List<TMP_Text> _shortcutKeys = new List<TMP_Text>();
@@ -51,29 +55,27 @@ namespace RetailEmpireTycoon.StoreOperations
         }
         public bool ControlsVisible => _bindings != null;
         public bool StaffVisible => _staff != null && storeWindow != null && storeWindow.IsStaffView;
-        public bool ModalVisible => ControlsVisible || StaffVisible;
+        public bool ModalVisible => ControlsVisible || StaffVisible || _statistics != null;
 
         private void Start()
         {
             _ui = new ShopUi(font, panelSprite, buttonSprite, windowSprite);
-            _status = _ui.Rect("Shop rating", canvas.transform, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -12), new Vector2(190, 36));
+            _status = _ui.Rect("Shop rating", canvas.transform, Vector2.one, Vector2.one, new Vector2(-16, -16), new Vector2(177, 33));
+            var ratingButton = _status.gameObject.AddComponent<Button>();
+            ratingButton.transition = Selectable.Transition.None;
+            ratingButton.navigation = new Navigation { mode = Navigation.Mode.None };
+            ratingButton.onClick.AddListener(() => OpenStatistics(true));
             for (int i = 0; i < 5; i++)
             {
-                var star = _ui.Rect("Rating star " + (i + 1), _status, new Vector2(0, 1), new Vector2(0, 1), new Vector2(i * 38, 0), new Vector2(34, 34));
-                var empty = _ui.Panel(star, Color.white); empty.sprite = inactiveStar; empty.type = Image.Type.Simple; empty.raycastTarget = false;
+                var star = _ui.Rect("Rating star " + (i + 1), _status, new Vector2(0, 1), new Vector2(0, 1), new Vector2(i * 36, 0), new Vector2(33, 33));
+                var empty = _ui.Panel(star, Color.white); empty.sprite = inactiveStar; empty.type = Image.Type.Simple;
                 var fill = _ui.Rect("Active fill", star, new Vector2(0, 1), new Vector2(0, 1), Vector2.zero, star.sizeDelta);
                 var image = _ui.Panel(fill, Color.white); image.sprite = activeStar; image.type = Image.Type.Filled;
                 image.fillMethod = Image.FillMethod.Horizontal; image.fillOrigin = 0; image.raycastTarget = false; _stars.Add(image);
             }
-            _openButton = _ui.IconButton(canvas.transform, ShopIcon.ClosedLock, Vector2.zero, 48, () => shop.SetOpen(!shop.IsOpen));
-            var openRect = (RectTransform)_openButton.transform;
-            openRect.anchorMin = openRect.anchorMax = openRect.pivot = new Vector2(1, 1);
-            openRect.anchoredPosition = new Vector2(-130, -16);
-            _lockIcon = _openButton.GetComponentInChildren<ShopIconGraphic>();
-            _openButton.gameObject.AddComponent<ShopLockAnimation>().Initialize(shop, _lockIcon);
-            _actions = _ui.Rect("Action shortcuts", canvas.transform, new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(192, 238));
+            _actions = _ui.Rect("Action shortcuts", canvas.transform, new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(192, 264));
             StyleShortcutText(_ui.Heading(_actions, "Управление", "Shortcuts", new Vector2(12, -10), new Vector2(166, 28), 17));
-            for (int i = 0; i < 7; i++)
+            for (int i = 0; i < 8; i++)
             {
                 var key = _ui.Rect("Shortcut key", _actions, new Vector2(0, 1), new Vector2(0, 1), new Vector2(12, -45 - i * 26), new Vector2(30, 22));
                 _ui.Panel(key, ShopUiTheme.Ink).raycastTarget = false;
@@ -84,12 +86,29 @@ namespace RetailEmpireTycoon.StoreOperations
                 StyleShortcutText(actionName);
                 _shortcutNames.Add(actionName);
             }
-            _tasks = _ui.Rect("Available player jobs", canvas.transform, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 12), new Vector2(440, 36));
-            _cashierButton = _ui.Button(_tasks, "", Vector2.zero, new Vector2(214, 36), () => { controls.CloseWindows(); work.BeginCheckout(); });
-            _cleanButton = _ui.Button(_tasks, "", new Vector2(226, 0), new Vector2(214, 36), BeginCleaning);
+            _tasks = _ui.Rect("Available player jobs", canvas.transform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-379, 16), new Vector2(440, 48));
+            _cashierButton = _ui.Button(_tasks, "", new Vector2(0, -6), new Vector2(214, 36), () => { controls.CloseWindows(); work.BeginCheckout(); });
+            _cleanButton = _ui.Button(_tasks, "", new Vector2(226, -6), new Vector2(214, 36), BeginCleaning);
+            var toast = _ui.Rect("Store status notice", canvas.transform, new Vector2(.5f, 1), new Vector2(.5f, 1), new Vector2(0, -19), new Vector2(300, 46));
+            _ui.Panel(toast, ShopUiTheme.Ink).raycastTarget = false;
+            _storeToast = toast.gameObject.AddComponent<CanvasGroup>(); _storeToast.alpha = 0;
+            _storeToast.blocksRaycasts = false; _storeToast.interactable = false;
+            _storeToastText = _ui.Label(toast, "", Vector2.zero, toast.sizeDelta, 19);
+            _storeToastText.alignment = TextAlignmentOptions.Center; _storeToastText.color = ShopUiTheme.Paper;
+            shop.OpenStateChanged += ShowStoreToast;
             AddSettingsEntry();
             AddStaffEntries();
             controls.Changed += RefreshBindings;
+        }
+
+        internal Button CreateStoreStatusButton(ShopUi ui, Transform parent)
+        {
+            var button = ui.IconButton(parent, ShopIcon.ClosedLock, Vector2.zero, 48,
+                () => { if (controls.CanOpenWindow) shop.SetOpen(!shop.IsOpen); });
+            button.name = "Open or close store";
+            var icon = button.GetComponentInChildren<ShopIconGraphic>();
+            button.gameObject.AddComponent<ShopLockAnimation>().Initialize(shop, icon);
+            return button;
         }
 
         private static void StyleShortcutText(TMP_Text text)
@@ -151,11 +170,16 @@ namespace RetailEmpireTycoon.StoreOperations
         private void Update()
         {
             if (_status == null) return;
-            bool overview = !work.IsActive && !ModalVisible && !controls.LegacyWindowVisible && !controls.IsConstructionActive;
+            bool overview = controls.CanOpenWindow;
             _status.gameObject.SetActive(overview);
             _actions.gameObject.SetActive(overview && HintsVisible);
-            _openButton.gameObject.SetActive(overview);
-            for (int i = 0; i < _stars.Count; i++) _stars[i].fillAmount = Mathf.Clamp01(shop.Rating - i);
+            _storeToast.alpha = Mathf.Clamp01((_toastUntil - Time.unscaledTime) / .3f);
+            if (_shownRating != shop.Rating)
+            {
+                _shownRating = shop.Rating;
+                for (int i = 0; i < _stars.Count; i++) _stars[i].fillAmount = Mathf.Clamp01(_shownRating - i);
+            }
+            _statistics?.Tick();
             RefreshShortcutText();
             int customers = shop.Visits.Count(v => v.Stage == VisitStage.Waiting && !v.Claimed);
             int dirt = shop.Dirt.Count(d => d != null && !d.IsClaimed);
@@ -167,19 +191,42 @@ namespace RetailEmpireTycoon.StoreOperations
             if (StaffVisible) RefreshStaff();
             RefreshThieves(overview);
             if (overview) HandleThiefClick();
-            if (ControlsVisible && Input.GetKeyDown(KeyCode.Escape) && !controls.Capturing.HasValue && !controls.CaptureCancelledThisFrame) CloseControls();
+        }
+
+        private void ShowStoreToast(bool open)
+        {
+            _storeToastText.text = open ? "Store is open" : "Store is closed";
+            _toastUntil = Time.unscaledTime + 2.8f;
+        }
+
+        public void OpenStatistics(bool rating)
+        {
+            if (!controls.CanOpenWindow) return;
+            LockModalInput();
+            _statistics = new ShopStatisticsPanel(_ui, canvas.transform, shop, rating, () => CloseStatistics());
+        }
+
+        public bool CloseStatistics()
+        {
+            if (_statistics == null) return false;
+            _statistics.Close();
+            _statistics = null;
+            RestoreModalInput();
+            return true;
         }
 
         private void RefreshShortcutText()
         {
             ShopAction[] actions = { ShopAction.Inventory, ShopAction.Warehouse, ShopAction.Catalog, ShopAction.Territory, ShopAction.Staff, ShopAction.OpenStore, ShopAction.Checkout };
             string[] names = { "Инвентарь", "Склад", "Закупки", "Участки", "Персонал", "Магазин", "Касса" };
-            string[] english = { "Construction", "Warehouse", "Orders", "Territories", "Staff", "Store", "Checkout" };
+            string[] english = { "Construction", "Warehouse", "Store catalog", "Territories", "Staff", "Open / close", "Checkout" };
             for (int i = 0; i < actions.Length; i++)
             {
                 _shortcutKeys[i].text = controls.Key(actions[i]).ToString();
                 _shortcutNames[i].text = ShopText.Get(names[i], english[i]);
             }
+            _shortcutKeys[7].text = "Esc";
+            _shortcutNames[7].text = "Pause";
         }
         private void BeginCleaning()
         {
@@ -232,8 +279,7 @@ namespace RetailEmpireTycoon.StoreOperations
         public void ToggleStaff()
         {
             if (StaffVisible) { CloseStaff(); return; }
-            if (work.IsActive || ControlsVisible || controls.IsConstructionActive) return;
-            controls.CloseWindows();
+            if (!controls.CanOpenWindow) return;
             if (storeWindow == null) return;
             storeWindow.gameObject.SetActive(true);
             storeWindow.OpenStaff();
@@ -270,7 +316,12 @@ namespace RetailEmpireTycoon.StoreOperations
                 var count = _ui.Label(row, "", new Vector2(464, -18), new Vector2(80, 34), 18);
                 count.gameObject.name = "Employee count";
             }
-            _ui.Button(_staff,"Track driver",new Vector2(350,-410),new Vector2(194,28),()=>shop.Driver?.OpenMap(canvas.transform));
+            _ui.Button(_staff,"Track driver",new Vector2(350,-410),new Vector2(194,28),() =>
+            {
+                if (shop.Driver == null) return;
+                storeWindow.Close();
+                shop.Driver.OpenMap(canvas.transform);
+            });
             _staffNotice = _ui.Label(_staff, "", new Vector2(4, -410), new Vector2(340, 28), 15);
             RefreshStaff();
         }
@@ -294,12 +345,17 @@ namespace RetailEmpireTycoon.StoreOperations
         }
         private void ShowStaffDetails(StaffRole role)
         {
-            var modal=_ui.Modal("Employee details",canvas.transform,new Vector2(480,280));
+            storeWindow.Close();
+            RectTransform modal = null;
+            void CloseDetails() { _ui.CloseModal(modal); controls.EndAuxiliary(CloseDetails); RestoreModalInput(); }
+            if (!controls.TryOpenAuxiliary(CloseDetails)) return;
+            LockModalInput();
+            modal=_ui.Modal("Employee details",canvas.transform,new Vector2(480,280));
             string status=shop.StaffStatus(role);
             _ui.Heading(modal,role.ToString(),role.ToString(),new Vector2(20,-16),new Vector2(430,36),24);
             _ui.Label(modal,$"Hired: {shop.Staff.Count(role)} / {StaffRoster.Limit(role,shop.Level)}\nWage: ${shop.Balance.Wage(role)}/min\n{status}",new Vector2(20,-68),new Vector2(440,110),18);
-            _ui.Button(modal,"Close",new Vector2(20,-220),new Vector2(150,38),()=>_ui.CloseModal(modal));
-            _ui.Button(modal,"Dismiss one",new Vector2(270,-220),new Vector2(190,38),()=>{shop.TryDismiss(role);_ui.CloseModal(modal);RefreshStaff();});
+            _ui.Button(modal,"Close",new Vector2(20,-220),new Vector2(150,38),CloseDetails);
+            _ui.Button(modal,"Dismiss one",new Vector2(270,-220),new Vector2(190,38),()=>{shop.TryDismiss(role);CloseDetails();});
         }
         public void CloseStaff()
         {
@@ -308,8 +364,9 @@ namespace RetailEmpireTycoon.StoreOperations
         public void ToggleControls()
         {
             if (ControlsVisible) { CloseControls(); return; }
-            if (work.IsActive || controls.IsConstructionActive) return;
-            CloseStaff(); LockModalInput();
+            if (!controls.CanShowControls) return;
+            controls.SuspendSettingsForBindings();
+            LockModalInput();
             _bindings = _ui.Modal("Key binding settings", canvas.transform, new Vector2(560, 616));
             _ui.Heading(_bindings, "Управление", "Controls", new Vector2(24, -18), new Vector2(455, 34), 26);
             _ui.IconButton(_bindings, ShopIcon.Close, new Vector2(504, -14), 36, CloseControls);
@@ -340,8 +397,14 @@ namespace RetailEmpireTycoon.StoreOperations
             if (controls != null) controls.CancelCapture();
             _ui.CloseModal(_bindings); _bindings = null;
             RestoreModalInput();
+            controls?.ResumeSettingsFromBindings();
         }
-        private void OnDisable() { CloseStaff(); CloseControls(); }
-        private void OnDestroy() { if (controls != null) controls.Changed -= RefreshBindings; if (storeWindow != null) storeWindow.StaffRequested -= BuildStaffPage; }
+        private void OnDisable() { CloseStaff(); CloseControls(); CloseStatistics(); }
+        private void OnDestroy()
+        {
+            if (shop != null) shop.OpenStateChanged -= ShowStoreToast;
+            if (controls != null) controls.Changed -= RefreshBindings;
+            if (storeWindow != null) storeWindow.StaffRequested -= BuildStaffPage;
+        }
     }
 }

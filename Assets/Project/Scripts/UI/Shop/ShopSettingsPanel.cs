@@ -30,8 +30,12 @@ namespace RetailEmpireTycoon.UI.Shop
             controlsButton.onClick.AddListener(operationsHud.ToggleControls);
             languageButton.onClick.AddListener(ChangeLanguage);
             closeButton.onClick.AddListener(controlPanel.ExitSetting);
-            menuButton.onClick.AddListener(AskMainMenu);
-            exitButton.onClick.AddListener(AskExit);
+            // Saving and leaving the game live on the parent pause page.
+            if (saveButton != null) saveButton.gameObject.SetActive(false);
+            if (menuButton != null) menuButton.gameObject.SetActive(false);
+            if (exitButton != null) exitButton.gameObject.SetActive(false);
+            if (TryGetComponent<ShopPanelFit>(out var fit)) fit.MaximumSize = new Vector2(530, 474);
+            ((RectTransform)closeButton.transform).anchoredPosition = new Vector2(24, -414);
             hintsButton.onClick.AddListener(ToggleHints);
             RefreshLanguage();
             RefreshHints();
@@ -43,8 +47,6 @@ namespace RetailEmpireTycoon.UI.Shop
             controlsButton.onClick.RemoveListener(operationsHud.ToggleControls);
             languageButton.onClick.RemoveListener(ChangeLanguage);
             closeButton.onClick.RemoveListener(controlPanel.ExitSetting);
-            menuButton.onClick.RemoveListener(AskMainMenu);
-            exitButton.onClick.RemoveListener(AskExit);
             hintsButton.onClick.RemoveListener(ToggleHints);
         }
         private void SetMusic(float value) { if (sound != null) sound.SetMusicVolume(value); }
@@ -66,17 +68,6 @@ namespace RetailEmpireTycoon.UI.Shop
         {
             languageButton.GetComponentInChildren<TMPro.TMP_Text>().text = "English · current build";
             languageButton.interactable=false;
-        }
-        private void AskMainMenu() { Confirm(ShopText.Get("Вернуться в главное меню?", "Return to main menu?"), controlPanel.BackMenu); }
-        private void AskExit() { Confirm(ShopText.Get("Выйти из игры?", "Exit the game?"), controlPanel.ExitGame); }
-        private void Confirm(string question, System.Action action)
-        {
-            var ui = new ShopUi(Resources.Load<ShopUiTheme>("ShopUi/Theme"));
-            var panel = ui.Modal("Leave confirmation", transform.parent, new Vector2(420, 190));
-            ui.Label(panel, question, new Vector2(24, -22), new Vector2(370, 40), 23);
-            ui.Copy(panel, "Несохранённые изменения будут потеряны.", "Unsaved changes will be lost.", new Vector2(24, -70), new Vector2(370, 36), 16).color = ShopUiTheme.Muted;
-            ui.Button(panel, "Отмена", "Cancel", new Vector2(24, -130), new Vector2(172, 36), () => ui.CloseModal(panel)).image.color = ShopUiTheme.Line;
-            ui.Button(panel, "Продолжить", "Continue", new Vector2(224, -130), new Vector2(172, 36), () => { ui.CloseModal(panel); action(); });
         }
     }
 }

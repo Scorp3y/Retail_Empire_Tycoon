@@ -38,6 +38,8 @@ namespace RetailEmpireTycoon.StoreOperations
         private float _arrival, _wages, _refresh;
         private float _reputation = 3;
         private int _completedSales;
+        private long _salesRevenue, _unitsSold, _wagesPaid;
+        private int _trackedSales;
         private bool _ready;
         private bool _refreshWorld;
         private bool _wasBuilding;
@@ -63,6 +65,13 @@ namespace RetailEmpireTycoon.StoreOperations
         public bool StaffWorking { get; private set; } = true;
         public int Level => 1 + (progression != null ? progression.CompletedRegionCount : 0);
         public float Rating { get; private set; } = 3;
+        public StoreRatingBreakdown RatingFactors { get; private set; }
+        public long SalesRevenue => _salesRevenue;
+        public long UnitsSold => _unitsSold;
+        public long WagesPaid => _wagesPaid;
+        public int CompletedSales => _completedSales;
+        public double AverageReceipt => _trackedSales == 0 ? 0 : (double)_salesRevenue / _trackedSales;
+        public event Action<bool> OpenStateChanged;
         public int BeautyPoints {get;private set;}
         public string Notice { get; private set; } = "Store closed. Stock the shelves, then open for business.";
         public Vector3 CheckoutPosition => _checkout;
@@ -89,7 +98,7 @@ namespace RetailEmpireTycoon.StoreOperations
             else if (customerModels != null && customerModels.Length > 0)
                 customerSelection = new ShopperSelection(customerModels, appearanceSeed);
         }
-        private void Start() { _arrival = 5; }
+        private void Start() { _arrival = 5; RefreshRating(); }
         private void OnEnable() { if (building != null) building.LayoutChanged += InvalidateLayout; }
         private void InvalidateLayout() { _refreshWorld = true; }
         private void Update() { Advance(Time.deltaTime); }
@@ -210,10 +219,13 @@ namespace RetailEmpireTycoon.StoreOperations
             }
             return null;
         }
-        public void SetOpen(bool open)
+        public void SetOpen(bool open) => SetOpen(open, true);
+        private void SetOpen(bool open, bool announce)
         {
+            bool changed = IsOpen != open;
             IsOpen = open; _arrival = Mathf.Min(_arrival, 5);
             Notice = open ? "Store open. Customers are arriving!" : "Store closed. Serve the remaining customers.";
+            if (changed && announce) OpenStateChanged?.Invoke(open);
         }
         public bool TryHire(StaffRole role)
         {
@@ -360,7 +372,13 @@ namespace RetailEmpireTycoon.StoreOperations
         public bool CompleteCheckout(ShopperVisit visit)
         {
             if (!_visits.Contains(visit) || !visit.Claimed || visit.Stage != VisitStage.Waiting || !visit.CommitGoods()) return false;
-            money.Add(visit.Quantity * visit.Product.SellPrice); _completedSales++; _reputation = Mathf.Min(5, _reputation + 0.04f);
+            int price = (int)Math.Min(int.MaxValue, (long)visit.Quantity * visit.Product.SellPrice);
+            money.Add(price);
+            _salesRevenue = AddMetric(_salesRevenue, price);
+            _unitsSold = AddMetric(_unitsSold, visit.Quantity);
+            if (_completedSales < int.MaxValue) _completedSales++;
+            if (_trackedSales < int.MaxValue) _trackedSales++;
+            _reputation = Mathf.Min(5, _reputation + 0.04f);
             if (_dirt.Count < 8 && UnityEngine.Random.value < balance.litterChance) SpawnDirt(visit.Character.transform.position);
             Leave(visit); Notice = "Sale completed: " + MoneyFormat.Compact(visit.Quantity * visit.Product.SellPrice); return true;
         }
@@ -417,8 +435,10 @@ namespace RetailEmpireTycoon.StoreOperations
             int due = Mathf.FloorToInt(_wages);
             if (due <= 0) { StaffWorking = true; return; }
             if (!money.TrySpend(due)) { StaffWorking = false; _wages = Mathf.Min(_wages, perMinute); Notice = "Insufficient funds for wages. Staff are waiting for payment."; return; }
+            _wagesPaid = AddMetric(_wagesPaid, due);
             _wages -= due; StaffWorking = true;
         }
+        private static long AddMetric(long total, int amount) => total + Math.Min(long.MaxValue - total, Math.Max(0, amount));
         private void RefreshRating()
         {
             var shelves = FindObjectsOfType<PlacedShelfStock>();
@@ -427,21 +447,44 @@ namespace RetailEmpireTycoon.StoreOperations
             float sizeBonus = 0.12f * (Level - 1);
             BeautyPoints=FindObjectsOfType<PlacedObject>().Where(p=>p.item!=null&&p.GetComponentInParent<BuildPreview>()==null).Sum(p=>p.item.beautyPoints);
             float beautyBonus=Mathf.Min(.6f,BeautyPoints*.02f);
-            Rating = Mathf.Clamp(_reputation * 0.55f + stockRatio * 1.1f + Mathf.Min(5, variety) * 0.16f + sizeBonus + beautyBonus - _dirt.Count * 0.12f - _visits.Count(v => v.WaitingSeconds > 35 && v.Stage == VisitStage.Waiting) * 0.08f, 1, 5);
+            int longWaits = _visits.Count(v => v.WaitingSeconds > 35 && v.Stage == VisitStage.Waiting);
+            RatingFactors = new StoreRatingBreakdown(_reputation * .55f, stockRatio * 1.1f, Mathf.Min(5, variety) * .16f,
+                sizeBonus, beautyBonus, _dirt.Count * -.12f, longWaits * -.08f);
+            Rating = RatingFactors.Score;
         }
-        public ShopOperationsSaveData BuildSaveData() => new ShopOperationsSaveData { isOpen = IsOpen, reputation = _reputation, staff = _staff.Snapshot(), unpaidWages = _wages, completedSales = _completedSales };
+        public ShopOperationsSaveData BuildSaveData() => new ShopOperationsSaveData
+        {
+            isOpen = IsOpen, reputation = _reputation, staff = _staff.Snapshot(), unpaidWages = _wages, completedSales = _completedSales,
+            salesRevenue = _salesRevenue, unitsSold = _unitsSold, wagesPaid = _wagesPaid, trackedSales = _trackedSales
+        };
         public void ApplySaveData(ShopOperationsSaveData data)
         {
             data ??= new ShopOperationsSaveData();
             foreach (var visit in _visits.ToArray()) RemoveVisit(visit);
             _reputation = float.IsNaN(data.reputation) || float.IsInfinity(data.reputation) ? 3 : Mathf.Clamp(data.reputation, 1, 5);
             _wages = float.IsNaN(data.unpaidWages) || float.IsInfinity(data.unpaidWages) ? 0 : Mathf.Clamp(data.unpaidWages, 0, 10000);
-            _completedSales = Mathf.Max(0, data.completedSales); _staff.Restore(data.staff, Level); SetOpen(data.isOpen);
+            _completedSales = Mathf.Max(0, data.completedSales);
+            _salesRevenue = Math.Max(0, data.salesRevenue);
+            _unitsSold = Math.Max(0, data.unitsSold);
+            _wagesPaid = Math.Max(0, data.wagesPaid);
+            _trackedSales = Mathf.Clamp(data.trackedSales, 0, _completedSales);
+            _staff.Restore(data.staff, Level); SetOpen(data.isOpen, false);
             // Loading the same store level can still replace all furniture and the entrance.
             // Rebuild routes only after the world and shelf saves have been restored.
             _refreshWorld = true;
             ConfigureWorld(); RefreshRating();
         }
         private void OnDisable() { if (building != null) building.LayoutChanged -= InvalidateLayout; work?.Cancel(); foreach (var employee in _employees) if (employee != null) employee.CancelDuty(); }
+    }
+
+    public readonly struct StoreRatingBreakdown
+    {
+        public readonly float Reputation, Stock, Variety, Size, Decoration, Dirt, Queue;
+        public float Score => Mathf.Clamp(Reputation + Stock + Variety + Size + Decoration + Dirt + Queue, 1, 5);
+        public StoreRatingBreakdown(float reputation, float stock, float variety, float size, float decoration, float dirt, float queue)
+        {
+            Reputation = reputation; Stock = stock; Variety = variety; Size = size;
+            Decoration = decoration; Dirt = dirt; Queue = queue;
+        }
     }
 }

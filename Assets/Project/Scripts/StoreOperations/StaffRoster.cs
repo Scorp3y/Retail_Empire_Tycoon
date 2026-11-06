@@ -44,5 +44,7 @@ namespace RetailEmpireTycoon.StoreOperations
         public int[] staff = new int[StaffRoster.RoleCount];
         public float unpaidWages;
         public int completedSales;
+        public long salesRevenue, unitsSold, wagesPaid;
+        public int trackedSales;
     }
 }

@@ -82,7 +82,11 @@ namespace RetailEmpireTycoon.City
             var town=shopScene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<TownWorldPlaces>(true)).FirstOrDefault();
             shopRail = town != null ? town.GetComponentInChildren<TownRailTraffic>() : null;
             var mainCamera=shopScene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<MainCamera>(true)).FirstOrDefault();
-            if(town!=null&&uiRoot!=null&&parkedPickup!=null)townMap=new StoreTownMapHud(ui,uiRoot,town,this,mainCamera);
+            if(town!=null&&uiRoot!=null&&parkedPickup!=null)
+            {
+                townMap=new StoreTownMapHud(ui,uiRoot,town,this,mainCamera);
+                controls?.AttachTownMap(townMap);
+            }
         }
         /// <summary>The private driveway is shared between the scaled store world and native City coordinates.</summary>
         public Vector3[] MapHomeAccess()
@@ -109,6 +113,7 @@ namespace RetailEmpireTycoon.City
         {
             if (Transitioning || InCity || confirmation != null) return;
             if(Fleet.DriverHasVehicle)return;
+            if (controls != null && !controls.TryOpenAuxiliary(CloseConfirmation)) return;
             confirmation = ui.Modal("Drive into town", uiRoot, new Vector2(480,240));
             ui.Heading(confirmation,"Drive into town?","Drive to the city?",new Vector2(22,-18),new Vector2(430,40),26);
             ui.Copy(confirmation,"Visit suppliers around town and collect your orders. The store will be paused until you return.",
@@ -116,7 +121,11 @@ namespace RetailEmpireTycoon.City
             ui.Button(confirmation,"Cancel","Cancel",new Vector2(22,-177),new Vector2(200,40),CloseConfirmation);
             ui.Button(confirmation,"Drive","Drive",new Vector2(250,-177),new Vector2(208,40),Begin);
         }
-        private void CloseConfirmation() { ui.CloseModal(confirmation); confirmation = null; }
+        private void CloseConfirmation()
+        {
+            ui.CloseModal(confirmation); confirmation = null;
+            controls?.EndAuxiliary(CloseConfirmation);
+        }
         public void Begin()
         {
             if (InCity || Transitioning) return;

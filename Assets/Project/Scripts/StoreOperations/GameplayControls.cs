@@ -3,6 +3,8 @@ using RetailEmpireTycoon.BuildSystem;
 using RetailEmpireTycoon.UI.HUD;
 using RetailEmpireTycoon.UI.Windows;
 using RetailEmpireTycoon.UI.Shop;
+using RetailEmpireTycoon.City;
+using RetailEmpireTycoon.Shelves;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -11,6 +13,7 @@ namespace RetailEmpireTycoon.StoreOperations
 {
     public enum ShopAction { Inventory, Warehouse, Catalog, Territory, Staff, OpenStore, Checkout, TopView, ResetView, RotateClockwise, RotateCounterclockwise, Pause }
 
+    [DefaultExecutionOrder(-110)]
     public sealed class GameplayControls : MonoBehaviour
     {
         [SerializeField] private HUDController hud;
@@ -27,13 +30,21 @@ namespace RetailEmpireTycoon.StoreOperations
         private readonly KeyCode[] _keys = { KeyCode.E, KeyCode.U, KeyCode.B, KeyCode.M, KeyCode.N, KeyCode.O, KeyCode.F, KeyCode.V, KeyCode.Home, KeyCode.R, KeyCode.Q, KeyCode.Space };
         private readonly KeyCode[] _defaults = { KeyCode.E, KeyCode.U, KeyCode.B, KeyCode.M, KeyCode.N, KeyCode.O, KeyCode.F, KeyCode.V, KeyCode.Home, KeyCode.R, KeyCode.Q, KeyCode.Space };
         public ShopAction? Capturing { get; private set; }
-        private int _captureCancelFrame = -1;
-        public bool CaptureCancelledThisFrame => _captureCancelFrame == Time.frameCount;
+        private ShopPauseMenu _pauseMenu;
+        private Action _auxiliaryClose;
+        private StoreTownMapHud _townMap;
+        private ShelfInfoWindow _shelfInfo;
+        private ProductAssignMode _productAssignment;
         public string BindingNotice { get; private set; }
         public bool WorldMapOpen { get; private set; }
         public void SetWorldMapOpen(bool open) { WorldMapOpen=open; }
-        public bool LegacyWindowVisible => WorldMapOpen || hud.shopWindow.activeInHierarchy || hud.buildInventoryWindow.activeInHierarchy
-            || settings != null && settings.settingPanel.activeInHierarchy;
+        private bool SettingsVisible => settings != null && settings.settingPanel != null && settings.settingPanel.activeInHierarchy;
+        public bool PauseMenuVisible => _pauseMenu?.IsOpen == true;
+        internal bool PrimaryWindowVisible => WorldMapOpen || hud.shopWindow.activeInHierarchy || hud.buildInventoryWindow.activeInHierarchy
+            || SettingsVisible || PauseMenuVisible || _auxiliaryClose != null || operationsHud != null && operationsHud.ModalVisible;
+        public bool LegacyWindowVisible => PrimaryWindowVisible || _shelfInfo != null && _shelfInfo.gameObject.activeInHierarchy;
+        public bool CanOpenWindow => !LegacyWindowVisible && !IsConstructionActive && !work.IsActive && _productAssignment?.IsActive != true;
+        internal bool CanShowControls => SettingsVisible || CanOpenWindow;
         public bool IsConstructionActive => building.mode != BuildMode.Normal || territoryMode.IsActive;
         public bool IsFloorNavigationActive => building.mode != BuildMode.Normal;
         public event Action Changed;
@@ -59,6 +70,8 @@ namespace RetailEmpireTycoon.StoreOperations
         }
         private void Awake()
         {
+            _shelfInfo = FindObjectOfType<ShelfInfoWindow>(true);
+            _productAssignment = FindObjectOfType<ProductAssignMode>(true);
             for (int i = 0; i < _keys.Length; i++)
             {
                 var saved = (KeyCode)PlayerPrefs.GetInt("RetailEmpire.Control." + (ShopAction)i, (int)_defaults[i]);
@@ -67,53 +80,102 @@ namespace RetailEmpireTycoon.StoreOperations
         }
         private void Update()
         {
-            if(WorldMapOpen)return;
+            _pauseMenu?.Tick();
+            if (Input.GetKeyDown(KeyCode.Escape)) { HandleEscape(); return; }
             if (Capturing.HasValue)
             {
-                if (Input.GetKeyDown(KeyCode.Escape)) { _captureCancelFrame = Time.frameCount; CancelCapture(); return; }
                 foreach (KeyCode key in Enum.GetValues(typeof(KeyCode))) if (Input.GetKeyDown(key)) { Rebind(Capturing.Value, key); return; }
                 return;
             }
-            if (EventSystem.current != null && EventSystem.current.currentSelectedGameObject != null
-                && EventSystem.current.currentSelectedGameObject.GetComponent<TMP_InputField>() != null) return;
-            if (work.IsActive) return;
-            if (operationsHud.ControlsVisible || settings != null && settings.settingPanel != null && settings.settingPanel.activeInHierarchy) return;
-            if (operationsHud.StaffVisible)
+            if (PauseMenuVisible)
             {
-                if (Input.GetKeyDown(KeyCode.Escape) || Pressed(ShopAction.Staff)) operationsHud.CloseStaff();
+                if (Pressed(ShopAction.Pause) && !SettingsVisible && !operationsHud.ControlsVisible) HandleEscape();
                 return;
             }
+            if (LegacyWindowVisible || work.IsActive || _productAssignment?.IsActive == true) return;
+            if (EventSystem.current != null && EventSystem.current.currentSelectedGameObject != null
+                && EventSystem.current.currentSelectedGameObject.GetComponent<TMP_InputField>() != null) return;
+            if (Pressed(ShopAction.Territory)) { RequestTerritory(); return; }
+            if (Pressed(ShopAction.Inventory)) { RequestConstruction(); return; }
+            if (IsConstructionActive) return;
+            if (Pressed(ShopAction.Pause)) { RequestPause(); return; }
             if (Pressed(ShopAction.TopView) && cameraInput.enabled) cameraInput.ToggleTopView();
             if (Pressed(ShopAction.ResetView) && cameraInput.enabled) cameraInput.ResetView();
-            if (Pressed(ShopAction.Pause)) pause?.TogglePause();
-            if (building.mode != BuildMode.Normal)
-            {
-                if (Pressed(ShopAction.Inventory) || Pressed(ShopAction.Warehouse))
-                {
-                    building.GetComponent<BuildEditingController>()?.Finish();
-                    building.ExitBuildMode();
-                }
-                else return;
-            }
-            if (Pressed(ShopAction.Territory)) { bool wasActive = territoryMode.IsActive; CloseWindows(); if (wasActive) territoryMode.Exit(); else territoryMode.Enter(); return; }
-            if (territoryMode.IsActive) return;
-            if (Pressed(ShopAction.Inventory)){construction?.Toggle();return;}
-            if (Pressed(ShopAction.Warehouse)) ToggleInventory(true);
-            if (Pressed(ShopAction.Catalog)) { hud.buildInventoryWindow.SetActive(false); hud.ToggleShop(); }
-            if (Pressed(ShopAction.Staff)) operationsHud.ToggleStaff();
+            if (Pressed(ShopAction.Warehouse)) { RequestWarehouse(); return; }
+            if (Pressed(ShopAction.Catalog)) { RequestShop(); return; }
+            if (Pressed(ShopAction.Staff)) { operationsHud.ToggleStaff(); return; }
             if (Pressed(ShopAction.OpenStore)) shop.SetOpen(!shop.IsOpen);
-            if (Pressed(ShopAction.Checkout)) { CloseWindows(); work.BeginCheckout(); }
+            else if (Pressed(ShopAction.Checkout)) work.BeginCheckout();
         }
-        private void ToggleInventory(bool products)
+
+        public void HandleEscape()
         {
-            bool visible = inventoryWindow.gameObject.activeSelf;
-            CloseWindows(); inventoryWindow.gameObject.SetActive(!visible);
-            if (products) inventoryWindow.ShowProducts(); else inventoryWindow.ShowFurniture();
+            if (Capturing.HasValue) CancelCapture();
+            else if (WorldMapOpen) _townMap?.Close();
+            else if (construction?.IsOpen == true && building.mode == BuildMode.Edit &&
+                building.GetComponent<BuildEditingController>()?.Selected == null) construction.Close();
+            else if (IsConstructionActive || work.IsActive) return; // Active placement, territory and work own their cancellation.
+            else if (_productAssignment?.IsActive == true) _productAssignment.Cancel();
+            else if (_auxiliaryClose != null) _auxiliaryClose();
+            else if (operationsHud.ControlsVisible) operationsHud.CloseControls();
+            else if (PauseMenuVisible) _pauseMenu.Escape();
+            else if (SettingsVisible) settings.ExitSetting();
+            else if (operationsHud.CloseStatistics()) return;
+            else if (hud.shopWindow.activeInHierarchy) hud.shopWindow.SetActive(false);
+            else if (hud.buildInventoryWindow.activeInHierarchy) hud.buildInventoryWindow.SetActive(false);
+            else if (_shelfInfo != null && _shelfInfo.gameObject.activeInHierarchy) _shelfInfo.Hide();
+            else RequestPause();
         }
+
+        internal void AttachTownMap(StoreTownMapHud map) => _townMap = map;
+        internal void ConfigurePause(ShopUi ui, Transform canvas) => _pauseMenu = new ShopPauseMenu(ui, canvas, settings, cameraInput);
+        internal void SuspendSettingsForBindings() => _pauseMenu?.SuspendSettingsForBindings();
+        internal void ResumeSettingsFromBindings() => _pauseMenu?.ResumeSettingsFromBindings();
+        public void RequestPause() { if (CanOpenWindow) _pauseMenu?.Open(); }
+        public void RequestShop() { if (CanOpenWindow) hud.shopWindow.SetActive(true); }
+        public void RequestWarehouse()
+        {
+            if (!CanOpenWindow) return;
+            inventoryWindow.gameObject.SetActive(true);
+            inventoryWindow.ShowProducts();
+        }
+        public void RequestConstruction()
+        {
+            if (construction?.IsOpen == true) construction.Close();
+            else if (CanOpenWindow) construction?.Open();
+        }
+        public void RequestTerritory()
+        {
+            if (territoryMode.IsActive) territoryMode.Exit();
+            else if (CanOpenWindow) territoryMode.Enter();
+        }
+        internal bool TryOpenAuxiliary(Action close)
+        {
+            if (!CanOpenWindow) return false;
+            _auxiliaryClose = close;
+            return true;
+        }
+        internal void EndAuxiliary(Action close)
+        {
+            if (_auxiliaryClose == close) _auxiliaryClose = null;
+        }
+
         public void CloseWindows(bool includeConstruction=true)
         {
+            _auxiliaryClose?.Invoke();
             if(includeConstruction)construction?.Close();
-            hud.shopWindow.SetActive(false); hud.buildInventoryWindow.SetActive(false); settings?.ExitSetting(); operationsHud.CloseStaff();
+            operationsHud.CloseControls();
+            _pauseMenu?.Close();
+            if (SettingsVisible) settings.ExitSetting();
+            _shelfInfo?.Hide();
+            operationsHud.CloseStatistics();
+            hud.shopWindow.SetActive(false); hud.buildInventoryWindow.SetActive(false); operationsHud.CloseStaff();
+        }
+        private void OnDisable()
+        {
+            if (!PauseMenuVisible) return;
+            operationsHud.CloseControls();
+            _pauseMenu.Close();
         }
         public void Capture(ShopAction action) { Capturing = action; BindingNotice = ShopText.Get("Нажми новую клавишу. Esc — отмена.", "Press a new key. Esc cancels."); Changed?.Invoke(); }
         public bool Rebind(ShopAction action, KeyCode key, bool persist = true)

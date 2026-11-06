@@ -4,7 +4,7 @@ using UnityEngine.UI;
 namespace RetailEmpireTycoon.UI.Shop
 {
     public enum ShopIcon { Cart, Warehouse, Settings, Territory, OpenLock, ClosedLock, Staff, Equipment, Products, Back, Close, Check, Sound, Save, Exit, Cashier, Guard, Stocker, Cleaner, Star, Coin, Pause, Play, Pickup, Decoration,
-        Hammer, Move, RotateLeft, RotateRight, ArrowUp, ArrowDown, Floor, Ceiling, Erase, Parking, Fuel }
+        Hammer, Move, RotateLeft, RotateRight, ArrowUp, ArrowDown, Floor, Ceiling, Erase, Parking, Fuel, Statistics }
 
     /// <summary>Navigation symbols share a normalized silhouette and scale without blurry bitmap resizing.</summary>
     [RequireComponent(typeof(CanvasRenderer))]
@@ -25,6 +25,9 @@ namespace RetailEmpireTycoon.UI.Shop
             mesh.Clear(); _mesh = mesh; _rect = GetPixelAdjustedRect();
             switch (icon)
             {
+                case ShopIcon.Statistics:
+                    Box(.19f,.22f,.15f,.25f); Box(.43f,.22f,.15f,.43f); Box(.67f,.22f,.15f,.63f);
+                    Line(.12f,.13f,.88f,.13f,.065f); break;
                 case ShopIcon.Fuel:
                     Box(.16f,.16f,.47f,.70f); Box(.23f,.58f,.33f,.18f,ShopUiTheme.Paper);
                     Line(.10f,.16f,.69f,.16f,.08f);
@@ -79,10 +82,20 @@ namespace RetailEmpireTycoon.UI.Shop
                     for (int i=0;i<8;i++) { float a=i*Mathf.PI/4; Vector2 d=new Vector2(Mathf.Cos(a),Mathf.Sin(a)); Line(.5f+d.x*.23f,.5f+d.y*.23f,.5f+d.x*.38f,.5f+d.y*.38f,.14f); }
                     Ring(.5f,.5f,.29f,.12f); break;
                 case ShopIcon.Territory:
-                    Polygon(new Vector2(.13f,.23f),new Vector2(.34f,.14f),new Vector2(.34f,.62f),new Vector2(.13f,.71f));
-                    Polygon(new Vector2(.37f,.14f),new Vector2(.62f,.23f),new Vector2(.62f,.61f),new Vector2(.37f,.7f));
-                    Polygon(new Vector2(.65f,.23f),new Vector2(.87f,.14f),new Vector2(.87f,.63f),new Vector2(.65f,.72f));
-                    Ring(.58f,.75f,.17f,.06f); Polygon(new Vector2(.45f,.64f),new Vector2(.71f,.64f),new Vector2(.58f,.43f)); break;
+                    for (int i = 0; i < 2; i++)
+                    {
+                        float corner = .15f + i * .52f;
+                        float edge = .15f + i * .62f;
+                        Box(corner, .15f, .18f, .08f);
+                        Box(corner, .77f, .18f, .08f);
+                        Box(.15f, corner, .08f, .18f);
+                        Box(.77f, corner, .08f, .18f);
+                        Box(.44f, edge, .12f, .08f);
+                        Box(edge, .44f, .08f, .12f);
+                    }
+                    Line(.36f, .5f, .64f, .5f, .08f);
+                    Line(.5f, .36f, .5f, .64f, .08f);
+                    break;
                 case ShopIcon.OpenLock: case ShopIcon.ClosedLock:
                     Box(.24f,.15f,.52f,.4f);
                     Shackle(_lockProgress >= 0 ? _lockProgress : icon == ShopIcon.OpenLock ? 1 : 0);

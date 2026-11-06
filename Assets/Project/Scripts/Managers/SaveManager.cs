@@ -98,9 +98,11 @@ public class SaveManager : MonoBehaviour
     }
 
 
-    public void SaveGame()
+    public void SaveGame() => TrySaveGame();
+
+    public bool TrySaveGame()
     {
-        if(!worldRestored){Debug.LogWarning("[SaveManager] Save blocked until the complete world and stock have been restored.");return;}
+        if(!worldRestored){Debug.LogWarning("[SaveManager] Save blocked until the complete world and stock have been restored.");return false;}
         FindRefs();
 
         gameData ??= new GameData();
@@ -141,6 +143,7 @@ public class SaveManager : MonoBehaviour
         else File.Move(temporaryPath, saveFilePath);
 
         Debug.Log("[SaveManager] Saved: " + saveFilePath);
+        return true;
     }
 
     public void LoadGame()

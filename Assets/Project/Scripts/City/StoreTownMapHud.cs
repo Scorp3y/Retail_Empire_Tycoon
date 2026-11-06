@@ -29,9 +29,9 @@ namespace RetailEmpireTycoon.City
         public void Tick()
         {
             if (trip.InCity || trip.Transitioning) { MiniMap?.SetVisible(false); return; }
-            bool blocked = trip.work != null && trip.work.IsActive || trip.controls != null && (trip.controls.IsConstructionActive || trip.controls.LegacyWindowVisible && !IsOpen);
-            if (!blocked && Input.GetKeyDown(KeyCode.Tab)) Toggle();
-            if (IsOpen && Input.GetKeyDown(KeyCode.Escape)) Close();
+            bool blocked = trip.work != null && trip.work.IsActive || trip.controls != null && !trip.controls.CanOpenWindow && !IsOpen;
+            if (!blocked && !Input.GetKeyDown(KeyCode.Escape) && Input.GetKeyDown(KeyCode.Tab)) Toggle();
+            if (IsOpen && trip.controls == null && Input.GetKeyDown(KeyCode.Escape)) Close();
             var position = Data.ToNative(trip.parkedPickup.transform.position);
             if (Time.unscaledTime >= nextNavigation) { nextNavigation = Time.unscaledTime + .2f; Navigation.Tick(position, Vector3.zero, 0, Time.unscaledTime); }
             MiniMap?.SetVisible(!blocked && !IsOpen); MiniMap?.Tick(position, 0, 0, false); window?.Tick(position, 0);
@@ -39,7 +39,7 @@ namespace RetailEmpireTycoon.City
         public void Toggle()
         {
             if (IsOpen) { Close(); return; }
-            if (trip.InCity || trip.Transitioning || trip.controls != null && (trip.controls.LegacyWindowVisible || trip.controls.IsConstructionActive || trip.controls.Capturing.HasValue) || trip.work != null && trip.work.IsActive) return;
+            if (trip.InCity || trip.Transitioning || trip.controls != null && !trip.controls.CanOpenWindow || trip.work != null && trip.work.IsActive) return;
             if (trip.controls != null) { trip.controls.CloseWindows(); trip.controls.SetWorldMapOpen(true); }
             var walls = trip.gameObject.scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<StoreWallOccluder>(true))
                 .Where(w => w.gameObject.activeInHierarchy && w.GetComponentInParent<BuildPreview>() == null).ToArray();

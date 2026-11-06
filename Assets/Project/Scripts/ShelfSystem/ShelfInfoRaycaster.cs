@@ -16,6 +16,7 @@ namespace RetailEmpireTycoon.Shelves
         private Vector2 _pressPosition;
         private bool _pendingClick;
         private bool _dragged;
+        private RetailEmpireTycoon.StoreOperations.GameplayControls _controls;
 
         [Header("Raycast")]
         [SerializeField] private LayerMask shelfMask;
@@ -25,11 +26,13 @@ namespace RetailEmpireTycoon.Shelves
         private void Awake()
         {
             FindMissingRefs();
+            _controls = FindObjectOfType<RetailEmpireTycoon.StoreOperations.GameplayControls>(true);
         }
 
         private void Update()
         {
-            if (workMinigame != null && workMinigame.IsActive) { HideWindow(); return; }
+            if (_controls?.PrimaryWindowVisible == true || workMinigame != null && workMinigame.IsActive)
+            { _pendingClick = false; HideWindow(); return; }
             if (Input.GetKeyDown(KeyCode.Escape))
             {
                 HideWindow();

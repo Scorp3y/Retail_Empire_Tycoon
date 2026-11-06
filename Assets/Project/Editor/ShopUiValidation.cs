@@ -194,11 +194,16 @@ public static class ShopUiValidation
             panel.controlsButton.onClick.Invoke(); yield return Capture("controls");
             Require(hud.ControlsVisible && !settings.GetComponentInParent<Canvas>().enabled, "Binding modal does not isolate underlying UI.");
             hud.CloseControls(); Require(settings.GetComponentInParent<Canvas>().enabled, "Settings canvas did not restore.");
-            panel.menuButton.onClick.Invoke(); yield return Capture("leave_confirmation");
-            var leave = GameObject.Find("Leave confirmation");
-            Require(leave != null, "Menu transition has no confirmation.");
-            leave.GetComponentsInChildren<Button>().First().onClick.Invoke();
             settings.ExitSetting();
+            controls.RequestPause();
+            var pausePage = GameObject.Find("Pause menu");
+            pausePage.GetComponentsInChildren<Button>().First(button =>
+                button.GetComponentInChildren<TMP_Text>().text == ShopText.Get("Главное меню", "Main menu")).onClick.Invoke();
+            yield return Capture("leave_confirmation");
+            var leave = GameObject.Find("Leave paused game");
+            Require(leave != null, "Menu transition has no confirmation.");
+            controls.HandleEscape();
+            controls.HandleEscape();
             var confirm = Object.FindObjectOfType<ConfirmPurchaseUI>(true);
             bool accepted = false;
             confirm.Show(ShopText.Get("Расширить магазин за $2000?", "Expand your store for $2000?"), () => accepted=true, () => { });

@@ -10,6 +10,8 @@ using RetailEmpireTycoon.StoreOperations;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 using Object=UnityEngine.Object;
 
 [InitializeOnLoad]
@@ -74,6 +76,7 @@ public static class ConstructionWorkspacePlay
         if(Frontage){FrontageMigration(starter);foreach(var step in GroundOnlyTransports(starter))yield return step;}
         Physics.simulationMode=SimulationMode.Script;
         VerifyFrontageDecor(starter);
+        foreach (var step in VerifyPauseAndStatistics(starter)) yield return step;
         Require(Mathf.Abs(starter.building.grid.cellSize-ShopProportions.CellSize)<.00001f && Mathf.Abs(GridSystem.StoreyHeight-1.65f)<.0001f,"Construction grid/storeys were not enlarged.");
         var bays=Object.FindObjectsOfType<ParkingBay>().Where(bay=>bay.GetComponentInParent<BuildPreview>()==null).ToArray();
         Require(bays.Length==3 && bays.All(bay=>Mathf.Abs(bay.width-1.943271f)<.005f && Mathf.Abs(bay.length-3.923667f)<.005f),"Parking must match the updated 1.1x kit.");
@@ -189,6 +192,11 @@ public static class ConstructionWorkspacePlay
                     Require(car!=null && !customer.IsFinished,"Car uses an unrelated parking timer rather than waiting for its buyer.");
                     TownFloristBatch.Render(EditorSceneManager.GetActiveScene(),Documentation+"/StoreAndParking.png",starter.blueprint.cameraFocus+new Vector3(-9,12,-16),starter.blueprint.cameraFocus+Vector3.back*3);
                     Require(shop.ClaimCheckout()==customer && shop.CompleteCheckout(customer),"Driver cannot buy through the real checkout.");paid=true;
+                    Require(shop.SalesRevenue == customer.Quantity * product.SellPrice && shop.UnitsSold == customer.Quantity &&
+                        shop.CompletedSales == 1 && shop.AverageReceipt == shop.SalesRevenue, "Real checkout did not update store statistics.");
+                    var persisted = JsonUtility.FromJson<ShopOperationsSaveData>(JsonUtility.ToJson(shop.BuildSaveData()));
+                    Require(persisted.salesRevenue == shop.SalesRevenue && persisted.unitsSold == shop.UnitsSold &&
+                        persisted.trackedSales == 1, "Sales totals did not survive save serialization.");
                     Require(shop.Money==beforeMoney+customer.Quantity*product.SellPrice && stocked.CurrentAmount==beforeStock-customer.Quantity,"Payment or stock was applied incorrectly.");
                 }
                 if(paid && customer.IsFinished && parking.VisitorCars.Count==0)break;
@@ -212,13 +220,18 @@ public static class ConstructionWorkspacePlay
         Time.timeScale=originalTimeScale;
         Require(customer!=null && walked && paid && customer.ReturnedToCar && streetArrival && streetDeparture && parking.VisitorCars.Count==0,"Incomplete street -> car -> shop -> purchase -> same car -> street cycle. "+parking.MovementState+" notice="+shop.Notice+" visit="+customer?.Stage);
         Require(parking.VisitorCars.Count==0,"Finished visitor retained the parking lease.");
+        Require(shop.TryHire(StaffRole.Cleaner), "Could not hire the payroll test employee.");
+        int payroll = shop.Balance.Wage(StaffRole.Cleaner);
+        shop.Advance(60);
+        Require(shop.WagesPaid == payroll && shop.BuildSaveData().wagesPaid == payroll,
+            "Actual payroll was not reflected in the statistics and save data.");
         if(Transport)Require(reachedUpper,"Parking buyer never physically reached its upstairs shelf.");
         if(Elevator)
         {
             Require(lowerDoorSeen&&upperDoorSeen&&liftMoved,"Real buyer skipped the lift cabin or a landing door pair.");
             File.WriteAllText(Report+"/doors.txt","PASS actual parking buyer boards the single cabin, rides upstairs, returns downstairs and passes both animated door pairs; doors only open with aligned cabin, never both stops at once.\n");
         }
-        File.WriteAllText(Report+"/cycle.txt","PASS actual passenger car arrival; buyer exits beside its car, walks to shelf, browses, pays exactly once, returns to the same car, boards and leaves. Car waits for its buyer, not a timer; bay released only after departure.\n");
+        File.WriteAllText(Report+"/cycle.txt","PASS actual passenger car arrival, checkout and departure. Actual sale, units, average receipt and payroll reached the persistent statistics.\n");
         File.WriteAllText(Report+"/placement.txt","PASS 10-percent larger StorePolish kit, shelves and storeys; 1.94x3.92 bays; proportional grid clearance; move all initial bays plus place and remove a test bay on service-yard asphalt; reject public/unowned ground; matching-width operable double door; idempotent version-one and legacy save conversion.\n");
         float shopWallTop=Object.FindObjectsOfType<PlacedObject>().Where(placed=>placed.item!=null && placed.item.isWall)
             .SelectMany(placed=>placed.GetComponentsInChildren<MeshRenderer>()).Max(renderer=>renderer.bounds.max.y);
@@ -244,6 +257,153 @@ public static class ConstructionWorkspacePlay
         starter.cityTrip.Return();while(starter.cityTrip.Transitioning)yield return null;
         Require(!starter.cityTrip.InCity,"Return from City failed.");
         File.WriteAllText(Report+"/city.txt","PASS actual Game -> City -> Game; no automatic roof; scaled wall top "+expectedTop+"; uniform world scale, player-built surfaces only.\n");
+    }
+
+    private static System.Collections.Generic.IEnumerable<object> VerifyPauseAndStatistics(StarterStoreInitialization starter)
+    {
+        var controls = Object.FindObjectOfType<GameplayControls>();
+        var shopWindow = Object.FindObjectOfType<RetailEmpireTycoon.UI.Shop.ShopWindow>(true);
+        var warehouse = Object.FindObjectOfType<RetailEmpireTycoon.UI.Windows.BuildInventoryWindow>(true);
+        var hud = Object.FindObjectOfType<ShopOperationsHud>();
+        var shop = Object.FindObjectOfType<RetailEmpireTycoon.StoreOperations.StoreOperations>();
+        var settings = Object.FindObjectOfType<ControlPanel>(true);
+        var settingsPanel = settings.settingPanel.GetComponent<RetailEmpireTycoon.UI.Shop.ShopSettingsPanel>();
+        var canvas = Object.FindObjectOfType<RetailEmpireTycoon.UI.Shop.ShopHudPresenter>().canvas;
+        var actionRow = canvas.transform.Find("Game edge HUD/Shop action row");
+        var rating = canvas.transform.Find("Shop rating");
+        Require(actionRow != null && actionRow.gameObject.activeInHierarchy, "Store HUD actions are missing.");
+        var actions = actionRow.GetComponentsInChildren<Button>()
+            .OrderBy(button => ((RectTransform)button.transform).anchoredPosition.x)
+            .Select(button => button.name);
+        Require(actions.SequenceEqual(new[] { "Open territories", "Open store statistics", "Open or close store",
+            "Open construction", "Open store catalog", "Open warehouse" }), "The store HUD actions are out of order or include the map.");
+        Require(rating.GetComponent<Graphic>() == null && rating.GetComponent<Outline>() == null &&
+            rating.GetComponentInChildren<TMPro.TMP_Text>(true) == null && rating.childCount == 5,
+            "The rating should show only its five stars.");
+        Button ButtonNamed(string text) => canvas.GetComponentsInChildren<Button>()
+            .First(button => button.GetComponentInChildren<TMPro.TMP_Text>()?.text == text);
+        Require(Object.FindObjectOfType<SaveManager>(true) == null, "Player save is not isolated.");
+        var saveObject = new GameObject("Disposable pause save fixture");
+        var save = saveObject.AddComponent<SaveManager>();
+        save.enabled = false; // Exercise the real writer without running its player-load or autosave lifecycle.
+        const string path = "Library/ShopPauseQA/disposable-save.json";
+        Directory.CreateDirectory("Library/ShopPauseQA");
+        var fields = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        typeof(SaveManager).GetField("saveFilePath", fields).SetValue(save, path);
+        typeof(SaveManager).GetField("worldRestored", fields).SetValue(save, true);
+        float originalTime = Time.timeScale;
+        try
+        {
+            controls.RequestShop();
+            controls.RequestWarehouse();
+            controls.RequestPause();
+            Require(shopWindow.gameObject.activeInHierarchy && !warehouse.gameObject.activeInHierarchy && !controls.PauseMenuVisible,
+                "Store did not exclude warehouse and pause.");
+            yield return null;
+            Require(!actionRow.gameObject.activeInHierarchy, "HUD actions overlap the catalog.");
+            CaptureUi("HudCatalog");
+            controls.HandleEscape();
+            yield return null;
+            Require(actionRow.gameObject.activeInHierarchy, "HUD actions did not return after closing the catalog.");
+            Require(!shopWindow.gameObject.activeInHierarchy && !controls.PauseMenuVisible, "Esc did not close just the catalog.");
+            controls.RequestWarehouse();
+            yield return null;
+            Require(warehouse.gameObject.activeInHierarchy && !actionRow.gameObject.activeInHierarchy, "HUD actions overlap the warehouse.");
+            controls.HandleEscape();
+            Require(!warehouse.gameObject.activeInHierarchy && !controls.PauseMenuVisible, "Esc did not close just the warehouse.");
+            controls.RequestConstruction();
+            yield return null;
+            Require(controls.IsConstructionActive && !actionRow.gameObject.activeInHierarchy, "HUD actions overlap construction.");
+            CaptureUi("HudConstruction");
+            controls.HandleEscape();
+            yield return null;
+            Require(!controls.IsConstructionActive && actionRow.gameObject.activeInHierarchy, "HUD actions did not return after construction.");
+            var map = starter.cityTrip.TownMap;
+            map.Toggle();
+            Require(map.IsOpen, "Store map did not open.");
+            controls.HandleEscape();
+            Require(!map.IsOpen && !controls.PauseMenuVisible, "Esc did not close just the map.");
+
+            Time.timeScale = .75f;
+            controls.HandleEscape();
+            float pausedAt = Time.time;
+            yield return null; yield return null;
+            Require(controls.PauseMenuVisible && Time.timeScale == 0 && Time.time == pausedAt, "Pause did not stop game time.");
+            Require(!actionRow.gameObject.activeInHierarchy, "HUD actions overlap the pause menu.");
+            CaptureUi("PauseMenu");
+            ButtonNamed("Save game").onClick.Invoke();
+            Require(File.Exists(path) && File.ReadAllText(path).Contains("\"shopOperations\"") &&
+                canvas.GetComponentsInChildren<TMPro.TMP_Text>().Any(label => label.text == "Game saved."),
+                "Pause save did not write and confirm the disposable save.");
+            ButtonNamed("Settings").onClick.Invoke();
+            controls.RequestShop();
+            Require(settings.settingPanel.activeInHierarchy && !shopWindow.gameObject.activeInHierarchy &&
+                !ButtonExists("Resume"), "Settings and another menu are shown together.");
+            settingsPanel.controlsButton.onClick.Invoke();
+            Require(hud.ControlsVisible && !settings.settingPanel.activeInHierarchy, "Controls did not replace Settings.");
+            controls.Capture(ShopAction.Catalog);
+            controls.HandleEscape();
+            Require(hud.ControlsVisible && !controls.Capturing.HasValue, "Esc closed the bindings page instead of cancelling capture.");
+            controls.HandleEscape();
+            Require(settings.settingPanel.activeInHierarchy && !hud.ControlsVisible && Time.timeScale == 0, "Esc did not return to Settings.");
+            controls.HandleEscape();
+            Require(!settings.settingPanel.activeInHierarchy && ButtonExists("Resume") && Time.timeScale == 0, "Esc did not return to the paused menu.");
+            ButtonNamed("Main menu").onClick.Invoke();
+            Require(ButtonExists("Leave") && !ButtonExists("Resume"), "The leave confirmation did not replace the pause page.");
+            controls.HandleEscape();
+            controls.HandleEscape();
+            Require(!controls.PauseMenuVisible && Mathf.Approximately(Time.timeScale, .75f), "Resume did not restore the prior time scale.");
+            yield return null;
+            yield return null;
+            Require(rating.gameObject.activeInHierarchy && actionRow.gameObject.activeInHierarchy,
+                "The rating and actions did not return after resuming.");
+            CaptureUi("HudOverview");
+
+            shop.ApplySaveData(new ShopOperationsSaveData {completedSales = 12});
+            Require(shop.CompletedSales == 12 && shop.SalesRevenue == 0 && shop.AverageReceipt == 0, "A legacy save invented revenue.");
+            shop.ApplySaveData(new ShopOperationsSaveData());
+            Require(Mathf.Approximately(shop.Rating, shop.RatingFactors.Score), "Rating breakdown does not match the live score.");
+            Canvas.ForceUpdateCanvases();
+            var star = (RectTransform)rating.GetChild(2);
+            var pointer = new PointerEventData(EventSystem.current)
+            {
+                position = RectTransformUtility.WorldToScreenPoint(canvas.GetComponent<GraphicRaycaster>().eventCamera,
+                    star.TransformPoint(star.rect.center))
+            };
+            // The batch editor does not assign render depth to overlay graphics outside screenshot capture.
+            var starGraphic = star.GetComponent<Graphic>();
+            Require(starGraphic.isActiveAndEnabled && starGraphic.raycastTarget &&
+                starGraphic.Raycast(pointer.position, canvas.GetComponent<GraphicRaycaster>().eventCamera), "The rating star cannot receive pointer input.");
+            ExecuteEvents.ExecuteHierarchy(star.gameObject, pointer, ExecuteEvents.pointerClickHandler);
+            yield return null;
+            Require(GameObject.Find("Rating factors") != null && GameObject.Find("Sales overview") == null, "The stars did not open the rating page.");
+            Require(!actionRow.gameObject.activeInHierarchy, "HUD actions overlap the rating breakdown.");
+            CaptureUi("RatingBreakdown");
+            ButtonNamed("Overview").onClick.Invoke(); yield return null;
+            Require(GameObject.Find("Sales overview") != null, "Statistics overview did not open.");
+            CaptureUi("StoreStatistics");
+            controls.HandleEscape();
+            var storeButton = actionRow.Find("Open or close store").GetComponent<Button>();
+            Require(string.IsNullOrEmpty(storeButton.GetComponentInChildren<TMPro.TMP_Text>()?.text) &&
+                storeButton.GetComponent<RetailEmpireTycoon.UI.Shop.ShopLockAnimation>() != null,
+                "The store status button should display only the animated lock.");
+            storeButton.onClick.Invoke(); yield return null;
+            var toast = canvas.transform.Find("Store status notice");
+            Require(shop.IsOpen && toast.GetComponent<CanvasGroup>().alpha > 0 && toast.GetComponentInChildren<TMPro.TMP_Text>().text == "Store is open",
+                "Opening the store did not display a temporary notice.");
+            storeButton.onClick.Invoke(); yield return null;
+            Require(!shop.IsOpen && toast.GetComponentInChildren<TMPro.TMP_Text>().text == "Store is closed", "Closing did not replace the notice.");
+            File.WriteAllText("Library/ShopPauseQA/Result.txt",
+                "PASS exclusive store, warehouse, map and pause; paused simulation; save; Settings, Controls, key capture and Escape stack; exit confirmation; live rating and overview; legacy stats; store state notices and icon-only lock; six ordered HUD actions hidden behind menus and construction; rating has stars only.\n");
+        }
+        finally
+        {
+            controls.CloseWindows();
+            Time.timeScale = originalTime;
+            Object.DestroyImmediate(saveObject);
+        }
+        bool ButtonExists(string text) => canvas.GetComponentsInChildren<Button>()
+            .Any(button => button.GetComponentInChildren<TMPro.TMP_Text>()?.text == text);
     }
 
     private static void VerifyFrontageDecor(StarterStoreInitialization starter)
