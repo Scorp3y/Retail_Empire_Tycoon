@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using RetailEmpireTycoon.BuildSystem;
 using RetailEmpireTycoon.Logistics;
 using RetailEmpireTycoon.StoreOperations;
 using RetailEmpireTycoon.UI.Shop;
@@ -31,6 +32,8 @@ namespace RetailEmpireTycoon.City
         private bool trafficEnabled;
         private PlayerVehicleFleet fleet;
         private PlayerVehicleAppearance parkedAppearance;
+        private PlacedObject[] personalParking = Array.Empty<PlacedObject>();
+        private readonly Dictionary<PlacedObject,(string id, GameObject model)> extraParkedVehicles = new();
         private StoreTownMapHud townMap;
         private TownRailTraffic shopRail, cityRail;
         public StoreTownMapHud TownMap => townMap;
@@ -64,6 +67,43 @@ namespace RetailEmpireTycoon.City
             if (parkedPickup == null) return;
             if (parkedAppearance == null) parkedAppearance = parkedPickup.AddComponent<PlayerVehicleAppearance>();
             parkedAppearance.Show(Fleet.Selected, .5f, Fleet.SelectedTuning);
+            RefreshExtraParkedVehicles();
+        }
+        internal void SetPersonalParking(PlacedObject[] bays)
+        {
+            personalParking = bays;
+            RefreshExtraParkedVehicles();
+        }
+        private void RefreshExtraParkedVehicles()
+        {
+            var assignments = personalParking.Skip(1).Where(bay => bay != null)
+                .Zip(Fleet.ParkedVehicleIds.Skip(1), (bay,id) => (bay,id)).ToDictionary(pair => pair.bay,pair => pair.id);
+            foreach (var pair in extraParkedVehicles.ToArray())
+            {
+                if (pair.Value.model != null && assignments.TryGetValue(pair.Key,out var id) && pair.Value.id == id) continue;
+                if (pair.Value.model != null) { pair.Value.model.SetActive(false); Destroy(pair.Value.model); }
+                extraParkedVehicles.Remove(pair.Key);
+            }
+            var driver = GetComponent<DriverDelivery>();
+            foreach (var pair in assignments)
+            {
+                if (extraParkedVehicles.ContainsKey(pair.Key)) continue;
+                var definition = Fleet.Catalog.FirstOrDefault(vehicle => vehicle.id == pair.Value);
+                var prefab = definition != null ? definition.model : driver?.starterVehicleModel;
+                if (prefab == null) continue;
+                var anchor = new GameObject("Parked player vehicle");
+                anchor.transform.SetParent(pair.Key.transform,false);
+                var visual = Instantiate(prefab,anchor.transform);
+                visual.transform.localScale = Vector3.one * (.5f / anchor.transform.lossyScale.x);
+                VehiclePaint.Apply(visual,definition,Fleet.TuningFor(pair.Value).Paint);
+                var renderers = visual.GetComponentsInChildren<Renderer>();
+                if (renderers.Length > 0) anchor.transform.position += Vector3.up * (.025f-renderers.Min(r=>r.bounds.min.y));
+                var collider = visual.AddComponent<BoxCollider>();
+                float height = definition != null ? definition.height : 1.65f;
+                collider.center = new Vector3(0,height*.5f,0);
+                collider.size = new Vector3(definition != null ? definition.width : 1.9f,height,definition != null ? definition.length : 4.4f);
+                extraParkedVehicles.Add(pair.Key,(pair.Value,anchor));
+            }
         }
         public bool WasShopObjectActive(GameObject instance)
         {
@@ -106,8 +146,17 @@ namespace RetailEmpireTycoon.City
             if (controls != null && (controls.LegacyWindowVisible || controls.IsConstructionActive)) return;
             if (work != null && work.IsActive) return;
             if (!Input.GetMouseButtonDown(0) || Camera.main == null || EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
-            if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out var hit, 1000)
-                && (hit.transform == parkedPickup.transform || hit.transform.IsChildOf(parkedPickup.transform))) ConfirmDeparture();
+            if (!Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out var hit, 1000)) return;
+            if (hit.transform == parkedPickup.transform || hit.transform.IsChildOf(parkedPickup.transform)) ConfirmDeparture();
+            else
+            {
+                foreach (var parked in extraParkedVehicles.Values)
+                {
+                    if (parked.model == null || !hit.transform.IsChildOf(parked.model.transform)) continue;
+                    if (Fleet.Select(parked.id)) ConfirmDeparture();
+                    break;
+                }
+            }
         }
         public void ConfirmDeparture()
         {

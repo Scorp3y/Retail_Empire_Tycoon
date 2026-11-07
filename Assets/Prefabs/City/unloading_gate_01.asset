@@ -14,23 +14,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   legacyWallDepth: 0
   wallCellSize: 0
-  wallGeometryVersion: 0
-  previousWallPrefab: {fileID: 0}
+  wallGeometryVersion: 4
+  previousWallPrefab: {fileID: 6606011814999625194, guid: 62e127dc142c48e429b55c6014d6bd36, type: 3}
   previousWallBounds:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+    m_Center: {x: 0, y: 0.82500005, z: 0}
+    m_Extent: {x: 0.82500005, y: 0.82500005, z: 0.275}
   previousWallAlignmentOffset: {x: 0, y: 0, z: 0}
   decorationProportionsVersion: 0
   id: unloading_gate_01
   displayName: Unloading gate
   description: 
-  icon: {fileID: 21300000, guid: dd5a4ba29358d574bbab5c4612c910d8, type: 3}
+  russianName:
+  russianDescription:
+  icon: {fileID: 21300000, guid: 091dc6db53b0c4d44910b81f0c92bc4e, type: 3}
   price: 180
   hiddenFromShop: 0
   weightKg: 70
   cargoVolumeM3: 0.5
   isAsphalt: 0
   isParkingSpace: 0
+  isPersonalParking: 0
   parkingGeometryVersion: 0
   previousParkingPrefab: {fileID: 0}
   previousParkingFootprint: {x: 0, y: 0}
@@ -44,7 +47,7 @@ MonoBehaviour:
   unlockCondition: {fileID: 0}
   category: 1
   subCategory: 0
-  footprint: {x: 6, y: 2}
+  footprint: {x: 6, y: 1}
   allowRotation: 1
   ruleFlags: 7
   placementKind: 0
@@ -54,14 +57,15 @@ MonoBehaviour:
   alignModelToFootprint: 1
   placementBounds:
     m_Center: {x: 0, y: 0.82500005, z: 0}
-    m_Extent: {x: 0.82500005, y: 0.82500005, z: 0.275}
+    m_Extent: {x: 0.825165, y: 0.82500005, z: 0.1375275}
   placementAlignmentOffset: {x: 0, y: 0, z: 0}
   frontFacing: 0
   twoSidedAccess: 0
   isDoorway: 0
   isCheckout: 0
   storeyConnection: 0
-  prefab: {fileID: 6606011814999625194, guid: 62e127dc142c48e429b55c6014d6bd36, type: 3}
+  storeyDirection: 0
+  prefab: {fileID: 3411005925645810119, guid: 2b1cd41ee5ca99b408c1ff081ce8c96c, type: 3}
   previewValidMaterial: {fileID: 2100000, guid: b737f1f25c90f1842999d06f57aa1608, type: 2}
   previewInvalidMaterial: {fileID: 2100000, guid: cd8bbf8a301d0664386b1c15cc42650f, type: 2}
   shelfData: {fileID: 0}

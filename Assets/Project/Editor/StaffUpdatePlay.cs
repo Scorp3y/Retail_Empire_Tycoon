@@ -53,6 +53,14 @@ public static class StaffUpdatePlay
         var parking=Object.FindObjectOfType<ParkingTraffic>();parking.enabled=false;
         var roads=driver.traffic;roads.enabled=false;
         for(int i=0;i<5;i++)yield return null;
+        var secondBay=Object.FindObjectsOfType<PlacedObject>().First(p=>p.item!=null && p.item.isParkingSpace && !p.playerParking);
+        var initialFleet=trip.Fleet.Capture();
+        secondBay.playerParking=true;starter.RefreshPickupParking();
+        trip.Fleet.Restore(new VehicleFleetSaveData{ownedIds=new System.Collections.Generic.List<string>{trip.Fleet.Catalog[0].id}});
+        Require(secondBay.transform.Find("Parked player vehicle")?.gameObject.activeInHierarchy==true,"The owned second vehicle did not appear on its private bay.");
+        Require(trip.Fleet.Select(trip.Fleet.Catalog[0].id) &&
+            trip.Fleet.Capture().parkingOrder.First()==trip.Fleet.SelectedId,"Vehicle choice was not remembered for parking.");
+        trip.Fleet.Restore(initialFleet);secondBay.playerParking=false;starter.RefreshPickupParking();
         shop.Advance(.05f);Require(shop.ReadyForStaff,"Store failed to configure.");
         // The modern starter has produce/bakery shelves; the older duty suite needs a cola-compatible fixture.
         var shelfItem=AssetDatabase.LoadAssetAtPath<BuildItemData>("Assets/Prefabs/Shelf/DoubleSidedShelfBuildItem.asset");
@@ -80,12 +88,19 @@ public static class StaffUpdatePlay
         Require(orders.Order(product),"Could not pay for a delivery order.");
         Require(orders.money.Money==wallet-product.BuyPrice,"Order payment incorrect.");
         Physics.simulationMode=SimulationMode.Script;double clock=0;var stages=new System.Collections.Generic.HashSet<DriverStage>();
-        bool busyChecked=false,resumeChecked=false,privateResumeChecked=false,mapChecked=false;int count=0;
+        bool busyChecked=false,resumeChecked=false,privateResumeChecked=false,mapChecked=false,sawCargo=false,sawEmptyBed=false;int count=0;
         for(int frame=0;frame<20000;frame++)
         {
             driver.Advance(.05f);clock+=.05;Physics.SyncTransforms();
             roads.Simulate(.05f,clock,driver.Vehicle!=null?driver.Vehicle.transform.position:trip.parkedPickup.transform.position,true);
             Physics.Simulate(.05f);stages.Add(driver.Stage);
+            if(driver.Vehicle!=null)
+            {
+                var bed=driver.Vehicle.GetComponentsInChildren<Transform>().FirstOrDefault(t=>t.name=="Visible delivery cargo");
+                bool visible=bed!=null && bed.Cast<Transform>().Any(t=>t.gameObject.activeSelf);
+                if(orders.PickupVolumeM3>0)sawCargo|=visible;
+                else if(sawCargo)sawEmptyBed|=!visible;
+            }
             if(driver.IsAway && !busyChecked)
             {
                 Require(trip.Fleet.DriverHasVehicle,"Driver did not reserve the player car.");
@@ -124,6 +139,7 @@ public static class StaffUpdatePlay
             if(driver.Stage==DriverStage.Idle && busyChecked && orders.products.GetCount(product)>old){count++;break;}
         }
         Require(count==1,"Real delivery failed: "+File.ReadAllText(StaffUpdateBatch.Report+"/journey-state.txt"));
+        Require(sawCargo && sawEmptyBed,"Pickup boxes did not follow loading and unloading.");
         foreach(var stage in new[]{DriverStage.WalkingToCar,DriverStage.Boarding,DriverStage.Driving,DriverStage.Loading,DriverStage.Unloading,DriverStage.Exiting})Require(stages.Contains(stage),"Invisible/skipped journey stage: "+stage);
         Require(resumeChecked,"Saved trip restoration not exercised.");
         Require(privateResumeChecked,"Private access save restoration not exercised.");

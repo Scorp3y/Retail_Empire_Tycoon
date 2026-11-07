@@ -40,20 +40,19 @@ namespace RetailEmpireTycoon.UI.Shop
             money.Changed += OnMoney; OnMoney(money.Money);
             var bottomRight = new Vector2(1, 0);
             _actionRow = ui.Rect("Shop action row", _root, bottomRight, bottomRight, new Vector2(-16, 16), Vector2.zero);
-            float rightOffset = 0;
+            const float buttonSize = 48, gap = 9;
+            int buttonCount = 0;
             Action("Open warehouse", ShopIcon.Warehouse, controls.RequestWarehouse);
             Action("Open store catalog", ShopIcon.Cart, controls.RequestShop);
             construction.Launcher = Action("Open construction", ShopIcon.Hammer, controls.RequestConstruction);
-            rightOffset += 7;
             Place(operations.CreateStoreStatusButton(ui, _actionRow));
-            rightOffset += 7;
             Action("Open store statistics", ShopIcon.Statistics, () => operations.OpenStatistics(false));
             Action("Open territories", ShopIcon.Territory, controls.RequestTerritory);
-            _actionRow.sizeDelta = new Vector2(rightOffset - 9, 48);
+            _actionRow.sizeDelta = new Vector2(buttonCount * buttonSize + (buttonCount - 1) * gap, buttonSize);
 
             Button Action(string name, ShopIcon icon, System.Action onClick)
             {
-                var button = ui.IconButton(_actionRow, icon, Vector2.zero, 48, onClick);
+                var button = ui.IconButton(_actionRow, icon, Vector2.zero, buttonSize, onClick);
                 button.name = name;
                 Place(button);
                 return button;
@@ -63,8 +62,10 @@ namespace RetailEmpireTycoon.UI.Shop
             {
                 var rect = (RectTransform)button.transform;
                 rect.anchorMin = rect.anchorMax = rect.pivot = bottomRight;
-                rect.anchoredPosition = new Vector2(-rightOffset, 0);
-                rightOffset += rect.sizeDelta.x + 9;
+                rect.sizeDelta = Vector2.one * buttonSize;
+                rect.anchoredPosition = new Vector2(-buttonCount * (buttonSize + gap), 0);
+                button.GetComponentInChildren<ShopIconGraphic>().MatchHudWidth();
+                buttonCount++;
             }
         }
         private void LateUpdate()

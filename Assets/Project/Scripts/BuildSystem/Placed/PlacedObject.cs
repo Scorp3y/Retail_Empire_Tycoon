@@ -17,8 +17,19 @@ namespace RetailEmpireTycoon.BuildSystem
         public int facing;
         public int wallModuleVersion;
         public bool playerParking;
+        public bool primaryPlayerParking;
         public int parkingModuleVersion;
 
         public List<Vector3Int> occupiedCells = new List<Vector3Int>();
+
+        internal bool IsPendingRemoval { get; private set; }
+
+        internal void RemoveFromScene()
+        {
+            // Unity destroys objects at the end of the frame. The save may be collected earlier.
+            IsPendingRemoval = true;
+            gameObject.SetActive(false);
+            Destroy(gameObject);
+        }
     }
 }

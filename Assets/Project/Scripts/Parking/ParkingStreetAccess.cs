@@ -27,16 +27,36 @@ namespace RetailEmpireTycoon.Parking
         public ParkingStreetAccess(TownRoadTraffic traffic,Transform streetEntry,Transform drivewayEntry)
         {this.traffic=traffic;this.streetEntry=streetEntry;this.drivewayEntry=drivewayEntry;}
 
+        public bool PrepareLane()
+        {
+            departure.Clear();
+            if(traffic==null || streetEntry==null || drivewayEntry==null || !FindLane())return Reject("No connected street lane.");
+            float scale=traffic.transform.lossyScale.x;
+            accessDistance -= 2f/scale;
+            ExitDistance=Mathf.Min(lane.Length-12,accessDistance+32/scale);
+            if(ExitDistance-accessDistance<6/scale)return Reject("No downstream departure room.");
+            AddDepartureMerge(ExitDistance);
+            FindUpstreamSpawn(32/scale);
+            return true;
+        }
+
+        public bool CanDivert(TrafficVehicle car)
+        {
+            if(car.IsTurning || car.ReservedJunction>=0) return false;
+            int index=arrivalLanes.IndexOf(car.LaneIndex);
+            if(index<0) return false;
+            float scale=traffic.transform.lossyScale.x;
+            return car.LaneIndex==LaneIndex
+                ? (accessDistance-car.Distance)*scale>=5
+                : car.Remaining*scale>=5 && car.NextLane==arrivalLanes[index+1];
+        }
+
         public bool TryPrepare(float width,float length,Camera camera)
         {
-            arrival.Clear();departure.Clear();
-            if(traffic==null || streetEntry==null || drivewayEntry==null || !FindLane())return Reject("No connected street lane.");
+            arrival.Clear();
             float scale=traffic.transform.lossyScale.x;
             float start=FindUpstreamSpawn(32/scale);
             if(start<0)return Reject("No upstream street spawn.");
-            float end=Mathf.Min(lane.Length-12,accessDistance+32/scale);
-            ExitDistance=end;
-            if(end-accessDistance<6/scale)return Reject("No downstream departure room.");
             var spawnPath=traffic.Network.Lanes[SpawnLane].Path;
             var first=World(spawnPath,start);
             var initialDirection=World(spawnPath,start+1)-first;
@@ -47,7 +67,6 @@ namespace RetailEmpireTycoon.Parking
             foreach(var collider in Physics.OverlapBox(first+Vector3.up*.4f,new Vector3(width*.5f+.15f,.3f,length*.5f+.4f),rotation,~0,QueryTriggerInteraction.Ignore))
                 if(collider.GetComponentInParent<TrafficVehicle>()!=null)return Reject("Street spawn is occupied.");
             arrival.Add(first);arrival.Add(first+initialDirection);
-            AddDepartureMerge(end);
             Status="Ready";return true;
         }
         private bool Reject(string reason){Status=reason;return false;}
@@ -120,7 +139,7 @@ namespace RetailEmpireTycoon.Parking
             start.y = .02f;
             var inward = drivewayEntry.position - streetEntry.position;
             inward.y = 0;
-            MergeDistance = Mathf.Min(endDistance, accessDistance + 5);
+            MergeDistance = Mathf.Min(endDistance, accessDistance + 5 + 2f/traffic.transform.lossyScale.x);
             var end = World(MergeDistance);
             lane.Sample(MergeDistance, out var direction);
             var exitHeading = traffic.transform.TransformDirection(direction);

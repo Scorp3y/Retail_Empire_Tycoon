@@ -202,7 +202,7 @@ public class SaveManager : MonoBehaviour
 
         StoreLevelId desiredLevel = StoreLevelId.Lvl1;
         _storeSpawner.UsesModularStore = gameData != null && gameData.usesModularStore;
-        starterStore?.ConfigureSite(_storeSpawner.UsesModularStore);
+        starterStore?.ConfigureSite(_storeSpawner.UsesModularStore, gameData);
 
         if (_progression != null && gameData?.territory != null)
         {

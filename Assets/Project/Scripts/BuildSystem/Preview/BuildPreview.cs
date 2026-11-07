@@ -16,6 +16,7 @@ namespace RetailEmpireTycoon.BuildSystem
         [SerializeField] private Material invalidFootprintMaterial;
         [SerializeField] private Material accessMaterial;
         private GameObject _instance, _footprintObject;
+        private WallPattern _wallPattern;
         private Renderer[] _renderers = new Renderer[0];
         private Mesh _footprintMesh;
         private MeshRenderer _footprintRenderer;
@@ -31,6 +32,8 @@ namespace RetailEmpireTycoon.BuildSystem
             // Copy only static visual geometry. Even a disabled gameplay script
             // can run Awake, so a preview must not instantiate gameplay components.
             _instance = CopyVisualTree(item.prefab.transform, transform);
+            _wallPattern = item.prefab.GetComponent<WallPattern>();
+            if (item.isParkingSpace) RetailEmpireTycoon.Parking.ParkingBay.ScalePaint(_instance.transform);
             // Instantiate(prefab, worldPosition, rotation) also replaces the root pose.
             _instance.transform.localPosition = Vector3.zero;
             _instance.transform.localRotation = Quaternion.identity;
@@ -98,6 +101,7 @@ namespace RetailEmpireTycoon.BuildSystem
         {
             if (_instance == null) return;
             transform.SetPositionAndRotation(worldPos, rotation);
+            _wallPattern?.Apply(_instance.GetComponent<MeshFilter>(), worldPos, rotation);
         }
 
         public void SetModelScale(Vector3 scale)

@@ -12,6 +12,7 @@ namespace RetailEmpireTycoon.UI.Shop
         public static string Item(BuildItemData item)
         {
             if (item == null) return Get("Предмет", "Item");
+            if (Russian && !string.IsNullOrWhiteSpace(item.russianName)) return item.russianName;
             switch(item.id)
             {
                 case "shelf_wallgoods_01": return "Wall shelf";

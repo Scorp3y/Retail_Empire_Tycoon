@@ -8,6 +8,19 @@ namespace RetailEmpireTycoon.Parking
         [Min(1)] public float dimensionsScale=1;
         public float length;
         public float width;
+        private void Awake() => ScalePaint(transform);
+
+        internal static void ScalePaint(Transform bay)
+        {
+            // Shorten the painted U around its center. Keep the bay's fit and manoeuvring envelope.
+            var paintScale = new Vector3(.855f, 1, .60375f);
+            foreach (Transform mark in bay)
+            {
+                if (mark.GetComponent<MeshRenderer>() == null) continue;
+                mark.localPosition = Vector3.Scale(mark.localPosition, paintScale);
+                mark.localScale = Vector3.Scale(mark.localScale, paintScale);
+            }
+        }
         public Vector3 ParkPosition => transform.position + transform.forward * (length>0?0:-.1f*dimensionsScale);
         public Vector3 ApproachPosition
         {
@@ -25,7 +38,7 @@ namespace RetailEmpireTycoon.Parking
         {
             var block=new MaterialPropertyBlock();
             block.SetColor("_BaseColor",personal?new Color(1,.76f,.08f):new Color(.96f,.93f,.82f));
-            foreach(var renderer in GetComponentsInChildren<MeshRenderer>())renderer.SetPropertyBlock(block);
+            foreach(Transform mark in transform) mark.GetComponent<MeshRenderer>()?.SetPropertyBlock(block);
         }
         public bool Fits(float vehicleWidth,float vehicleLength)
         {
@@ -41,6 +54,7 @@ namespace RetailEmpireTycoon.Parking
             float x=width/previous.size.x,z=depth/previous.size.z;
             foreach(Transform child in transform)
             {
+                if (child.GetComponent<MeshRenderer>() == null) continue;
                 child.localPosition=Vector3.Scale(child.localPosition,new Vector3(x,1,z));
                 child.localScale=Vector3.Scale(child.localScale,new Vector3(x,1,z));
             }

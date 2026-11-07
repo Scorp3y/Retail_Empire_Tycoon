@@ -38,7 +38,12 @@ namespace RetailEmpireTycoon.BuildSystem
         public int PreviewOpeningTileCount {get;private set;}
         public int FloorStrokeCellCount {get;private set;}
         public event System.Action LayoutChanged;
-        public void NotifyLayoutChanged() => LayoutChanged?.Invoke();
+        public void NotifyLayoutChanged()
+        {
+            WallPattern.RefreshConnections(grid);
+            LayoutChanged?.Invoke();
+        }
+        internal bool PersonalParkingLimitReached => FindObjectsOfType<PlacedObject>().Count(p => p.playerParking) >= 3;
         public PlacementResult ValidateExistingPlacement(PlacementRequest request) => _validator.CanPlace(request);
 
         public bool TryGetPlacementFocus(out Vector3 focus)
@@ -233,6 +238,8 @@ namespace RetailEmpireTycoon.BuildSystem
                 return PlacementResult.Fail(PlaceFailReason.RuleFailed, "This item is not ready for placement");
             if (inventory == null || inventory.GetCount(_selected) < 1)
                 return PlacementResult.Fail(PlaceFailReason.InsufficientInventory, "This item is not in storage");
+            if (_selected.isPersonalParking && PersonalParkingLimitReached)
+                return PlacementResult.Fail(PlaceFailReason.RuleFailed, "You can have up to three personal parking bays.");
             if (territory == null || !(_selected.isParkingSpace ? territory.IsParkingCellAllowed(cell) : territory.IsCellPurchased(cell)))
                 return PlacementResult.Fail(PlaceFailReason.NotPurchased, "Outside your available building area");
             return _validator.CanPlace(new PlacementRequest(_selected, cell, _rotated, _facing));
@@ -310,8 +317,10 @@ namespace RetailEmpireTycoon.BuildSystem
             placed.anchorCell = req.anchorCell;
             placed.rotated = req.rotated;
             placed.facing = req.facing;
-            placed.wallModuleVersion = req.item.isWall ? BuildItemData.CurrentWallModuleVersion : 0;
+            placed.wallModuleVersion = req.item.HasVersionedWallGeometry ? req.item.WallPlacementVersion : 0;
             placed.parkingModuleVersion=req.item.parkingGeometryVersion;
+            placed.playerParking = req.item.isPersonalParking;
+            if (placed.playerParking) go.GetComponent<RetailEmpireTycoon.Parking.ParkingBay>()?.ApplyPaint(true);
 
             var cells = new List<Vector3Int>(StoreyLink.OccupiedCells(grid, req.item, req.anchorCell, req.rotated));
             placed.occupiedCells = cells;
@@ -430,7 +439,7 @@ namespace RetailEmpireTycoon.BuildSystem
 
             foreach (var placed in placedObjects)
             {
-                if (placed == null || placed.item == null || placed.GetComponentInParent<BuildPreview>() != null)
+                if (placed == null || placed.IsPendingRemoval || placed.item == null || placed.GetComponentInParent<BuildPreview>() != null)
                     continue;
 
                 result.Add(new PlacedBuildSaveData
@@ -443,6 +452,7 @@ namespace RetailEmpireTycoon.BuildSystem
                     facing = placed.facing,
                     wallModuleVersion = placed.wallModuleVersion,
                     playerParking = placed.playerParking,
+                    primaryPlayerParking = placed.primaryPlayerParking,
                     parkingModuleVersion = placed.parkingModuleVersion
                 });
             }
@@ -475,6 +485,7 @@ namespace RetailEmpireTycoon.BuildSystem
                 if (placed != null)
                 {
                     placed.playerParking = d.playerParking;
+                    placed.primaryPlayerParking = d.playerParking && d.primaryPlayerParking;
                     placed.GetComponent<RetailEmpireTycoon.Parking.ParkingBay>()?.ApplyPaint(d.playerParking);
                 }
             }
@@ -501,11 +512,8 @@ namespace RetailEmpireTycoon.BuildSystem
 
             foreach (var placed in placedObjects)
             {
-                if (placed != null && placed.GetComponentInParent<BuildPreview>() == null)
-                {
-                    placed.gameObject.SetActive(false);
-                    Destroy(placed.gameObject);
-                }
+                if (placed != null && !placed.IsPendingRemoval && placed.GetComponentInParent<BuildPreview>() == null)
+                    placed.RemoveFromScene();
             }
         }
 
@@ -518,7 +526,7 @@ namespace RetailEmpireTycoon.BuildSystem
             var modelScale = Vector3.one;
             var bounds = req.item.placementBounds;
             var prefab = req.item.prefab;
-            bool legacyWall = req.item.isWall && wallModuleVersion < BuildItemData.CurrentWallModuleVersion;
+            bool legacyWall = req.item.HasVersionedWallGeometry && wallModuleVersion < req.item.WallPlacementVersion;
             bool legacyParking=req.item.isParkingSpace && parkingModuleVersion<req.item.parkingGeometryVersion && req.item.previousParkingPrefab!=null;
             if(legacyParking)
             {

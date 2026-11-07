@@ -69,7 +69,7 @@ namespace RetailEmpireTycoon.BuildSystem
             foreach(var placed in data.placedObjects.Where(placed=>placed.floor==0))
             {
                 var item=catalog.GetById(placed.itemId);if(item==null || item.isParkingSpace)continue;
-                var size=item.isWall?item.WallFootprint(placed.wallModuleVersion):item.footprint;
+                var size=item.HasVersionedWallGeometry?item.WallFootprint(placed.wallModuleVersion):item.footprint;
                 occupied.UnionWith(grid.GetFootprintCells(new Vector3Int(placed.x,0,placed.z),size,placed.rotated,item.pivotOffset));
                 if(item.isDoorway)approaches.UnionWith(Parking.Rule_ParkingSurface.DoorAccessCells(grid,item,new Vector3Int(placed.x,0,placed.z),placed.rotated,placed.facing));
             }

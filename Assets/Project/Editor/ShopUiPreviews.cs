@@ -36,7 +36,8 @@ public static class ShopUiPreviews
         }
         AssetDatabase.SaveAssets(); Debug.Log("Unified catalog previews rendered from the existing game models.");
     }
-    public static Sprite Render(GameObject prefab, string id, float yaw, ProductItemData example = null)
+    public static Sprite Render(GameObject prefab, string id, float yaw, ProductItemData example = null,
+        string outputFolder = Folder, Action<GameObject> prepare = null)
     {
         var scene = EditorSceneManager.NewPreviewScene();
         RenderTexture target = null; Texture2D image = null;
@@ -45,6 +46,7 @@ public static class ShopUiPreviews
         {
             var model = (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
             model.transform.position = Vector3.zero;
+            prepare?.Invoke(model);
             if (example != null)
             {
                 var shelf = model.GetComponent<PlacedShelfStock>();
@@ -76,7 +78,7 @@ public static class ShopUiPreviews
             camera.Render(); RenderTexture.active = target;
             image = new Texture2D(384,384,TextureFormat.RGBA32,false); image.ReadPixels(new Rect(0,0,384,384),0,0); image.Apply();
             if (image.GetPixels32().Count(p => p.a > 32) < 100) throw new InvalidOperationException("Empty preview: " + id);
-            string path = Folder + "/" + id + ".png"; File.WriteAllBytes(path, image.EncodeToPNG()); AssetDatabase.ImportAsset(path);
+            string path = outputFolder + "/" + id + ".png"; File.WriteAllBytes(path, image.EncodeToPNG()); AssetDatabase.ImportAsset(path);
             var importer = (TextureImporter)AssetImporter.GetAtPath(path); importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single; importer.alphaIsTransparency = true; importer.mipmapEnabled = false;
             importer.textureCompression = TextureImporterCompression.Uncompressed; importer.SaveAndReimport();

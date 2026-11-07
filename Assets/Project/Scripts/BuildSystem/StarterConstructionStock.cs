@@ -12,7 +12,10 @@ namespace RetailEmpireTycoon.BuildSystem
     {
         [SerializeField] private BuildItemData[] shelves = Array.Empty<BuildItemData>();
         [SerializeField] private BuildItemData floor, wall, door, gate, parking;
+        [SerializeField] private BuildItemData personalParking;
         [SerializeField] private BuildItemData[] transports=Array.Empty<BuildItemData>();
+
+        internal bool HasSingleCellOpenings => door != null && gate != null && door.HasVersionedOpening && gate.HasVersionedOpening;
 
         public void ConfigureTransports(IEnumerable<BuildItemData> items)
         {
@@ -48,8 +51,13 @@ namespace RetailEmpireTycoon.BuildSystem
                 else entry.count+=count;
             }
             for(int i=0;i<5;i++)Add(choices[i],1);
-            Add(floor,20);Add(wall,20);Add(door,1);Add(gate,1);Add(parking,2);
+            var wallStyles = BuildItemCatalog.LoadWallCollection();
+            var stripe = wallStyles.FirstOrDefault(item => item.id == BuildItemData.StoreStripeId);
+            Add(floor,20);Add(stripe ?? wall,20);Add(door,1);Add(gate,1);Add(parking,2);
             foreach(var transport in transports)Add(transport,1);
+            foreach (var wallStyle in wallStyles)
+                if (!wallStyle.IsWallCorner) Add(wallStyle, 10);
+            if (personalParking != null) Add(personalParking, 2);
         }
 
         private void Validate()

@@ -11,6 +11,7 @@ namespace RetailEmpireTycoon.City
     {
         public string selectedId = PlayerVehicleFleet.StarterId;
         public List<string> ownedIds = new List<string>();
+        public List<string> parkingOrder = new List<string>();
         public List<VehicleTuningSaveEntry> tuning = new List<VehicleTuningSaveEntry>();
         public List<VehicleFuelSaveEntry> fuel = new List<VehicleFuelSaveEntry>();
     }
@@ -28,6 +29,7 @@ namespace RetailEmpireTycoon.City
         public const string StarterId = "delivery_pickup";
         private readonly PlayerVehicleDefinition[] catalog;
         private readonly HashSet<string> owned = new HashSet<string>(StringComparer.Ordinal);
+        private readonly List<string> parkingOrder = new List<string>();
         private readonly Dictionary<string, VehicleTuning> tuning = new Dictionary<string, VehicleTuning>(StringComparer.Ordinal);
         private readonly Dictionary<string, float> fuel = new Dictionary<string, float>(StringComparer.Ordinal);
         private readonly MoneyController money;
@@ -65,10 +67,13 @@ namespace RetailEmpireTycoon.City
             ApplyCapacity();
         }
         public bool Owns(string id) => id == StarterId || owned.Contains(id);
+        internal IEnumerable<string> ParkedVehicleIds => new[] { SelectedId }.Concat(parkingOrder)
+            .Concat(new[] { StarterId }).Concat(catalog.Where(item => Owns(item.id)).Select(item => item.id)).Distinct();
         public VehicleFleetSaveData Capture() => new VehicleFleetSaveData
         {
             selectedId = SelectedId,
             ownedIds = owned.OrderBy(id => id).ToList(),
+            parkingOrder = parkingOrder.ToList(),
             tuning = tuning.OrderBy(pair => pair.Key)
                 .Select(pair => new VehicleTuningSaveEntry {id = pair.Key, tuning = pair.Value}).ToList(),
             fuel = fuel.OrderBy(pair => pair.Key)
@@ -89,6 +94,8 @@ namespace RetailEmpireTycoon.City
         {
             owned.Clear(); foreach (string id in vehicles.Where(id => id != StarterId)) owned.Add(id);
             SelectedId = selection;
+            parkingOrder.Clear();
+            if (data?.parkingOrder != null) parkingOrder.AddRange(data.parkingOrder.Where(Owns).Distinct());
             fuel.Clear();
             if (data?.fuel != null)
                 foreach (var entry in data.fuel)
@@ -181,7 +188,17 @@ namespace RetailEmpireTycoon.City
             if (committing) return false;
             var before = Capture(); int oldMoney = money.Money;
             committing = true;
-            try { mutation(); ApplyCapacity(); persist(); }
+            try
+            {
+                mutation();
+                if (SelectedId != before.selectedId)
+                {
+                    parkingOrder.Remove(SelectedId);
+                    parkingOrder.Insert(0, SelectedId);
+                }
+                ApplyCapacity();
+                persist();
+            }
             catch (Exception error)
             {
                 RestoreState(before, before.ownedIds, before.selectedId);

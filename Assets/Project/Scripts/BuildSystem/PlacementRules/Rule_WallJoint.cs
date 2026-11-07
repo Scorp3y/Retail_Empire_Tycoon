@@ -12,7 +12,7 @@ namespace RetailEmpireTycoon.BuildSystem
         private static bool ConnectsTowards(BuildItemData item, int facing, Vector3Int direction)
         {
             var local = Quaternion.Euler(0, -facing * 90, 0) * (Vector3)direction;
-            if (item.id == "wallcorner_01") return local.x > .9f || local.z > .9f;
+            if (item.IsWallCorner) return local.x > .9f || local.z > .9f;
             return Mathf.Abs(local.x) > .9f;
         }
 
@@ -23,7 +23,7 @@ namespace RetailEmpireTycoon.BuildSystem
             {
                 if (neighbour == request.ignoredObject || neighbour.item == null || !neighbour.item.isWall
                     || neighbour.wallModuleVersion < BuildItemData.CurrentWallModuleVersion) continue;
-                if (request.item.id != "wallcorner_01" && neighbour.item.id != "wallcorner_01") continue;
+                if (!request.item.IsWallCorner && !neighbour.item.IsWallCorner) continue;
                 foreach(var direction in new[]{Vector3Int.left,Vector3Int.right,Vector3Int.forward,Vector3Int.back})
                 {
                     if(!cells.Any(cell=>neighbour.occupiedCells.Contains(cell+direction)))continue;

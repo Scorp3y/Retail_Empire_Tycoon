@@ -33,6 +33,9 @@ namespace RetailEmpireTycoon.Logistics
         public TownRoadTraffic traffic;
         public ParkingTraffic parking;
         public GameObject starterVehicleModel;
+        [SerializeField] private GameObject cargoBoxPrefab;
+        private Transform cargoBed;
+        private const float DrivingSpeedMultiplier = 1.2f;
         private ShopCharacter employee;
         private TrafficVehicle car;
         private DriverRoadRoute route;
@@ -137,7 +140,7 @@ namespace RetailEmpireTycoon.Logistics
             {
                 actionTime+=seconds;if(actionTime<1.5f)return;actionTime=0;
                 var entry=orders.Ledger.Entries.FirstOrDefault(e=>e.location==DeliveryLocation.Depot && orders.SupplierFor(e)==supplier && Fits(e));
-                if(entry!=null){if(orders.LoadFrom(entry,supplier)){loadedAtStop=true;return;}Status=orders.Notice;return;}
+                if(entry!=null){if(orders.LoadFrom(entry,supplier)){loadedAtStop=true;RefreshCargo();return;}Status=orders.Notice;return;}
                 if(!loadedAtStop && orders.PickupWeightKg==0){Status="No package fits the selected vehicle. Returning empty.";}
                 returning=true;
                 if(!route.Plan(SupplierStreet(),StreetEntry,Court!=null?Court.streetAccess-Court.entrance:(Vector3?)null)){Status="No return road route. Cargo is safe in the vehicle.";return;}
@@ -147,6 +150,7 @@ namespace RetailEmpireTycoon.Logistics
             {
                 actionTime+=seconds;if(actionTime<2)return;actionTime=0;
                 if(orders.PickupWeightKg>0 && !orders.Unload()){Status=orders.Notice;return;}
+                RefreshCargo();
                 if(orders.PickupWeightKg>0){Status="Warehouse full. Remaining cargo stays in the delivery vehicle.";return;}
                 SetStage(DriverStage.Exiting,"Delivery complete. Driver leaving the vehicle");
                 if(employee!=null){employee.SetBrowsing(false);employee.transform.position=car.transform.position+Vector3.up*.2f;employee.gameObject.SetActive(true);seatedFrom=employee.transform.position;}
@@ -220,7 +224,7 @@ namespace RetailEmpireTycoon.Logistics
         {
             if(Stage==DriverStage.LeavingParking && privatePath.Length-privateDistance<car.Length+4)
                 traffic.RequestPrivateMerge(car,route.Start.Lane,route.Start.Distance);
-            float step=Math.Min(2.5f*seconds,privatePath.Length-privateDistance);
+            float step=Math.Min(2.5f*DrivingSpeedMultiplier*seconds,privatePath.Length-privateDistance);
             var current=privatePath.Sample(privateDistance,out _);var next=privatePath.Sample(privateDistance+step,out var direction);
             var world=traffic.transform.TransformPoint(current);var forward=traffic.transform.TransformDirection(direction);
             float scale=traffic.transform.lossyScale.x;
@@ -254,8 +258,29 @@ namespace RetailEmpireTycoon.Logistics
             var wheels=bindings!=null?bindings.wheels.Select(w=>new TrafficVehicle.Wheel{visual=w.pivot,front=w.front}).ToArray():visual.GetComponentsInChildren<Transform>().Where(t=>t.name.StartsWith("Wheel")).Select(t=>new TrafficVehicle.Wheel{visual=t,front=t.localPosition.z>0}).ToArray();
             float length=selected!=null?selected.length:4.4f,width=selected!=null?selected.width:1.9f;
             car=root.AddComponent<TrafficVehicle>();car.Configure("player_delivery",length,width,length*.62f,.33f,wheels);car.enabled=false;
+            car.CruiseSpeedMultiplier=DrivingSpeedMultiplier;
             var collider=root.AddComponent<BoxCollider>();collider.center=new Vector3(0,.8f,0);collider.size=new Vector3(width,1.4f,length);
+            cargoBed=null;
+            var openBed=visual.GetComponentsInChildren<Transform>().FirstOrDefault(t=>t.name=="Cargo bed");
+            if(openBed!=null && cargoBoxPrefab!=null)
+            {
+                cargoBed=new GameObject("Visible delivery cargo").transform;
+                cargoBed.SetParent(openBed,false);
+                RefreshCargo();
+            }
             trip.parkedPickup.SetActive(false);
+        }
+        private void RefreshCargo()
+        {
+            if(cargoBed==null)return;
+            int count=Mathf.Clamp(Mathf.CeilToInt(orders.PickupVolumeM3/.18f),0,12);
+            for(int i=0;i<count;i++)
+            {
+                var box=i<cargoBed.childCount?cargoBed.GetChild(i):Instantiate(cargoBoxPrefab,cargoBed).transform;
+                box.localPosition=new Vector3((i%2-.5f)*.65f,(i/6)*.48f,(i/2%3)*.5f);
+                box.gameObject.SetActive(true);
+            }
+            for(int i=count;i<cargoBed.childCount;i++)cargoBed.GetChild(i).gameObject.SetActive(false);
         }
         public DriverJourneySaveData Capture()=>new DriverJourneySaveData
         {

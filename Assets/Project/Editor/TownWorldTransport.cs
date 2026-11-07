@@ -123,10 +123,24 @@ internal sealed partial class TownWorldAssembler
 
     private void RailLine(TownTransportPath path,bool siding)
     {
-        var mesh=new TownMeshBuilder();var bed=new TownMeshBuilder();
-        for(int i=1;i<path.points.Length;i++)
+        var (mesh,bed)=RailGeometry(path.points,siding);
+        Geometry(siding?"Freight rail siding":"Continuous northern railway",mesh,"Railway infrastructure");
+        Geometry(siding?"Freight ballast":"Railway embankment",bed,"Railway infrastructure");
+        if(siding)
         {
-            var a=path.points[i-1];var b=path.points[i];var delta=b-a;var side=Vector3.Cross(Vector3.up,delta).normalized;
+            var end=path.points.Last();var buffer=new TownMeshBuilder();
+            var forward=(end-path.points[path.points.Length-2]).normalized;
+            buffer.Box(end+new Vector3(0,.55f,0),new Vector3(2.6f,1.1f,.2f),TownColor.Red,Quaternion.LookRotation(forward));
+            Geometry("Freight siding buffer stop",buffer,"Railway infrastructure");
+        }
+    }
+
+    internal static (TownMeshBuilder rails,TownMeshBuilder ballast) RailGeometry(Vector3[] points,bool siding)
+    {
+        var mesh=new TownMeshBuilder();var bed=new TownMeshBuilder();
+        for(int i=1;i<points.Length;i++)
+        {
+            var a=points[i-1];var b=points[i];var delta=b-a;var side=Vector3.Cross(Vector3.up,delta).normalized;
             bool bridge=!siding&&a.x>=299&&b.x<=345&&Mathf.Abs(a.z-228)<.01f;
             if(!bridge)
             {
@@ -144,18 +158,13 @@ internal sealed partial class TownWorldAssembler
             int ties=Mathf.CeilToInt(delta.magnitude/.85f);
             for(int tie=0;tie<ties;tie++)mesh.Box(Vector3.Lerp(a,b,(tie+.5f)/ties)-Vector3.up*.11f,new Vector3(2.2f,.15f,.2f),TownColor.Wood,Quaternion.LookRotation(delta));
         }
-        Geometry(siding?"Freight rail siding":"Continuous northern railway",mesh,"Railway infrastructure");
-        Geometry(siding?"Freight ballast":"Railway embankment",bed,"Railway infrastructure");
-        if(siding)
-        {
-            var end=path.points.Last();var buffer=new TownMeshBuilder();
-            var forward=(end-path.points[path.points.Length-2]).normalized;
-            buffer.Box(end+new Vector3(0,.55f,0),new Vector3(2.6f,1.1f,.2f),TownColor.Red,Quaternion.LookRotation(forward));
-            Geometry("Freight siding buffer stop",buffer,"Railway infrastructure");
-        }
+        return (mesh,bed);
     }
 
     private void RailRiverBridge()
+        => Geometry("Separate railway river bridge",LegacyRailBridge(),"Railway infrastructure");
+
+    internal static TownMeshBuilder LegacyRailBridge()
     {
         var mesh=new TownMeshBuilder();var center=new Vector3(322,4.05f,228);
         mesh.Box(center,new Vector3(46,.6f,5.2f),TownColor.Stone);
@@ -171,7 +180,7 @@ internal sealed partial class TownWorldAssembler
             }
         }
         foreach(float x in new[]{303f,342f})mesh.Box(new Vector3(x,-.2f,228),new Vector3(2,8.2f,6),TownColor.Stone);
-        Geometry("Separate railway river bridge",mesh,"Railway infrastructure");
+        return mesh;
     }
 
     private void RailwayStation()

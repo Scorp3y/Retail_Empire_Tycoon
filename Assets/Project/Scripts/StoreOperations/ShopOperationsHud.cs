@@ -44,8 +44,18 @@ namespace RetailEmpireTycoon.StoreOperations
         private readonly List<Image> _stars = new List<Image>();
         private const string HintsPreference = "ShopUi.ShowHints";
         private bool _hintsVisible;
-        private readonly List<TMP_Text> _shortcutKeys = new List<TMP_Text>();
-        private readonly List<TMP_Text> _shortcutNames = new List<TMP_Text>();
+        private static readonly (ShopAction? Action, string Russian, string English)[] Shortcuts =
+        {
+            (ShopAction.Inventory, "Инвентарь", "Construction"),
+            (ShopAction.Warehouse, "Склад", "Warehouse"),
+            (ShopAction.Catalog, "Закупки", "Store catalog"),
+            (ShopAction.Territory, "Участки", "Territories"),
+            (ShopAction.Staff, "Персонал", "Staff"),
+            (ShopAction.OpenStore, "Магазин", "Open / close"),
+            (ShopAction.Checkout, "Касса", "Checkout"),
+            (null, "Пауза", "Pause")
+        };
+        [NonSerialized] private TMP_Text[] _shortcutLabels;
         public bool HintsVisible => _hintsVisible;
         private void Awake() { _hintsVisible = PlayerPrefs.GetInt(HintsPreference, 1) != 0; }
         public void SetHintsVisible(bool visible, bool persist = true)
@@ -75,16 +85,14 @@ namespace RetailEmpireTycoon.StoreOperations
             }
             _actions = _ui.Rect("Action shortcuts", canvas.transform, new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(12, 0), new Vector2(192, 264));
             StyleShortcutText(_ui.Heading(_actions, "Управление", "Shortcuts", new Vector2(12, -10), new Vector2(166, 28), 17));
-            for (int i = 0; i < 8; i++)
+            for (int i = 0; i < Shortcuts.Length; i++)
             {
                 var key = _ui.Rect("Shortcut key", _actions, new Vector2(0, 1), new Vector2(0, 1), new Vector2(12, -45 - i * 26), new Vector2(30, 22));
                 _ui.Panel(key, ShopUiTheme.Ink).raycastTarget = false;
                 var label = _ui.Label(key, "", Vector2.zero, new Vector2(30, 22), 14);
                 label.alignment = TextAlignmentOptions.Center; label.color = ShopUiTheme.Paper;
-                _shortcutKeys.Add(label);
                 var actionName = _ui.Label(_actions, "", new Vector2(52, -45 - i * 26), new Vector2(130, 22), 14);
                 StyleShortcutText(actionName);
-                _shortcutNames.Add(actionName);
             }
             _tasks = _ui.Rect("Available player jobs", canvas.transform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-379, 16), new Vector2(440, 48));
             _cashierButton = _ui.Button(_tasks, "", new Vector2(0, -6), new Vector2(214, 36), () => { controls.CloseWindows(); work.BeginCheckout(); });
@@ -217,16 +225,16 @@ namespace RetailEmpireTycoon.StoreOperations
 
         private void RefreshShortcutText()
         {
-            ShopAction[] actions = { ShopAction.Inventory, ShopAction.Warehouse, ShopAction.Catalog, ShopAction.Territory, ShopAction.Staff, ShopAction.OpenStore, ShopAction.Checkout };
-            string[] names = { "Инвентарь", "Склад", "Закупки", "Участки", "Персонал", "Магазин", "Касса" };
-            string[] english = { "Construction", "Warehouse", "Store catalog", "Territories", "Staff", "Open / close", "Checkout" };
-            for (int i = 0; i < actions.Length; i++)
+            // During a script reload, the existing HUD remains and its transient text cache is lost.
+            // The heading is followed by one key and one caption per shortcut.
+            _shortcutLabels ??= _actions.GetComponentsInChildren<TMP_Text>(true);
+            if (_shortcutLabels.Length != 1 + Shortcuts.Length * 2) return;
+            for (int i = 0; i < Shortcuts.Length; i++)
             {
-                _shortcutKeys[i].text = controls.Key(actions[i]).ToString();
-                _shortcutNames[i].text = ShopText.Get(names[i], english[i]);
+                var shortcut = Shortcuts[i];
+                _shortcutLabels[1 + i * 2].text = shortcut.Action.HasValue ? controls.Key(shortcut.Action.Value).ToString() : "Esc";
+                _shortcutLabels[2 + i * 2].text = ShopText.Get(shortcut.Russian, shortcut.English);
             }
-            _shortcutKeys[7].text = "Esc";
-            _shortcutNames[7].text = "Pause";
         }
         private void BeginCleaning()
         {

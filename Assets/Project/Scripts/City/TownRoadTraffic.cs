@@ -16,8 +16,8 @@ namespace RetailEmpireTycoon.City
         public const int DefaultCapacity = 23;
         [SerializeField] private int maximumCars = DefaultCapacity;
         [SerializeField] private float chunkSize = 96;
-        private readonly List<TrafficVehicle> pool = new();
-        private readonly List<TrafficVehicle> active = new();
+        private List<TrafficVehicle> pool = new();
+        private List<TrafficVehicle> active = new();
         private readonly HashSet<TrafficVehicle> parkingArrivals = new();
         private readonly Dictionary<TrafficVehicle,(int Lane,float Distance)> privateMerges=new();
         private readonly Dictionary<Vector2Int,List<Spawn>> spawnChunks = new();
@@ -81,6 +81,9 @@ namespace RetailEmpireTycoon.City
             privateMerges[car]=(lane,metres);
         }
         public void CancelPrivateMerge(TrafficVehicle car) => privateMerges.Remove(car);
+
+        public bool TryReserveParkingArrival(TrafficVehicle car)
+            => car != null && active.Contains(car) && !car.IsTurning && car.ReservedJunction < 0 && parkingArrivals.Add(car);
 
         /// <summary>Check the entry gap before a visible car leaves its driveway.</summary>
         public bool HasMergeGap(TrafficVehicle car, int lane, float metres)
@@ -161,8 +164,11 @@ namespace RetailEmpireTycoon.City
 
         private void Initialize()
         {
-            if (initialized) return;
+            if (initialized && random != null) return;
             if (network == null || fleet.Length != 20) throw new InvalidOperationException("Town traffic has not been authored.");
+            // Script reload preserves serialized fields but discards the random generator and spatial index.
+            hasObserverChunk=false;
+            spawnChunks.Clear();sparseCandidates.Clear();
             random=new System.Random(17491);
             ReadApproachPriority();
             float widest=0,longest=0;

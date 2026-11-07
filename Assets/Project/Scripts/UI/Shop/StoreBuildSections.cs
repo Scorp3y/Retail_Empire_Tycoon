@@ -32,7 +32,12 @@ namespace RetailEmpireTycoon.UI.Shop
                 :new[]{"All","Plants","Seating","Lighting","Other"};
             for(int i=0;i<sections.Length;i++)
             {
-                string section=sections[i];var button=ui.Button(root,section,new Vector2(i*width/sections.Length,0),new Vector2(width/sections.Length-6,34),()=>{Selected=section;shop.Refresh();});
+                string section=sections[i];var button=ui.Button(root,section,new Vector2(i*width/sections.Length,0),new Vector2(width/sections.Length-6,34),()=>
+                {
+                    Selected=section;
+                    shop.Refresh();
+                    Refresh();
+                });
                 button.image.color=Selected==section?ShopUiTheme.Green:ShopUiTheme.Line;
                 button.GetComponentInChildren<TMPro.TMP_Text>().fontSize=14;
             }

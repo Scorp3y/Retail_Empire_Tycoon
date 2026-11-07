@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d6abad8a36b0794996f8dedd8a8e734, type: 3}
+  m_Name: parking_personal
+  m_EditorClassIdentifier: 
+  legacyWallDepth: 0
+  wallCellSize: 0
+  wallGeometryVersion: 0
+  previousWallPrefab: {fileID: 0}
+  previousWallBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
+  previousWallAlignmentOffset: {x: 0, y: 0, z: 0}
+  decorationProportionsVersion: 0
+  id: parking_personal
+  displayName: Personal parking bay
+  description: Reserved for your vehicle.
+  icon: {fileID: 21300000, guid: 90a6ef75800ae0943859343a72d1ae27, type: 3}
+  price: 60
+  hiddenFromShop: 0
+  weightKg: 1
+  cargoVolumeM3: 0.02
+  isAsphalt: 0
+  isParkingSpace: 1
+  isPersonalParking: 1
+  parkingGeometryVersion: 1
+  previousParkingPrefab: {fileID: 4604022470322728026, guid: 864e220433f2cec469ecd0000dcc9de3, type: 3}
+  previousParkingFootprint: {x: 6, y: 11}
+  previousParkingBounds:
+    m_Center: {x: 0, y: 0.023100002, z: 0}
+    m_Extent: {x: 0.6628049, y: 0.0033000007, z: 1.3727999}
+  isUnloadingGate: 0
+  isWall: 0
+  beautyPoints: 0
+  unlockedByDefault: 1
+  unlockCondition: {fileID: 0}
+  category: 1
+  subCategory: 0
+  footprint: {x: 8, y: 16}
+  allowRotation: 1
+  ruleFlags: 3
+  placementKind: 0
+  floorMaterial: {fileID: 0}
+  accessibilitySides: 1
+  pivotOffset: {x: 0, y: 0}
+  alignModelToFootprint: 1
+  placementBounds:
+    m_Center: {x: 0, y: 0.023100002, z: 0}
+    m_Extent: {x: 0.9716355, y: 0.0033000007, z: 1.9618335}
+  placementAlignmentOffset: {x: 0, y: 0, z: 0}
+  frontFacing: 0
+  twoSidedAccess: 0
+  isDoorway: 0
+  isCheckout: 0
+  storeyConnection: 0
+  prefab: {fileID: 1603318642449957857, guid: 0e13c1b6ea757ec4b8410971b4b24393, type: 3}
+  previewValidMaterial: {fileID: 2100000, guid: b737f1f25c90f1842999d06f57aa1608, type: 2}
+  previewInvalidMaterial: {fileID: 2100000, guid: cd8bbf8a301d0664386b1c15cc42650f, type: 2}
+  shelfData: {fileID: 0}
+  decorationData: {fileID: 0}
+  cashierData: {fileID: 0}

@@ -11,6 +11,14 @@ namespace RetailEmpireTycoon.Core
         public const int WallBlockSizeInCells = 1;
         public const int WallThicknessInCells = 2;
         public const int CurrentWallModuleVersion = 3;
+        public const int TwoCellWallVersion = 4;
+        public const string StoreStripeId = "wall_finish_01";
+        public const string StoreStripeCornerId = "wall_store_stripe_corner";
+        public bool IsWallCorner => id == "wallcorner_01" || id == StoreStripeCornerId;
+        public int WallPlacementVersion => Mathf.Max(CurrentWallModuleVersion, wallGeometryVersion);
+        public bool HasVersionedOpening => (isDoorway || isUnloadingGate) && wallGeometryVersion >= TwoCellWallVersion;
+        public bool HasVersionedWallGeometry => isWall || HasVersionedOpening;
+        private bool UsesPreviousWallKit(int version) => wallGeometryVersion >= TwoCellWallVersion && version < TwoCellWallVersion;
         [HideInInspector] public float legacyWallDepth;
         [HideInInspector] public float wallCellSize;
         [HideInInspector] public int wallGeometryVersion;
@@ -19,16 +27,18 @@ namespace RetailEmpireTycoon.Core
         [HideInInspector] public Vector3 previousWallAlignmentOffset;
         [HideInInspector] public int decorationProportionsVersion;
 
-        public Vector2Int WallFootprint(int version) => version == 0 && id == "wall_01"
+        public Vector2Int WallFootprint(int version) => UsesPreviousWallKit(version)
+            ? (HasVersionedOpening ? new Vector2Int(footprint.x, 2) : IsWallCorner ? new Vector2Int(2, 2) : new Vector2Int(1, 2)) : version == 0 && id == "wall_01"
             ? new Vector2Int(4, 2) : version < 2 ? new Vector2Int(2, 2) : version == 2 ? Vector2Int.one : footprint;
 
-        public GameObject WallPrefab(int version) => version < 3 && previousWallPrefab != null ? previousWallPrefab : prefab;
-        public Bounds WallBounds(int version) => version < 3 && previousWallPrefab != null ? previousWallBounds : placementBounds;
+        public GameObject WallPrefab(int version) => (version < 3 || UsesPreviousWallKit(version)) && previousWallPrefab != null ? previousWallPrefab : prefab;
+        public Bounds WallBounds(int version) => (version < 3 || UsesPreviousWallKit(version)) && previousWallPrefab != null ? previousWallBounds : placementBounds;
 
         public Vector2Int WallPivot(int version) => version == 0 && id == "wall_01" ? new Vector2Int(-1, 0) : pivotOffset;
 
         public Vector3 WallModelScale(int version)
         {
+            if (UsesPreviousWallKit(version)) return Vector3.one;
             var savedFootprint = WallFootprint(version);
             var modelBounds = WallBounds(version);
             if(version == 2)return Vector3.one;
@@ -42,6 +52,8 @@ namespace RetailEmpireTycoon.Core
         public string displayName;
         [TextArea(1, 3)]
         public string description;
+        public string russianName;
+        [TextArea(1, 3)] public string russianDescription;
         public Sprite icon;
 
         [Header("Shop")]
@@ -52,6 +64,7 @@ namespace RetailEmpireTycoon.Core
         [Min(.001f)] public float cargoVolumeM3 = .25f;
         public bool isAsphalt;
         public bool isParkingSpace;
+        public bool isPersonalParking;
         [HideInInspector] public int parkingGeometryVersion;
         [HideInInspector] public GameObject previousParkingPrefab;
         [HideInInspector] public Vector2Int previousParkingFootprint;

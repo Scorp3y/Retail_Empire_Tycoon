@@ -338,6 +338,8 @@ namespace RetailEmpireTycoon.City
             {
                 var progression=shopScene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<StoreProgression>(true)).FirstOrDefault();
                 if(progression!=null)town.GetComponentInChildren<TownExpansionScenery>()?.ApplyState(progression.State);
+                var starter=shopScene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<StarterStoreInitialization>(true)).FirstOrDefault();
+                town.SetStarterSidewalk(starter?.StarterSidewalkWest);
             }
             var walls = shopScene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<StoreWallOccluder>(true))
                 .Where(w=>trip.WasShopObjectActive(w.gameObject)).ToArray();
@@ -364,7 +366,7 @@ namespace RetailEmpireTycoon.City
             var filters = walls.SelectMany(w=>w.GetComponentsInChildren<MeshFilter>(true)).Concat(doorFilters).Concat(contents).Distinct().ToArray();
             foreach(var filter in filters)
             {
-                var source = filter.GetComponent<MeshRenderer>(); if(source==null || filter.sharedMesh==null) continue;
+                var source = filter.GetComponent<MeshRenderer>(); if(source==null || !source.enabled || filter.sharedMesh==null) continue;
                 var copy = new GameObject("Store facade "+filter.name,typeof(MeshFilter),typeof(MeshRenderer));
                 copy.transform.SetParent(facadeRoot,false); copy.transform.position=Map(filter.transform.position);
                 copy.transform.rotation=filter.transform.rotation; copy.transform.localScale=Vector3.Scale(filter.transform.lossyScale,geometryScale);
@@ -398,7 +400,8 @@ namespace RetailEmpireTycoon.City
                 var point=index==0?unload:new GameObject("Invisible store unloading zone "+(index+1)).AddComponent<DeliveryCheckpoint>();
                 if(index>0)point.transform.SetParent(transform,false);
                 point.kind=CheckpointKind.Unload;point.radius=2.5f;point.requiresRearDocking=true;point.displayName="Store unloading gate";
-                unloadingGates.Add((point,Map(gate.transform.position),gate.transform.rotation,gate.item.placementBounds.size.z*geometryScale.z));
+                float depth=gate.item.WallBounds(gate.wallModuleVersion).size.z;
+                unloadingGates.Add((point,Map(gate.transform.position),gate.transform.rotation,depth*geometryScale.z));
                 foreach(var filter in gate.GetComponentsInChildren<MeshFilter>(true)) CopyExterior(filter,Map,geometryScale);
             }
             RefreshUnloadingZones();

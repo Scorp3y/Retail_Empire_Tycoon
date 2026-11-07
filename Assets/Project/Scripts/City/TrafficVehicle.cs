@@ -27,6 +27,7 @@ namespace RetailEmpireTycoon.City
         public float Length => length;
         public float Width => width;
         public float Speed { get; private set; }
+        internal float CruiseSpeedMultiplier { get; set; } = 1;
         public float Distance => distance;
         public int LaneIndex => laneIndex;
         public int NextLane => nextLane;
@@ -74,10 +75,10 @@ namespace RetailEmpireTycoon.City
             if (seconds <= 0 || float.IsNaN(seconds) || float.IsInfinity(seconds)) return;
             float clearance=Mathf.Max(0, allowedMetres);
             float curveSpeed = nextLane >= 0 ? network.TurnSpeed(laneIndex, nextLane) : network.Lanes[laneIndex].speedLimit;
-            float limit = IsTurning ? curveSpeed : Mathf.Min(network.Lanes[laneIndex].speedLimit,
+            float limit = IsTurning ? curveSpeed : Mathf.Min(network.Lanes[laneIndex].speedLimit * CruiseSpeedMultiplier,
                 Mathf.Sqrt(curveSpeed * curveSpeed + 3.6f * Remaining));
             float target=Mathf.Min(limit, Mathf.Min(Mathf.Sqrt(2*4*clearance), clearance / .65f));
-            Speed=Mathf.MoveTowards(Speed,target,(target<Speed ? 4.3f : 1.8f)*seconds);
+            Speed=Mathf.MoveTowards(Speed,target,(target<Speed ? 4.3f : 1.8f * CruiseSpeedMultiplier)*seconds);
             float travel=Mathf.Min(clearance,Speed*seconds);
             if (travel < .0001f) { Speed=0; HoldSeconds+=seconds; return; }
             HoldSeconds=0; Travelled+=travel;

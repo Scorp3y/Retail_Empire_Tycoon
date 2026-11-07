@@ -21,6 +21,7 @@ namespace RetailEmpireTycoon.BuildSystem
                 if(wall.GetComponentInParent<BuildPreview>()!=null)continue;
                 if(request.ignoredObject!=null&&wall.GetComponentInParent<PlacedObject>()==request.ignoredObject)continue;
                 var other=wall.WorldBounds;
+                if(wall.TryGetComponent<WallPattern>(out var pattern)) other=pattern.BoundsBeforeJoining(other);
                 var overlap=Vector3.Min(bounds.max,other.max)-Vector3.Max(bounds.min,other.min);
                 if(overlap.x>.012f&&overlap.z>.012f&&overlap.y>.1f)
                     return PlacementResult.Fail(PlaceFailReason.Overlap,"This item intersects an existing wall.");

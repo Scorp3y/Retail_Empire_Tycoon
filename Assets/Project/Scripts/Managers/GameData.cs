@@ -5,7 +5,7 @@ using RetailEmpireTycoon.SaveSystem;
 [Serializable]
 public class GameData
 {
-    public const int StartingCapital = 300000;
+    public const int StartingCapital = 420000;
     public bool usesModularStore;
     public int shopProportionsVersion;
     public int starterSiteVersion;
@@ -53,6 +53,7 @@ public class PlacedBuildSaveData
     // Missing in old saves: their wall sections retain the previous multi-cell dimensions.
     public int wallModuleVersion;
     public bool playerParking;
+    public bool primaryPlayerParking;
     public int parkingModuleVersion;
 }
 

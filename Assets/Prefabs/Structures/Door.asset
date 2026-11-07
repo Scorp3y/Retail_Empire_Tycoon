@@ -14,23 +14,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   legacyWallDepth: 0
   wallCellSize: 0
-  wallGeometryVersion: 0
-  previousWallPrefab: {fileID: 0}
+  wallGeometryVersion: 4
+  previousWallPrefab: {fileID: 8709404398107324398, guid: 6583a12afa2310a4198a490e1f63ffe2, type: 3}
   previousWallBounds:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+    m_Center: {x: 0, y: 0.82500005, z: 0}
+    m_Extent: {x: 0.82500005, y: 0.82500005, z: 0.275}
   previousWallAlignmentOffset: {x: 0, y: 0, z: 0}
   decorationProportionsVersion: 0
   id: door_01
   displayName: Entrance door
   description: 
-  icon: {fileID: 21300000, guid: 9bb6725e66dd72a4c963f41d599e1bd3, type: 3}
+  russianName:
+  russianDescription:
+  icon: {fileID: 21300000, guid: 7862674b4fa6f1b40803001a58a239e6, type: 3}
   price: 100
   hiddenFromShop: 0
   weightKg: 35
   cargoVolumeM3: 0.3
   isAsphalt: 0
   isParkingSpace: 0
+  isPersonalParking: 0
   parkingGeometryVersion: 0
   previousParkingPrefab: {fileID: 0}
   previousParkingFootprint: {x: 0, y: 0}
@@ -44,7 +47,7 @@ MonoBehaviour:
   unlockCondition: {fileID: 0}
   category: 1
   subCategory: 0
-  footprint: {x: 6, y: 2}
+  footprint: {x: 6, y: 1}
   allowRotation: 1
   ruleFlags: 3
   placementKind: 2
@@ -54,14 +57,15 @@ MonoBehaviour:
   alignModelToFootprint: 1
   placementBounds:
     m_Center: {x: 0, y: 0.82500005, z: 0}
-    m_Extent: {x: 0.82500005, y: 0.82500005, z: 0.275}
+    m_Extent: {x: 0.825165, y: 0.82500005, z: 0.1375275}
   placementAlignmentOffset: {x: 0, y: 0, z: 0}
   frontFacing: 0
   twoSidedAccess: 0
   isDoorway: 1
   isCheckout: 0
   storeyConnection: 0
-  prefab: {fileID: 8709404398107324398, guid: 6583a12afa2310a4198a490e1f63ffe2, type: 3}
+  storeyDirection: 0
+  prefab: {fileID: 5346313043565664243, guid: 01f72dfedd5430b46a18808232db7cb4, type: 3}
   previewValidMaterial: {fileID: 2100000, guid: b737f1f25c90f1842999d06f57aa1608, type: 2}
   previewInvalidMaterial: {fileID: 2100000, guid: cd8bbf8a301d0664386b1c15cc42650f, type: 2}
   shelfData: {fileID: 0}

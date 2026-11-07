@@ -63,10 +63,16 @@ public static class ConstructionWorkspacePlay
         Require(Object.FindObjectOfType<SaveManager>(true)==null,"Player save writer present.");
         var starter=Object.FindObjectOfType<StarterStoreInitialization>();starter.cityTrip.orders.save=null;
         if(StarterAccess)SiteRevision(starter);
-        var data=starter.CreateNewGame(50000);Object.FindObjectOfType<StoreProgression>().ApplySaveData(data.territory);
+        var data=starter.CreateNewGame();Object.FindObjectOfType<StoreProgression>().ApplySaveData(data.territory);
         StarterStock(starter,data);
         starter.building.inventory.ApplySaveData(data.buildInventory,starter.catalog);
-        var spawner=Object.FindObjectOfType<StorePrefabSpawner>();spawner.UsesModularStore=true;starter.ConfigureSite(true);spawner.Spawn(StoreLevelId.Lvl1);starter.ApplyNewGameBuildings(data);
+        var orders=starter.cityTrip.orders;
+        Require(data.buildInventory.All(entry=>starter.building.inventory.GetCount(starter.catalog.GetById(entry.itemId))==entry.count),
+            "Starting quantities were lost when applying the warehouse inventory.");
+        Require(orders.shopCapacityKg-orders.ShopWeightKg>=2*orders.pickupCapacityKg,
+            "Starter stock must leave room for two full pickup loads.");
+        var spawner=Object.FindObjectOfType<StorePrefabSpawner>();spawner.UsesModularStore=true;starter.ConfigureSite(true,data);spawner.Spawn(StoreLevelId.Lvl1);starter.ApplyNewGameBuildings(data);
+        VerifyStarterWallJoins(starter);
         var shop=Object.FindObjectOfType<RetailEmpireTycoon.StoreOperations.StoreOperations>();shop.enabled=false;shop.SetOpen(false);
         var parking=Object.FindObjectOfType<ParkingTraffic>();parking.enabled=false;
         var roads=Object.FindObjectOfType<RetailEmpireTycoon.City.TownRoadTraffic>();roads.enabled=false;
@@ -80,6 +86,14 @@ public static class ConstructionWorkspacePlay
         Require(Mathf.Abs(starter.building.grid.cellSize-ShopProportions.CellSize)<.00001f && Mathf.Abs(GridSystem.StoreyHeight-1.65f)<.0001f,"Construction grid/storeys were not enlarged.");
         var bays=Object.FindObjectsOfType<ParkingBay>().Where(bay=>bay.GetComponentInParent<BuildPreview>()==null).ToArray();
         Require(bays.Length==3 && bays.All(bay=>Mathf.Abs(bay.width-1.943271f)<.005f && Mathf.Abs(bay.length-3.923667f)<.005f),"Parking must match the updated 1.1x kit.");
+        foreach (var bay in bays)
+        {
+            var paint = bay.GetComponentsInChildren<MeshRenderer>().Select(r => r.bounds)
+                .Aggregate((a,b) => { a.Encapsulate(b); return a; });
+            var size = bay.transform.InverseTransformDirection(paint.size);
+            Require(Mathf.Abs(Mathf.Abs(size.x)-bay.width*.855f)<.02f &&
+                Mathf.Abs(Mathf.Abs(size.z)-bay.length*.60375f)<.02f,"Parking paint does not match the requested proportions.");
+        }
         var editing=starter.building.GetComponent<BuildEditingController>();editing.ReadPointerInput=false;
         foreach(var bay in bays)
         {
@@ -99,7 +113,18 @@ public static class ConstructionWorkspacePlay
         Require(placedNew,"No free asphalt can accept a new full-size parking bay.");
         starter.building.EnterBuildMode(parkingItem);Require(!starter.building.CanPlaceAt(new Vector3Int(-800,0,-800)).ok,"Public/unowned terrain admitted parking.");starter.building.ExitBuildMode();
         var extraBay=Object.FindObjectsOfType<ParkingBay>().Single(bay=>bay.GetComponentInParent<BuildPreview>()==null && !bays.Contains(bay));
+        var extraAnchor=extraBay.GetComponent<PlacedObject>().anchorCell;
         editing.Begin();editing.Select(extraBay.GetComponent<PlacedObject>());Require(editing.DeleteSelected(),"New test bay cannot be returned to storage.");editing.Finish();
+        var personalItem=starter.catalog.GetById("parking_personal");
+        Require(personalItem!=null && personalItem.isPersonalParking && !personalItem.hiddenFromShop,"The personal bay is missing from the build catalog.");
+        Require(starter.building.inventory.GetCount(personalItem)==2,"Two personal parking bays must be available in starting storage.");
+        starter.building.EnterBuildMode(personalItem);
+        Require(starter.building.TryPlaceAt(extraAnchor),"The personal parking item cannot be placed on clear asphalt.");
+        Require(starter.building.inventory.GetCount(personalItem)==1,"Placing a personal bay must consume one from storage.");
+        var extraPersonal=Object.FindObjectsOfType<PlacedObject>().Single(p=>p.item==personalItem);
+        Require(extraPersonal.playerParking && !extraPersonal.primaryPlayerParking &&
+            starter.building.BuildPlacedSaveData().Any(p=>p.itemId==personalItem.id && p.playerParking),"A personal bay was not reserved on placement and saved.");
+        editing.Begin();editing.Select(extraPersonal);Require(editing.DeleteSelected(),"A secondary personal bay cannot be returned to storage.");editing.Finish();
         foreach(var door in Object.FindObjectsOfType<PlacedObject>().Where(placed=>placed.item!=null&&placed.item.id=="door_01"))
         {
             Require(door.transform.Find("door-left")!=null && door.transform.Find("door-right")!=null,"New operable double door missing.");
@@ -107,10 +132,15 @@ public static class ConstructionWorkspacePlay
         }
         foreach(string id in new[]{"door_01","unloading_gate_01"})
         {
-            var bounds=CityUpdateSetup.Measure(starter.catalog.GetById(id).prefab);
-            Require(Vector3.Distance(bounds.size,new Vector3(1.65f,1.65f,.55f))<.003f,"Opening does not match wall envelope: "+id+" "+bounds);
-            var band=starter.catalog.GetById(id).prefab.GetComponentsInChildren<MeshRenderer>(true).First(renderer=>renderer.name=="ContinuousTopBand");
-            Require(band.sharedMaterial==AssetDatabase.LoadAssetAtPath<Material>(MobilityUpdateBatch.Root+"/Walls.mat"),"Opening uses a mismatched wall palette.");
+            var item=starter.catalog.GetById(id);
+            var bounds=CityUpdateSetup.Measure(item.prefab);
+            float cell=starter.building.grid.cellSize;
+            Require(Vector3.Distance(bounds.size,new Vector3(6*cell,GridSystem.StoreyHeight,cell))<.003f &&
+                item.footprint==new Vector2Int(6,1),"Opening does not match wall envelope: "+id+" "+bounds);
+            var band=item.prefab.GetComponentsInChildren<MeshRenderer>(true).First(renderer=>renderer.name=="ContinuousTopBand");
+            Require(band.sharedMaterial==AssetDatabase.LoadAssetAtPath<Material>(WallCollectionBatch.Root+"/Wallfinishes.mat"),"Opening uses a mismatched wall palette.");
+            Require(item.WallFootprint(0)==new Vector2Int(6,2) && item.WallPrefab(0)!=item.prefab,
+                "Saved openings must keep the previous footprint and prefab.");
         }
         foreach(var step in Workspace(starter))yield return step;
         Migration(starter);
@@ -131,6 +161,17 @@ public static class ConstructionWorkspacePlay
         foreach(var shelf in shelves)shelf.ClearStock();var stocked=shelves.First(shelf=>shelf.IsProductAllowed(product) && (!Transport || shelf.GetComponent<PlacedObject>().anchorCell.y==1));stocked.SetStockFromSave(product,24);
         var balance=Object.Instantiate(shop.Balance);balance.thiefChance=0;balance.litterChance=0;ShopGameplaySetup.Set(shop,"balance",balance);
         shop.Advance(.1f);shop.SetOpen(true);parking.arrivalInterval=9999;
+        var visitorFleet=Resources.Load<ParkingVisitorFleet>("Parking/Visitors");
+        var access=new ParkingStreetAccess(roads,parking.roadEntry,parking.drivewayEntry);
+        var passingCar=Object.Instantiate(visitorFleet.Vehicles.OrderBy(c=>c.Width*c.Length).First());
+        passingCar.transform.localScale=Vector3.one*visitorFleet.ModelScale;
+        Require(access.PrepareLane() && access.TryPrepare(passingCar.Width*visitorFleet.ModelScale,
+            passingCar.Length*visitorFleet.ModelScale,null),"No upstream position for the passing car.");
+        // A script reload can keep the initialized flag while losing the runtime-only generator.
+        typeof(RetailEmpireTycoon.City.TownRoadTraffic).GetField("random",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)
+            .SetValue(roads,null);
+        Require(roads.TryJoinTraffic(passingCar,access.SpawnLane,access.SpawnDistance),"Could not stage a regular car on the road.");
+        access.GuideArrival(passingCar);
         Directory.CreateDirectory(Documentation);
         if(Frontage)TownFloristBatch.Render(EditorSceneManager.GetActiveScene(),Documentation+"/SiteAndStreet.png",starter.blueprint.cameraFocus+new Vector3(-12,23,-31),starter.blueprint.cameraFocus+Vector3.back*8);
         File.WriteAllText(Report+"/routing.txt","entry="+shop.EntrancePosition+" arrival="+shop.ArrivalPosition+" shelf="+stocked.transform.position+" from street="+shop.TryShelfApproach(stocked,shop.ArrivalPosition,out _)+"\n");
@@ -148,7 +189,7 @@ public static class ConstructionWorkspacePlay
         }
         File.AppendAllText(Report+"/routing.txt",map.ToString());
         Require(shop.TryShelfApproach(stocked,shop.ArrivalPosition,out _),"Entrance to shelf route is blocked; see routing.txt.");
-        ShopperVisit customer=null;GameObject car=null;bool paid=false,walked=false,streetArrival=false,streetDeparture=false,reachedUpper=false;int beforeMoney=shop.Money,beforeStock=stocked.CurrentAmount;
+        ShopperVisit customer=null;GameObject car=null;bool paid=false,walked=false,streetArrival=false,streetDeparture=false,reachedUpper=false,parkingSteering=false;int beforeMoney=shop.Money,beforeStock=stocked.CurrentAmount;
         var lift=Elevator?Object.FindObjectsOfType<StoreyTransportVisual>().Single(motor=>motor.liftDoors!=null):null;
         bool lowerDoorSeen=false,upperDoorSeen=false,liftMoved=false;
         float trafficTime=0,originalTimeScale=Time.timeScale;
@@ -174,10 +215,11 @@ public static class ConstructionWorkspacePlay
                 if(car!=null)
                 {
                     Require(Vector3.Distance(car.transform.position,parking.roadEntry.position)>6,"Visitor still spawns at the driveway.");
-                    Require(!GeometryUtility.TestPlanesAABB(GeometryUtility.CalculateFrustumPlanes(Camera.main),new Bounds(car.transform.position+Vector3.up*.4f,Vector3.one*3)),"Visitor spawned in camera view.");
+                    Require(car==passingCar.gameObject && parking.ArrivalState=="Diverted from city traffic","The customer did not use the existing road car.");
                     streetArrival=true;
                 }
             }
+            if(car!=null && !passingCar.enabled)parkingSteering|=Mathf.Abs(passingCar.Steering)>4;
             if(paid && car!=null && car.transform.position.z<parking.roadEntry.position.z-.5f && Mathf.Abs(car.transform.position.x-parking.roadEntry.position.x)>6)streetDeparture=true;
             if(customer==null)customer=shop.Visits.FirstOrDefault(visit=>visit.ArrivedByCar);
             if(customer!=null)
@@ -218,7 +260,7 @@ public static class ConstructionWorkspacePlay
             if(step%100==0 || Elevator)yield return null;
         }
         Time.timeScale=originalTimeScale;
-        Require(customer!=null && walked && paid && customer.ReturnedToCar && streetArrival && streetDeparture && parking.VisitorCars.Count==0,"Incomplete street -> car -> shop -> purchase -> same car -> street cycle. "+parking.MovementState+" notice="+shop.Notice+" visit="+customer?.Stage);
+        Require(customer!=null && walked && paid && customer.ReturnedToCar && streetArrival && streetDeparture && parkingSteering && parking.VisitorCars.Count==0,"Incomplete street -> car -> shop -> purchase -> same car -> street cycle. "+parking.MovementState+" notice="+shop.Notice+" visit="+customer?.Stage);
         Require(parking.VisitorCars.Count==0,"Finished visitor retained the parking lease.");
         Require(shop.TryHire(StaffRole.Cleaner), "Could not hire the payroll test employee.");
         int payroll = shop.Balance.Wage(StaffRole.Cleaner);
@@ -257,6 +299,8 @@ public static class ConstructionWorkspacePlay
         starter.cityTrip.Return();while(starter.cityTrip.Transitioning)yield return null;
         Require(!starter.cityTrip.InCity,"Return from City failed.");
         File.WriteAllText(Report+"/city.txt","PASS actual Game -> City -> Game; no automatic roof; scaled wall top "+expectedTop+"; uniform world scale, player-built surfaces only.\n");
+        if (Resources.Load<BuildItemData>("WallCollection/wall_finish_01") != null)
+            foreach (var step in VerifyWallCollection(starter)) yield return step;
     }
 
     private static System.Collections.Generic.IEnumerable<object> VerifyPauseAndStatistics(StarterStoreInitialization starter)
@@ -269,9 +313,21 @@ public static class ConstructionWorkspacePlay
         var settings = Object.FindObjectOfType<ControlPanel>(true);
         var settingsPanel = settings.settingPanel.GetComponent<RetailEmpireTycoon.UI.Shop.ShopSettingsPanel>();
         var canvas = Object.FindObjectOfType<RetailEmpireTycoon.UI.Shop.ShopHudPresenter>().canvas;
+        var shortcuts=canvas.transform.Find("Action shortcuts").GetComponentsInChildren<TMPro.TMP_Text>(true);
+        shortcuts[shortcuts.Length-1].text="";
+        typeof(ShopOperationsHud).GetField("_shortcutLabels",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)
+            .SetValue(hud,null);
+        hud.SendMessage("RefreshShortcutText");
+        Require(shortcuts.Length==17 && shortcuts[15].text=="Esc" && shortcuts[16].text=="Pause",
+            "The shortcut HUD could not restore its labels after losing the runtime cache.");
         var actionRow = canvas.transform.Find("Game edge HUD/Shop action row");
         var rating = canvas.transform.Find("Shop rating");
         Require(actionRow != null && actionRow.gameObject.activeInHierarchy, "Store HUD actions are missing.");
+        var buttons=actionRow.GetComponentsInChildren<Button>().Select(b=>(RectTransform)b.transform).OrderBy(r=>r.anchoredPosition.x).ToArray();
+        Require(buttons.Length==6 && buttons.All(r=>r.sizeDelta==new Vector2(48,48)) &&
+            buttons.Zip(buttons.Skip(1),(left,right)=>right.anchoredPosition.x-left.anchoredPosition.x).All(gap=>Mathf.Abs(gap-57)<.01f),
+            "The HUD buttons must have equal size and spacing.");
+        Canvas.ForceUpdateCanvases();CaptureUi("StarterHudUniform");
         var actions = actionRow.GetComponentsInChildren<Button>()
             .OrderBy(button => ((RectTransform)button.transform).anchoredPosition.x)
             .Select(button => button.name);
@@ -406,39 +462,240 @@ public static class ConstructionWorkspacePlay
             .Any(button => button.GetComponentInChildren<TMPro.TMP_Text>()?.text == text);
     }
 
+    private static System.Collections.Generic.IEnumerable<object> VerifyWallCollection(StarterStoreInitialization starter)
+    {
+        var orders=starter.cityTrip.orders;
+        var build=starter.building;
+        var editor=build.GetComponent<BuildEditingController>();
+        var shop=Object.FindObjectOfType<RetailEmpireTycoon.UI.Shop.ShopWindow>(true);
+        var controls=Object.FindObjectOfType<GameplayControls>();
+        var styles=Resources.LoadAll<BuildItemData>("WallCollection").Where(item=>!item.IsWallCorner).OrderBy(item=>item.id).ToArray();
+        Require(styles.Length==30 && styles.Select(i=>i.id).Distinct().Count()==30,"The wall collection catalog is incomplete.");
+        VerifyWallProfiles(starter,styles);
+        controls.RequestShop();
+        shop.OpenCategory(BuildCategory.Structures);
+        yield return null;
+        shop.GetComponentsInChildren<Button>().Single(button=>button.name=="Walls").onClick.Invoke();
+        yield return null;
+        var cards=shop.GetComponentsInChildren<RetailEmpireTycoon.UI.Shop.ShopItemCard>();
+        Require(styles.All(item=>cards.Any(card=>card.nameText.text==item.displayName && card.icon.sprite==item.icon &&
+            card.buyButton.interactable)),"A purchasable wall card, name or icon is missing from Construction → Walls.");
+        Require(cards.All(card=>card.nameText.text!="Wall" && card.nameText.text!="Corner wall") &&
+            cards.Any(card=>card.nameText.text=="Store Stripe Corner" && card.buyButton.interactable),
+            "Legacy wall cards must be hidden and the new corner available.");
+        CaptureUi("WallCollectionStore");
+        controls.HandleEscape();
+        yield return null;
+
+        int money=orders.money.Money;
+        var oldLedger=orders.Ledger.Capture();
+        var oldLayout=build.BuildPlacedSaveData();
+        var oldInventory=build.inventory.BuildSaveData();
+        var floor=starter.floors.BuildSaveData().Where(t=>t.floor==0 && t.itemId!="asphalt_01")
+            .Select(t=>new Vector3Int(t.x,0,t.z))
+            .OrderBy(at=>(build.grid.CellToWorld(at)-starter.blueprint.cameraFocus).sqrMagnitude).ToArray();
+        var positions=new System.Collections.Generic.List<Vector3Int>();
+        foreach(var item in styles)
+        {
+            Require(starter.catalog.GetById(item.id)==item && item.isWall && item.prefab.isStatic,"Wall definition or save lookup mismatch for "+item.id);
+            int balance=orders.money.Money;
+            Require(orders.Order(item) && orders.money.Money==balance-item.price,"Wall order did not charge the expected amount.");
+            var parcel=orders.Ledger.Entries.Single(e=>e.itemId==item.id && e.location==RetailEmpireTycoon.Logistics.DeliveryLocation.Depot);
+            Require(orders.LoadFrom(parcel,RetailEmpireTycoon.Logistics.SupplierKind.Construction) && orders.Unload(),
+                "The construction supplier could not deliver "+item.id+": "+orders.Notice);
+            build.EnterBuildMode(item);
+            var cell=floor.FirstOrDefault(at=>positions.All(p=>(p-at).sqrMagnitude>=9) && build.CanPlaceAt(at).ok);
+            Require(build.TryPlaceAt(cell),"A delivered wall cannot be placed: "+item.id);
+            build.ExitBuildMode();
+            var wall=Object.FindObjectsOfType<PlacedObject>().Single(p=>p.item==item && p.anchorCell==cell);
+            Require(wall.GetComponent<BoxCollider>()!=null && wall.GetComponent<MeshCollider>()==null &&
+                wall.wallModuleVersion==BuildItemData.TwoCellWallVersion,"Unexpected wall collider or geometry version.");
+            // Keep a few examples for the save round-trip and reuse the same aisle for the other tests.
+            if(item==styles[0] || item==styles[12] || item==styles[24] || item==styles[29])
+            {
+                positions.Add(cell);
+                continue;
+            }
+            editor.Begin();
+            Require(editor.Select(wall) && editor.DeleteSelected(),"A placed wall could not be returned to storage.");
+            editor.Finish();
+            build.inventory.ApplySaveData(oldInventory,starter.catalog);
+        }
+        orders.money.SetMoney(0);
+        Require(!orders.Order(styles[0]) && orders.money.Money==0,"A wall could be ordered without funds.");
+        var kept=Object.FindObjectsOfType<PlacedObject>().Single(p=>p.item==styles[0] && p.anchorCell==positions[0]);
+        editor.Begin();
+        Require(editor.Select(kept),"Cannot select wall for move.");
+        editor.Rotate(1);
+        var movedTo=floor.First(at=>at!=positions[0] && positions.Skip(1).All(p=>(p-at).sqrMagnitude>=9) && editor.PreviewAt(at).ok);
+        Require(editor.Confirm() && kept.facing==1 && kept.anchorCell==movedTo,"Wall movement or rotation failed.");
+        editor.Finish();
+        positions[0]=movedTo;
+        var saved=JsonUtility.FromJson<GameData>(JsonUtility.ToJson(new GameData{placedObjects=build.BuildPlacedSaveData()}));
+        Require(saved.placedObjects.Count(p=>p.itemId.StartsWith("wall_finish_",StringComparison.Ordinal))==
+            oldLayout.Count(p=>p.itemId.StartsWith("wall_finish_",StringComparison.Ordinal))+positions.Count,
+            "A wall returned to storage was still included in a save taken in the same frame.");
+        build.ApplyPlacedSaveData(saved.placedObjects,starter.catalog);
+        yield return null;
+        var restored=build.BuildPlacedSaveData();
+        Require(restored.Count==saved.placedObjects.Count &&
+            saved.placedObjects.Where(p=>p.itemId.StartsWith("wall_finish_",StringComparison.Ordinal))
+                .All(p=>restored.Any(r=>r.itemId==p.itemId && r.x==p.x && r.z==p.z && r.facing==p.facing)),
+            "Wall IDs, cells, or rotations were lost on save/load.");
+        var examples=Object.FindObjectsOfType<PlacedObject>().Where(p=>p.item!=null &&
+            p.item.id.StartsWith("wall_finish_",StringComparison.Ordinal) && positions.Contains(p.anchorCell)).ToArray();
+        var focus=examples.Aggregate(Vector3.zero,(sum,p)=>sum+p.transform.position)/examples.Length+Vector3.up*.55f;
+        TownFloristBatch.Render(EditorSceneManager.GetActiveScene(),Documentation+"/WallCollectionPlaced.png",
+            focus+new Vector3(-2.4f,3f,-3.2f),focus);
+        build.ApplyPlacedSaveData(oldLayout,starter.catalog);
+        build.inventory.ApplySaveData(oldInventory,starter.catalog);
+        orders.Ledger.Restore(oldLedger);
+        orders.money.SetMoney(money);
+        yield return null;
+        File.WriteAllText(Report+"/wall-collection.txt","PASS 30 cards, paid supplier purchase/load/unload and placement, insufficient funds, removal, move/rotation and save/load with legacy walls.\n");
+    }
+
+    private static void VerifyStarterWallJoins(StarterStoreInitialization starter)
+    {
+        var placed=Object.FindObjectsOfType<PlacedObject>();
+        var stripes=placed.Where(p=>p.item.id==BuildItemData.StoreStripeId).ToArray();
+        var corners=placed.Where(p=>p.item.id==BuildItemData.StoreStripeCornerId).ToArray();
+        Require(stripes.Length==62 && corners.Length==4 && placed.All(p=>p.item.id!="wall_01" && p.item.id!="wallcorner_01") &&
+            stripes.Concat(corners).All(p=>p.wallModuleVersion==BuildItemData.TwoCellWallVersion),
+            "New games must place the two-cell wall kit on the starter footprint.");
+        var occupied=new System.Collections.Generic.HashSet<Vector3Int>();
+        Require(placed.SelectMany(p=>p.occupiedCells).All(occupied.Add),"The new starter layout overlaps a wall, opening or fixture.");
+        int west=corners.Min(p=>p.anchorCell.x),east=corners.Max(p=>p.anchorCell.x);
+        int south=corners.Min(p=>p.anchorCell.z),north=corners.Max(p=>p.anchorCell.z);
+        var floor=starter.floors.BuildSaveData();
+        var town=Object.FindObjectOfType<RetailEmpireTycoon.City.TownWorldPlaces>();
+        var sidewalk=town.transform.Find("Player entrance sidewalk trim").GetComponent<MeshFilter>();
+        float worldEdge=sidewalk.transform.TransformPoint(sidewalk.sharedMesh.bounds.min).x;
+        Require(Mathf.Abs(worldEdge-west*starter.building.grid.cellSize)<.002f,"The entrance sidewalk still extends into the left asphalt.");
+        var blueprint=starter.blueprint.initialState;
+        int oldWest=blueprint.placedObjects.Where(p=>p.itemId=="wallcorner_01").Min(p=>p.x)+1;
+        Require(west==oldWest+StarterStoreBlueprint.RightSideShiftCells,"Starter store was not moved to the right edge.");
+        var asphalt=floor.Where(tile=>tile.floor==0 && tile.itemId=="asphalt_01").Select(tile=>new Vector2Int(tile.x,tile.z)).ToHashSet();
+        for(int x=oldWest-1;x<west;x++)
+        for(int z=south-1;z<=north;z++)
+            Require(asphalt.Contains(new Vector2Int(x,z)),"There is a hole in the new asphalt to the left of the starter shop.");
+        Require(placed.Where(p=>p.item.id=="parking_01").All(p=>blueprint.placedObjects.Any(old=>old.itemId=="parking_01" && old.x==p.anchorCell.x && old.z==p.anchorCell.z)),
+            "Moving the shop also moved the forecourt parking bays.");
+        Require(floor.Where(tile=>tile.floor==0 && tile.itemId!="asphalt_01").All(tile=>
+            tile.x>=west && tile.x<=east && tile.z>=south && tile.z<=north),"The starter floor extends past the exterior walls.");
+        Require(floor.Any(tile=>tile.itemId=="floor_graphite" && tile.x==west && tile.z==south),"The border trim removed the floor under the walls.");
+        var openings=placed.Where(p=>p.item.isDoorway || p.item.isUnloadingGate).ToArray();
+        float cell=starter.building.grid.cellSize;
+        Require(openings.Length==3 && openings.All(p=>p.wallModuleVersion==BuildItemData.TwoCellWallVersion && p.occupiedCells.Count==6),
+            "The starter doorway or gate still uses its legacy placement geometry.");
+        foreach(var opening in openings)
+        foreach(int side in new[]{-1,1})
+        {
+            var expected=opening.transform.position+opening.transform.right*(4*cell*side);
+            Require(stripes.Any(p=>(p.transform.position-expected).sqrMagnitude<.000001f),"Opening is not flush with the adjacent walls.");
+        }
+        var stems=stripes.Where(p=>p.GetComponent<BoxCollider>().size.x>2*starter.building.grid.cellSize+.02f).ToArray();
+        Require(stems.Length==2,"The two starter T junctions have no wall extension.");
+        Require(stripes.Count(p=>p.GetComponent<MeshFilter>().sharedMesh.triangles.Length<
+            p.item.prefab.GetComponent<MeshFilter>().sharedMesh.triangles.Length)>50,
+            "Internal wall caps were left on the joined starter segments.");
+        foreach(var stem in stems)
+        {
+            var box=stem.GetComponent<BoxCollider>();
+            Vector3 probe=stem.transform.TransformPoint(new Vector3(Mathf.Sign(box.center.x)*(box.size.x*.5f-.025f)+box.center.x,.85f,-.2f));
+            Physics.SyncTransforms();
+            Require(box.Raycast(new Ray(probe,stem.transform.forward),out _,.4f),"A starter T junction left a physical gap.");
+        }
+        Directory.CreateDirectory(Documentation);
+        Vector3 focus=stems[0].transform.position+Vector3.up*.55f;
+        TownFloristBatch.Render(EditorSceneManager.GetActiveScene(),Documentation+"/StarterWallJunction.png",focus+new Vector3(-2,3,-2.7f),focus);
+        focus=stripes.Aggregate(Vector3.zero,(sum,p)=>sum+p.transform.position)/stripes.Length;
+        TownFloristBatch.Render(EditorSceneManager.GetActiveScene(),Documentation+"/StarterFittedOpenings.png",focus+new Vector3(-10,12,-14),focus);
+        var siteFocus=focus+new Vector3(-3.6f,0,-2.8f);
+        TownFloristBatch.Render(EditorSceneManager.GetActiveScene(),Documentation+"/StarterRightSide.png",siteFocus+new Vector3(0,18,-12),siteFocus);
+        foreach(var opening in openings.Where(p=>p.item.isUnloadingGate || p.anchorCell.z==south))
+        {
+            focus=opening.transform.position+Vector3.up*.75f;
+            var position=focus-opening.transform.forward*2.8f+opening.transform.right*1.6f+Vector3.up*1.55f;
+            TownFloristBatch.Render(EditorSceneManager.GetActiveScene(),Documentation+(opening.item.isUnloadingGate?"/StarterFittedGate.png":"/StarterFittedDoor.png"),position,focus);
+        }
+    }
+
+    private static void VerifyWallProfiles(StarterStoreInitialization starter,BuildItemData[] styles)
+    {
+        float cell=starter.building.grid.cellSize;
+        foreach(var item in styles)
+        {
+            var box=item.prefab.GetComponent<BoxCollider>();
+            Require(item.footprint==new Vector2Int(2,1) && Mathf.Abs(box.size.x-2*cell)<.0001f &&
+                Mathf.Abs(box.size.z-cell)<.0001f && item.WallFootprint(3)==new Vector2Int(1,2) &&
+                item.WallPrefab(3)!=item.prefab && Mathf.Abs(item.WallPrefab(3).GetComponent<BoxCollider>().size.x-cell)<.0001f,
+                item.id+" does not use two full cells or cannot restore its previous footprint.");
+        }
+        foreach(int index in new[]{0,1,2,3,15,16,17,20})
+        {
+            var item=styles[index];
+            var mesh=item.prefab.GetComponent<MeshFilter>().sharedMesh;
+            var vertices=mesh.vertices;
+            float halfWidth=cell;
+            Require(Mathf.Abs(mesh.bounds.min.x+halfWidth)<.0001f && Mathf.Abs(mesh.bounds.max.x-halfWidth)<.0001f,
+                item.id+" does not reach both grid edges.");
+            var left=vertices.Where(v=>Mathf.Abs(v.x+halfWidth)<.0001f).Select(v=>new Vector2(v.y,v.z)).ToHashSet();
+            var right=vertices.Where(v=>Mathf.Abs(v.x-halfWidth)<.0001f).Select(v=>new Vector2(v.y,v.z)).ToHashSet();
+            Require(left.SetEquals(right),item.id+" has different profiles at its meeting edges.");
+            if(index!=20)continue;
+            var uv=mesh.uv;
+            var top=Enumerable.Range(0,vertices.Length).Where(i=>Mathf.Abs(vertices[i].y-mesh.bounds.max.y)<.0001f).ToArray();
+            Require(top.Length>0 && top.All(i=>uv[i]==WallCollectionFinishes.Swatch(9)),"Corrugation is projected onto the steel top cap.");
+        }
+    }
+
     private static void VerifyFrontageDecor(StarterStoreInitialization starter)
     {
         if (!starter.CreateNewGame().frontageDecorGranted) return; // Older assembly stages predate this furniture.
         var frontage = Object.FindObjectsOfType<PlacedObject>().Where(item => item.item != null &&
             item.item.id.StartsWith("frontage_", StringComparison.Ordinal)).ToArray();
-        Require(frontage.Length == 6, "Starter frontage must have six editable pieces.");
-        var bench = frontage.Single(item => item.item.id == "frontage_bench");
-        var anchor = bench.anchorCell;
-        var item = bench.item;
+        Require(frontage.Length == 3 && frontage.All(p=>p.anchorCell.x>=16), "The trimmed sidewalk still has fixtures on its removed stretch.");
+        var bin = frontage.Single(item => item.item.id == "frontage_bin");
+        var anchor = bin.anchorCell;
+        var item = bin.item;
         var editor = starter.building.GetComponent<BuildEditingController>();
         editor.ReadPointerInput = false;
         editor.Begin();
-        Require(editor.Select(bench) && editor.DeleteSelected(), "Outdoor bench cannot be returned to construction storage.");
+        Require(editor.Select(bin) && editor.DeleteSelected(), "Outdoor bin cannot be returned to construction storage.");
         editor.Finish();
         starter.building.EnterBuildMode(item);
-        Require(starter.building.CanPlaceAt(anchor).ok && starter.building.TryPlaceAt(anchor), "Outdoor bench cannot be built back on its original spot.");
+        Require(starter.building.CanPlaceAt(anchor).ok && starter.building.TryPlaceAt(anchor), "Outdoor bin cannot be built back on its original spot.");
         starter.building.ExitBuildMode();
 
         var legacy = JsonUtility.FromJson<GameData>(JsonUtility.ToJson(starter.blueprint.initialState));
+        var shelf=legacy.placedObjects.First(p=>p.itemId=="shelf_fresh_01");
+        int oldShelfX=shelf.x;
+        legacy.shelfStocks.Add(new RetailEmpireTycoon.SaveSystem.ShelfStockSaveEntry{buildItemId=shelf.itemId,anchorX=shelf.x,anchorZ=shelf.z,productId="site-relocation-test",amount=9});
         starter.UpgradeUnmodifiedLayout(legacy);
         starter.UpgradeUnmodifiedLayout(legacy);
-        Require(legacy.placedObjects.Count(placed => placed.itemId.StartsWith("frontage_", StringComparison.Ordinal)) == 6,
-            "The unchanged legacy frontage did not get exactly one set of props.");
+        var movedStock=legacy.shelfStocks.Single(stock=>stock.productId=="site-relocation-test");
+        Require(shelf.x==oldShelfX+StarterStoreBlueprint.RightSideShiftCells && movedStock.anchorX==shelf.x &&
+            movedStock.amount==9,"Starter relocation did not preserve the shelf stock or shifted it twice.");
+        Require(legacy.placedObjects.Count(placed => placed.itemId.StartsWith("frontage_", StringComparison.Ordinal)) == 3 &&
+            legacy.buildInventory.Where(entry=>entry.itemId.StartsWith("frontage_",StringComparison.Ordinal)).Sum(entry=>entry.count)==3,
+            "The legacy frontage did not trim once and return the removed fixtures to storage.");
+        Require(legacy.placedObjects.Count(p=>p.itemId==BuildItemData.StoreStripeId && p.wallModuleVersion==BuildItemData.TwoCellWallVersion)==62,
+            "An untouched legacy shop did not migrate to the two-cell wall kit.");
+        Require(legacy.placedObjects.Count(p=>(p.itemId=="door_01" || p.itemId=="unloading_gate_01") && p.wallModuleVersion==BuildItemData.TwoCellWallVersion)==3 &&
+            legacy.floorTiles.Count(t=>t.itemId=="floor_graphite")<starter.blueprint.initialState.floorTiles.Count(t=>t.itemId=="floor_graphite"),
+            "An untouched starter save did not receive the fitted openings and floor border.");
         var customized = JsonUtility.FromJson<GameData>(JsonUtility.ToJson(starter.blueprint.initialState));
         customized.placedObjects.First(placed => placed.itemId == "wall_01").x += 20;
         starter.UpgradeUnmodifiedLayout(customized);
         Require(!customized.placedObjects.Any(placed => placed.itemId.StartsWith("frontage_", StringComparison.Ordinal)) &&
+            customized.placedObjects.Any(placed=>placed.itemId=="wall_01") &&
             customized.buildInventory.Where(entry => entry.itemId.StartsWith("frontage_", StringComparison.Ordinal)).Sum(entry => entry.count) == 6,
             "A customized frontage received props outside the player's inventory.");
         Directory.CreateDirectory("Docs/TownFlowUpdate");
         var focus = starter.blueprint.cameraFocus + Vector3.back * 5;
         TownFloristBatch.Render(EditorSceneManager.GetActiveScene(), "Docs/TownFlowUpdate/StarterDecor.png", focus + new Vector3(-10, 7, -9), focus);
-        File.WriteAllText("Docs/TownFlowUpdate/Decor.txt", "PASS six editable props; bench removed and rebuilt; unchanged legacy save migrated once; custom layout received six pieces in storage.\n");
+        File.WriteAllText("Docs/TownFlowUpdate/Decor.txt", "PASS three editable frontage props; bin removed and rebuilt; three fixtures on the trimmed sidewalk returned to storage once; custom layout received six pieces in storage.\n");
     }
     private static System.Collections.Generic.IEnumerable<object> GroundOnlyTransports(StarterStoreInitialization starter)
     {
@@ -508,15 +765,20 @@ public static class ConstructionWorkspacePlay
     }
     private static void StarterStock(StarterStoreInitialization starter,GameData data)
     {
-        Require(data.buildInventory.Sum(entry=>entry.count)==53,"Incorrect starter stock total.");
+        Require(data.playerMoney==420000,"New games should start with $420,000.");
+        Require(data.buildInventory.Sum(entry=>entry.count)==358,"Incorrect starter stock total.");
+        var starterWalls=Resources.LoadAll<BuildItemData>("WallCollection").Where(item=>!item.IsWallCorner).ToArray();
+        Require(starterWalls.Length==30 && starterWalls.All(wall=>data.buildInventory.Single(entry=>entry.itemId==wall.id).count==
+            (wall.id==BuildItemData.StoreStripeId?30:10)),
+            "Starting storage must contain ten modules of each wall style.");
         Require(data.buildInventory.Where(entry=>starter.catalog.GetById(entry.itemId).category==BuildCategory.Shelf).Count()==5,"Five different starter shelves required.");
-        foreach(var pair in new[]{("floor_cream",20),("wall_01",20),("door_01",1),("unloading_gate_01",1),("parking_01",2)})
+        foreach(var pair in new[]{("floor_cream",20),("door_01",1),("unloading_gate_01",1),("parking_01",2)})
             Require(data.buildInventory.Single(entry=>entry.itemId==pair.Item1).count==pair.Item2,"Incorrect stock: "+pair.Item1);
         foreach(string id in new[]{"stairs_01","elevator_01","escalator_01","escalator_down_01"})Require(data.buildInventory.Single(entry=>entry.itemId==id).count==1,"Missing starter transport: "+id);
         Require(starter.blueprint.initialState.buildInventory.Count==0,"Grant mutated the reusable blueprint.");
         var reloaded=JsonUtility.FromJson<GameData>(JsonUtility.ToJson(data));
         starter.UpgradeUnmodifiedLayout(reloaded);
-        Require(reloaded.buildInventory.Sum(entry=>entry.count)==53,"Loading/upgrading grants the starter stock again.");
+        Require(reloaded.buildInventory.Sum(entry=>entry.count)==358,"Loading/upgrading grants the starter stock again.");
         var stock=(StarterConstructionStock)typeof(StarterStoreBlueprint).GetField("constructionStock",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance).GetValue(starter.blueprint);
         var choices=new System.Collections.Generic.HashSet<string>();
         for(int seed=1;seed<=12;seed++)
@@ -527,7 +789,7 @@ public static class ConstructionWorkspacePlay
         Require(choices.Count>1,"Starter shelf selection is not random.");
         var layout=Object.FindObjectOfType<RetailEmpireTycoon.City.TownWorldPlaces>().layout;
         Require(layout.ShopVisualScale==Vector3.one*layout.shopToCityScale,"City shop is still stretched vertically.");
-        File.WriteAllText(Report+"/stock.txt","PASS 5 distinct random shelves, 20 cream floor, 20 walls, 1 door, 1 gate, 2 bays, 1 stairs, 1 elevator, 1 reversible escalator and 1 down escalator; actual inventory restore; blueprint unchanged; existing-game upgrade grants nothing.\n");
+        File.WriteAllText(Report+"/stock.txt","PASS $420,000 capital, 10 of each of 30 wall styles, 2 personal bays and the existing starter stock; inventory restore; existing-game upgrade grants nothing.\n");
     }
     private static System.Collections.Generic.IEnumerable<object> Workspace(StarterStoreInitialization starter)
     {
@@ -568,7 +830,7 @@ public static class ConstructionWorkspacePlay
         Require(ground==string.Join(";",starter.floors.BuildSaveData().Where(tile=>tile.floor==0).Select(tile=>tile.itemId+":"+tile.x+":"+tile.z).OrderBy(key=>key))
             && placed==JsonUtility.ToJson(new GameData{placedObjects=build.BuildPlacedSaveData()}),"Upper-floor building changed the ground-floor data.");
         yield return null;CaptureUi("Workspace_Floor2");EnglishUi("upper-floor construction");
-        var wallCell=build.BuildPlacedSaveData().First(item=>item.floor==0 && item.itemId=="wall_01");
+        var wallCell=build.BuildPlacedSaveData().First(item=>item.floor==0 && item.itemId==BuildItemData.StoreStripeId);
         var overWall=new Vector3Int(wallCell.x,1,wallCell.z);
         Require(build.TryPaintCells(new System.Collections.Generic.List<Vector3Int>{overWall}),"Cannot build a ceiling over a wall.");
         Require(Mathf.Abs(starter.floors.SurfaceElevation(overWall)-GridSystem.StoreyHeight-FloorPainter.UpperSurfaceLift)<.0001f,"Upper surface still lies on the wall cap.");
@@ -585,7 +847,29 @@ public static class ConstructionWorkspacePlay
         Require(!workspace.editor.DeleteSelected(),"Personal return parking can be deleted.");workspace.editor.CancelSelection();
         var visitor=Object.FindObjectsOfType<PlacedObject>().First(item=>item.item!=null && item.item.isParkingSpace && !item.playerParking);
         Require(workspace.editor.SelectAtScreenPoint(build.worldCamera.WorldToScreenPoint(visitor.transform.position)) && workspace.editor.Selected==visitor,"Pointer cannot select ordinary parking.");
-        workspace.editor.CancelSelection();workspace.Close();
+        var visitors=Object.FindObjectsOfType<PlacedObject>().Where(item=>item.item!=null && item.item.isParkingSpace && !item.playerParking).ToArray();
+        Require(visitors.Length==2,"The starter needs two visitor bays for the personal parking test.");
+        foreach(var bay in visitors)
+        {
+            Require(workspace.editor.Select(bay),"Cannot select extra personal parking.");
+            workspace.editor.TogglePersonalParking();
+            Require(bay.playerParking,"The selected bay was not made personal.");
+        }
+        Require(workspace.editor.Select(visitor),"Cannot select the new return point.");
+        workspace.editor.UseSelectedReturnBay();
+        var savedBays=build.BuildPlacedSaveData().Where(p=>p.playerParking).ToArray();
+        Require(savedBays.Length==3 && savedBays.Single(p=>p.primaryPlayerParking).x==visitor.anchorCell.x &&
+            Vector3.Distance(starter.cityTrip.parkedPickup.transform.position, visitor.transform.position)<1,
+            "The three personal bays or chosen return position were not saved.");
+        Require(workspace.editor.Select(personal),"Cannot restore the original return point.");
+        workspace.editor.UseSelectedReturnBay();
+        foreach(var bay in visitors)
+        {
+            Require(workspace.editor.Select(bay),"Cannot reselect the visitor bay.");
+            workspace.editor.TogglePersonalParking();
+            Require(!bay.playerParking,"Cannot restore the visitor bay.");
+        }
+        workspace.Close();
         Require(!workspace.IsOpen && build.mode==BuildMode.Normal,"Construction close did not restore ordinary gameplay.");
         yield return null;CaptureUi("Overview");
         var shop=Object.FindObjectOfType<RetailEmpireTycoon.UI.Shop.ShopWindow>(true);shop.gameObject.SetActive(true);shop.ShowMainTabs();yield return null;EnglishUi("store catalog");shop.gameObject.SetActive(false);

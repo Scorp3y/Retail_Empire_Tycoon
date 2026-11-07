@@ -50,7 +50,7 @@ namespace RetailEmpireTycoon.BuildSystem
             Selected = placed;
             placementDefinition = Instantiate(placed.item);
             placementDefinition.name = placed.item.name + " edit geometry";
-            if (placed.item.isWall && placed.wallModuleVersion < BuildItemData.CurrentWallModuleVersion)
+            if (placed.item.HasVersionedWallGeometry && placed.wallModuleVersion < placed.item.WallPlacementVersion)
             {
                 placementDefinition.footprint = placed.item.WallFootprint(placed.wallModuleVersion);
                 placementDefinition.pivotOffset = placed.item.WallPivot(placed.wallModuleVersion);
@@ -113,6 +113,7 @@ namespace RetailEmpireTycoon.BuildSystem
             if(Selected.item.isParkingSpace && Selected.parkingModuleVersion<Selected.item.parkingGeometryVersion)
                 Selected.GetComponent<RetailEmpireTycoon.Parking.ParkingBay>()?.Resize(Selected.item.placementBounds.size.x,Selected.item.placementBounds.size.z,Selected.item.previousParkingBounds);
             Selected.transform.SetPositionAndRotation(BuildPlacementPose.Position(building.grid, placementDefinition, candidateCell, request.rotated, candidateFacing), Quaternion.Euler(0, candidateFacing * 90, 0));
+            Selected.GetComponent<WallPattern>()?.Align();
             Selected.anchorCell = candidateCell;
             Selected.facing = candidateFacing;
             Selected.rotated = request.rotated;
@@ -133,8 +134,8 @@ namespace RetailEmpireTycoon.BuildSystem
             var parkingTraffic=FindObjectOfType<RetailEmpireTycoon.Parking.ParkingTraffic>();
             if(Selected.item.isParkingSpace && parkingTraffic!=null && !parkingTraffic.CanEdit(Selected.GetComponent<RetailEmpireTycoon.Parking.ParkingBay>()))
             {Notice="Wait until this parking bay is free.";return false;}
-            if (Selected.playerParking)
-            { Notice = "Personal parking can be moved or rotated, but not removed: it is the pickup return point."; return false; }
+            if (Selected.primaryPlayerParking)
+            { Notice = "Choose another return bay before removing this one."; return false; }
             if (Selected.item.isUnloadingGate && FindObjectsOfType<PlacedObject>().Count(p => p.item != null && p.item.isUnloadingGate) <= 1)
             { Notice = "The last unloading gate is required. You can move it instead."; return false; }
             var shelf = Selected.GetComponent<PlacedShelfStock>();
@@ -151,11 +152,37 @@ namespace RetailEmpireTycoon.BuildSystem
             building.inventory.Add(removed.item, 1);
             building.grid.Release(removed.occupiedCells);
             CancelSelection();
-            removed.gameObject.SetActive(false);
-            Destroy(removed.gameObject);
+            removed.RemoveFromScene();
             building.NotifyLayoutChanged();
             Notice = "The item and remaining goods were returned to storage.";
             return true;
+        }
+
+        public void TogglePersonalParking()
+        {
+            if (!IsActive || Selected?.item.isParkingSpace != true) return;
+            if (Selected.primaryPlayerParking)
+            { Notice = "Choose another return bay before making this one public."; return; }
+            if (Selected.item.isPersonalParking) return;
+            if (!Selected.playerParking && building.PersonalParkingLimitReached)
+            { Notice = "You can have up to three personal parking bays."; return; }
+            var bay = Selected.GetComponent<RetailEmpireTycoon.Parking.ParkingBay>();
+            var traffic = FindObjectOfType<RetailEmpireTycoon.Parking.ParkingTraffic>();
+            if (bay == null || traffic != null && !traffic.CanEdit(bay))
+            { Notice = "Wait until this parking bay is free."; return; }
+            Selected.playerParking = !Selected.playerParking;
+            bay.ApplyPaint(Selected.playerParking);
+            building.NotifyLayoutChanged();
+            CancelSelection();
+        }
+
+        public void UseSelectedReturnBay()
+        {
+            if (!IsActive || Selected?.playerParking != true) return;
+            foreach (var bay in FindObjectsOfType<PlacedObject>())
+                if (bay.playerParking) bay.primaryPlayerParking = bay == Selected;
+            building.NotifyLayoutChanged();
+            CancelSelection();
         }
 
         public void CancelSelection()

@@ -21,6 +21,8 @@ namespace RetailEmpireTycoon.UI.Shop
         private RectTransform toolbar,catalog,content;
         private TMP_Text title,notice,floorLabel,catalogCount;
         private Button left,right,remove,cancel,down,up,buildTab,editTab,floorBrush,ceilingBrush,eraseBrush;
+        private Button personalParking, returnBay;
+        private TMP_Text parkingAction, placementHint;
         private bool showCatalog=true;
         private BuildCategory? category;
         public Button Launcher {get;set;}
@@ -47,7 +49,11 @@ namespace RetailEmpireTycoon.UI.Shop
             right=Action(toolbar,ShopIcon.RotateRight,"Rotate right",new Vector2(162,-112),142,()=>Rotate(1));
             remove=Action(toolbar,ShopIcon.Warehouse,"To storage",new Vector2(312,-112),148,()=>editor.DeleteSelected());
             cancel=Action(toolbar,ShopIcon.Close,"Cancel",new Vector2(468,-112),120,CancelTool);
-            ui.Label(toolbar,"Click to select / place · R / Q rotate",new Vector2(620,-120),new Vector2(364,22),13).color=ShopUiTheme.Muted;
+            placementHint=ui.Label(toolbar,"Click to select / place · R / Q rotate",new Vector2(620,-120),new Vector2(364,22),13);
+            placementHint.color=ShopUiTheme.Muted;
+            personalParking=Action(toolbar,ShopIcon.Parking,"Make personal",new Vector2(600,-112),172,editor.TogglePersonalParking);
+            parkingAction=personalParking.GetComponentInChildren<TMP_Text>();
+            returnBay=Action(toolbar,ShopIcon.Pickup,"Set return bay",new Vector2(780,-112),182,editor.UseSelectedReturnBay);
             CreateCatalog();
             building.inventory.Changed+=RefreshCatalog;
             toolbar.gameObject.SetActive(false);catalog.gameObject.SetActive(false);
@@ -144,7 +150,18 @@ namespace RetailEmpireTycoon.UI.Shop
             bool selected=editor.Selected!=null;
             var item=selected?editor.Selected.item:building.SelectedItem;
             title.text=item!=null?ShopText.Item(item)+(building.Storeys.EraseSurface?" · erase tiles":""):"Select an owned item, or click an object to move it";
-            notice.text=selected?(!editor.CandidateResult.ok?BuildPreview.FailureText(editor.CandidateResult):editor.Notice)
+            bool parkingSelected=selected && item.isParkingSpace;
+            personalParking.gameObject.SetActive(parkingSelected && !item.isPersonalParking);
+            returnBay.gameObject.SetActive(parkingSelected && editor.Selected.playerParking);
+            placementHint.gameObject.SetActive(!parkingSelected);
+            if (parkingSelected)
+            {
+                parkingAction.text=editor.Selected.playerParking?"Make public":"Make personal";
+                personalParking.interactable=!editor.Selected.primaryPlayerParking;
+                returnBay.interactable=!editor.Selected.primaryPlayerParking;
+                if (editor.Selected.primaryPlayerParking) title.text+=" · Return bay";
+            }
+            notice.text=selected?(!parkingSelected && !editor.CandidateResult.ok?BuildPreview.FailureText(editor.CandidateResult):editor.Notice)
                 :building.HasPlacementPreview&&!building.PreviewResult.ok?BuildPreview.FailureText(building.PreviewResult)
                 :building.mode==BuildMode.Build?"Click to place · Esc cancels the current tool":"Choose Build or Move · click any parking bay to relocate it";
             if(item!=null && item.storeyConnection!=StoreyConnectionKind.None && (selected?editor.CandidateResult.ok:building.HasPlacementPreview&&building.PreviewResult.ok))

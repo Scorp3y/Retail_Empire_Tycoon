@@ -52,7 +52,7 @@ namespace RetailEmpireTycoon.Parking
         private sealed class Visit
         {
             public ParkingBay bay; public GameObject car; public List<Vector3> route;
-            public int id,next; public float leaveAt,blockedSince,speed,width,length; public bool leaving;
+            public int id,next; public float leaveAt,blockedSince,speed,width,length,modelScale; public bool leaving;
             public TrafficVehicle wheels;
             public ShopperVisit shopper;
             public bool parked;
@@ -103,32 +103,45 @@ namespace RetailEmpireTycoon.Parking
                 departure.next=0; departure.blockedSince=0;
                 moving=departure; return;
             }
-            if(clock<nextArrival || store==null || !store.CanAcceptCustomer) return; nextArrival=clock+1;
-            foreach(var bay in FindObjectsOfType<ParkingBay>().Where(IsVisitorBay))
+            if(clock<nextArrival || store==null || !store.CanAcceptCustomer) return;
+            nextArrival=clock+.6f;
+            if(!streetAccess.PrepareLane()){ArrivalState=streetAccess.Status;return;}
+            var passing=streetTraffic.ActiveCars.Where(car=>ParkingVisitorFleet.IsAllowed(car.DesignId) && streetAccess.CanDivert(car)).ToArray();
+            foreach(var bay in FindObjectsOfType<ParkingBay>().Where(IsVisitorBay)
+                .OrderBy(bay=>(bay.ApproachPosition-drivewayEntry.position).sqrMagnitude))
             {
                 int id=bay.GetInstanceID(); if(reservations.IsReserved(id)) continue;
-                var design=fleet.NextFitting(bay,ref designCursor);if(design==null)continue;
-                float width=design.Width*fleet.ModelScale;
+                var existing=passing.FirstOrDefault(car=>bay.Fits(car.Width*car.transform.lossyScale.x,car.Length*car.transform.lossyScale.x));
+                var design=existing!=null?existing:fleet.NextFitting(bay,ref designCursor);
+                if(design==null)continue;
+                float scale=existing!=null?existing.transform.lossyScale.x:fleet.ModelScale;
+                float width=design.Width*scale;
                 var route=Route(bay,width); if(route.Count==0){ArrivalState="No asphalt route to "+bay.name;continue;}
-                float length=design.Length*fleet.ModelScale;
-                if(!streetAccess.TryPrepare(width,length,Camera.main)){ArrivalState=streetAccess.Status;continue;}
+                float length=design.Length*scale;
+                if(existing==null && !streetAccess.TryPrepare(width,length,Camera.main)){ArrivalState=streetAccess.Status;continue;}
                 var exit=new List<Vector3>(route);exit.Reverse();
                 int streetDepartureStart=exit.Count;
                 exit.AddRange(streetAccess.Departure);
                 if(!reservations.Reserve(id)||!reservations.BeginManeuver(id)) continue;
-                var arrival=streetAccess.Arrival;
-                var car=Instantiate(design.gameObject,arrival[0],Quaternion.LookRotation(arrival[1]-arrival[0]));
-                car.name="Parking visitor";car.transform.SetParent(transform,true);
-                car.transform.localScale=Vector3.one*fleet.ModelScale;
-                var driver=car.GetComponent<TrafficVehicle>();driver.enabled=false;
-                var body=car.GetComponent<Rigidbody>();body.interpolation=RigidbodyInterpolation.None;
-                if(!streetTraffic.TryJoinTraffic(driver,streetAccess.SpawnLane,streetAccess.SpawnDistance,true))
-                {Destroy(car);reservations.Release(id);ArrivalState="Waiting for a road traffic slot.";continue;}
+                var driver=existing;
+                if(existing!=null)
+                {
+                    if(!streetTraffic.TryReserveParkingArrival(driver)){reservations.Release(id);continue;}
+                }
+                else
+                {
+                    var arrival=streetAccess.Arrival;
+                    driver=Instantiate(design,arrival[0],Quaternion.LookRotation(arrival[1]-arrival[0]));
+                    driver.name="Parking visitor";
+                    driver.transform.localScale=Vector3.one*scale;
+                    if(!streetTraffic.TryJoinTraffic(driver,streetAccess.SpawnLane,streetAccess.SpawnDistance,true))
+                    {Destroy(driver.gameObject);reservations.Release(id);ArrivalState="Waiting for a road traffic slot.";continue;}
+                }
                 streetAccess.GuideArrival(driver);
-                moving=new Visit{id=id,bay=bay,car=car,route=route,exitRoute=exit,width=width,length=length,wheels=driver,
+                moving=new Visit{id=id,bay=bay,car=driver.gameObject,route=route,exitRoute=exit,width=width,length=length,modelScale=scale,wheels=driver,
                     arrivingOnStreet=true,streetDepartureStart=streetDepartureStart,
                     departureLane=streetAccess.LaneIndex,departureDistance=streetAccess.ExitDistance,mergeDistance=streetAccess.MergeDistance};
-                visits.Add(moving);ArrivalState="Arriving from street";nextArrival=clock+arrivalInterval;break;
+                visits.Add(moving);ArrivalState=existing!=null?"Diverted from city traffic":"Arriving from street";nextArrival=clock+arrivalInterval;break;
             }
         }
         private List<Vector3> Route(ParkingBay bay,float vehicleWidth)
@@ -166,15 +179,60 @@ namespace RetailEmpireTycoon.Parking
             if(drivewayEntry!=null)path.Insert(0,drivewayEntry.position+Vector3.up*.02f);
             path.Insert(0,roadEntry.position+Vector3.up*.02f);
             path.Add(bay.ParkPosition+Vector3.up*.02f);
-            return path;
+            return RoundTurns(path);
         }
+
+        private static List<Vector3> RoundTurns(List<Vector3> path)
+        {
+            var corners=new List<Vector3>{path[0]};
+            for(int i=1;i<path.Count-1;i++)
+            {
+                var from=(path[i]-path[i-1]).normalized;
+                var to=(path[i+1]-path[i]).normalized;
+                if(Vector3.Dot(from,to)<.999f || i==1 || i==path.Count-2)corners.Add(path[i]);
+            }
+            corners.Add(path[path.Count-1]);
+            var result=new List<Vector3>{corners[0],corners[1]};
+            for(int i=2;i<corners.Count-2;i++)
+            {
+                var center=corners[i];
+                var before=corners[i-1]-center;
+                var after=corners[i+1]-center;
+                float cut=Mathf.Min(.48f,Mathf.Min(before.magnitude,after.magnitude)*.45f);
+                var a=center+before.normalized*cut;
+                var b=center+after.normalized*cut;
+                for(int j=0;j<=5;j++)
+                {
+                    float t=j/5f,u=1-t;
+                    result.Add(a*u*u+center*(2*u*t)+b*t*t);
+                }
+            }
+            result.Add(corners[corners.Count-2]);result.Add(corners[corners.Count-1]);
+            return result;
+        }
+
         private void Move(float seconds)
         {
             if(moving.arrivingOnStreet)
             {
                 var driver=moving.wheels;streetAccess.GuideArrival(driver);
                 if(driver.IsTurning || driver.LaneIndex!=streetAccess.LaneIndex || driver.Distance<streetAccess.AccessDistance)return;
+                var start=driver.transform.position;
+                var heading=streetTraffic.transform.TransformDirection(driver.Forward);
+                var entry=moving.route[1];
+                var inward=(drivewayEntry.position-roadEntry.position).normalized;
+                float handle=Vector3.Distance(start,entry)*.45f;
+                var b=start+heading*handle;
+                var c=entry-inward*handle;
+                moving.route.RemoveAt(0);
+                for(int i=12;i>=1;i--)
+                {
+                    float t=i/13f,u=1-t;
+                    moving.route.Insert(0,start*u*u*u+b*(3*u*u*t)+c*(3*u*t*t)+entry*t*t*t);
+                }
+                moving.speed=Mathf.Min(1.25f,driver.Speed*streetTraffic.transform.lossyScale.x);
                 streetTraffic.WithdrawParkingCar(driver);moving.car.transform.SetParent(transform,true);
+                moving.car.GetComponent<Rigidbody>().interpolation=RigidbodyInterpolation.None;
                 moving.arrivingOnStreet=false;
             }
             if(moving.next>=moving.route.Count)
@@ -217,6 +275,8 @@ namespace RetailEmpireTycoon.Parking
             bool obstacle=blocking.collider!=null;LastObstacle=obstacle?blocking.collider.name:string.Empty;
             if(obstacle)
             {
+                moving.speed=0;
+                moving.wheels.AnimateParkingWheels(0,0,seconds);
                 if(moving.blockedSince==0) moving.blockedSince=clock;
                 // A removed bay or blocked driveway must not retain a lease forever.
                 // Do not make an occupied, visible car disappear just because a queue is slow.
@@ -226,16 +286,24 @@ namespace RetailEmpireTycoon.Parking
             moving.blockedSince=0;
             if(delta.sqrMagnitude<.001f) { moving.next++; return; }
             bool onStreet=moving.leaving && moving.next>=moving.streetDepartureStart;
-            float streetSpeed = onStreet ? streetTraffic.Network.Lanes[moving.departureLane].speedLimit
-                * streetTraffic.transform.lossyScale.x * .75f : .55f;
-            moving.speed=Mathf.MoveTowards(moving.speed,streetSpeed,onStreet?1.2f*seconds:.7f*seconds);
-            var position=Vector3.MoveTowards(car.transform.position,target,moving.speed*seconds);
             bool reversing=moving.leaving&&moving.next<=1;
-            var facing=Quaternion.LookRotation(reversing?-delta:delta);
-            float steer=Vector3.SignedAngle(car.transform.forward,reversing?-delta:delta,Vector3.up);
-            moving.wheels.AnimateParkingWheels(Vector3.Distance(car.transform.position,position)*(reversing?-1:1)/fleet.ModelScale,steer,seconds);
-            car.transform.SetPositionAndRotation(position,Quaternion.RotateTowards(car.transform.rotation,facing,100*seconds));
+            var look=delta.normalized;
+            if(!reversing && moving.next+1<moving.route.Count)
+            {
+                var ahead=moving.route[moving.next+1]-target;ahead.y=0;
+                if(ahead.sqrMagnitude>.0001f)look=Vector3.Slerp(look,ahead.normalized,.5f*Mathf.Clamp01(1-delta.magnitude/.65f));
+            }
+            float steer=Vector3.SignedAngle(car.transform.forward,reversing?-look:look,Vector3.up);
+            float limit=onStreet?streetTraffic.Network.Lanes[moving.departureLane].speedLimit*streetTraffic.transform.lossyScale.x*.75f
+                :reversing?.95f:Mathf.Lerp(1.7f,.78f,Mathf.Clamp01(Mathf.Abs(steer)/75));
+            if(moving.next==moving.route.Count-1 && !moving.leaving)limit=Mathf.Min(limit,Mathf.Sqrt(2*1.7f*delta.magnitude));
+            moving.speed=Mathf.MoveTowards(moving.speed,limit,(limit<moving.speed?2.6f:1.5f)*seconds);
+            var position=Vector3.MoveTowards(car.transform.position,target,moving.speed*seconds);
+            var facing=Quaternion.LookRotation(reversing?-look:look);
+            moving.wheels.AnimateParkingWheels(Vector3.Distance(car.transform.position,position)*(reversing?-1:1)/moving.modelScale,steer*1.6f,seconds);
+            car.transform.SetPositionAndRotation(position,Quaternion.RotateTowards(car.transform.rotation,facing,125*seconds));
             var body=car.GetComponent<Rigidbody>();body.position=position;body.rotation=car.transform.rotation;
+            if((position-target).sqrMagnitude<.000001f)moving.next++;
         }
         private void Release(Visit visit)
         {

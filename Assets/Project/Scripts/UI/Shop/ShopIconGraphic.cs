@@ -15,6 +15,8 @@ namespace RetailEmpireTycoon.UI.Shop
         private VertexHelper _mesh;
         private Rect _rect;
         private float _lockProgress = -1;
+        private bool _matchHudWidth;
+        public void MatchHudWidth() { _matchHudWidth = true; SetVerticesDirty(); }
         public float LockProgress
         {
             get => _lockProgress;
@@ -123,6 +125,28 @@ namespace RetailEmpireTycoon.UI.Shop
                     Box(.47f,.24f,.055f,.52f,gold); Line(.64f,.67f,.36f,.67f,.07f,gold); Line(.36f,.67f,.36f,.5f,.07f,gold); Line(.36f,.5f,.64f,.5f,.07f,gold); Line(.64f,.5f,.64f,.33f,.07f,gold); Line(.64f,.33f,.36f,.33f,.07f,gold); break;
                 case ShopIcon.Pause: Box(.27f,.2f,.16f,.6f); Box(.57f,.2f,.16f,.6f); break;
                 case ShopIcon.Play: Polygon(new Vector2(.29f,.18f),new Vector2(.29f,.82f),new Vector2(.82f,.5f)); break;
+            }
+            if (_matchHudWidth) FitHudWidth(mesh);
+        }
+
+        private void FitHudWidth(VertexHelper mesh)
+        {
+            float left = float.PositiveInfinity, right = float.NegativeInfinity;
+            var vertex = new UIVertex();
+            for (int i = 0; i < mesh.currentVertCount; i++)
+            {
+                mesh.PopulateUIVertex(ref vertex, i);
+                left = Mathf.Min(left, vertex.position.x);
+                right = Mathf.Max(right, vertex.position.x);
+            }
+            if (right <= left) return;
+            float center = (left + right) * .5f;
+            float scale = _rect.width * .74f / (right - left);
+            for (int i = 0; i < mesh.currentVertCount; i++)
+            {
+                mesh.PopulateUIVertex(ref vertex, i);
+                vertex.position.x = _rect.center.x + (vertex.position.x - center) * scale;
+                mesh.SetUIVertex(vertex, i);
             }
         }
         private void ConstructionHammer()

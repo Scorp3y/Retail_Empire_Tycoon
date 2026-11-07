@@ -23,6 +23,7 @@ namespace RetailEmpireTycoon.UI.Shop
         public MoneyController money;
         public BuildInventory inventory;
         private BuildItemData _item;
+        private ShopIconGraphic _parkingIcon;
         private RetailEmpireTycoon.Logistics.DeliveryOrders _orders;
 
         public void Bind(BuildItemData item, MoneyController moneyController, BuildInventory buildInventory, RetailEmpireTycoon.Logistics.DeliveryOrders orders = null)
@@ -50,8 +51,10 @@ namespace RetailEmpireTycoon.UI.Shop
             if (nameText != null)
                 nameText.text = ShopText.Item(_item);
 
+            string description = ShopText.Russian && !string.IsNullOrWhiteSpace(_item.russianDescription)
+                ? _item.russianDescription : _item.description;
             if (descText != null)
-                descText.text = _item.description;
+                descText.text = description;
 
             if (priceText != null)
                 priceText.text = MoneyFormat.Compact(_item.price);
@@ -62,6 +65,9 @@ namespace RetailEmpireTycoon.UI.Shop
                 sizeText.text = ShopText.Get("Размер (клетки)", "Size (cells)") + $"\n{f.x} × {f.y}";
                 if (_orders != null) {sizeText.fontSize=13;sizeText.text += $"\n{_item.weightKg:0.#} kg";}
                 if (_item.beautyPoints > 0) sizeText.text += ShopText.Get($"\nКрасота +{_item.beautyPoints}", $"\nBeauty +{_item.beautyPoints}");
+                if (descText == null && _item.isWall && !string.IsNullOrWhiteSpace(_item.russianDescription))
+                    sizeText.text = $"{f.x} × {f.y} " + ShopText.Get("кл.", "cells") +
+                        $" · {_item.weightKg:0.#} kg\n<size=12>{description}</size>";
             }
             if (_orders != null && buyButton != null) buyButton.GetComponentInChildren<ShopLocalizedLabel>()?.Set("Заказать","Order");
         }
@@ -70,6 +76,25 @@ namespace RetailEmpireTycoon.UI.Shop
         {
             if (icon == null) return;
 
+            if (_item != null && _item.isParkingSpace)
+            {
+                if (_parkingIcon == null)
+                {
+                    var graphic = new GameObject("Parking symbol", typeof(RectTransform));
+                    graphic.transform.SetParent(icon.transform, false);
+                    var rect = (RectTransform)graphic.transform;
+                    rect.anchorMin = rect.anchorMax = new Vector2(.5f,.5f);
+                    rect.sizeDelta = new Vector2(48,48);
+                    _parkingIcon = graphic.AddComponent<ShopIconGraphic>();
+                    _parkingIcon.Icon = ShopIcon.Parking;
+                    _parkingIcon.raycastTarget = false;
+                }
+                _parkingIcon.color = _item.isPersonalParking ? new Color32(148,99,15,255) : ShopUiTheme.Ink;
+                _parkingIcon.gameObject.SetActive(true);
+                icon.enabled = false;
+                return;
+            }
+            if (_parkingIcon != null) _parkingIcon.gameObject.SetActive(false);
             icon.sprite = _item != null ? _item.icon : null;
             icon.enabled = icon.sprite != null;
         }

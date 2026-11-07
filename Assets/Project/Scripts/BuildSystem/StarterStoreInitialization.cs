@@ -15,6 +15,7 @@ namespace RetailEmpireTycoon.BuildSystem
         public FloorPainter floors;
         public BuildItemCatalog catalog;
         public MainCamera cameraInput;
+        internal float? StarterSidewalkWest { get; private set; }
         private bool modular;
         private void OnEnable() { if (building != null) building.LayoutChanged += RefreshPickupParking; }
         private void OnDisable() { if (building != null) building.LayoutChanged -= RefreshPickupParking; }
@@ -38,10 +39,17 @@ namespace RetailEmpireTycoon.BuildSystem
             if(blueprint!=null && blueprint.ForecourtRevision.TryApply(data,building.grid,catalog))
                 Debug.Log("Unmodified starter frontage updated; customized shops preserved.");
             blueprint?.GrantFrontageDecor(data, building.grid, catalog);
+            blueprint?.ReplaceDefaultWalls(data, catalog);
+            blueprint?.FitDefaultOpeningsAndFloor(data, catalog);
+            blueprint?.MoveDefaultStoreRight(data);
+            blueprint?.ClearStarterSidewalkOverhang(data);
         }
-        public void ConfigureSite(bool modularStore)
+        public void ConfigureSite(bool modularStore, GameData data = null)
         {
             modular = modularStore;
+            StarterSidewalkWest = modularStore && data?.starterSiteVersion == StarterStoreBlueprint.RightSideSiteVersion
+                ? building.grid.origin.x + blueprint.RightSideWestCell * building.grid.cellSize : (float?)null;
+            FindObjectOfType<TownWorldPlaces>()?.SetStarterSidewalk(StarterSidewalkWest);
             land.SetInitialServiceYard(modularStore ? blueprint.serviceYard : default);
             if(modularStore&&blueprint.hasStraightStreetAccess&&cityTrip!=null)
             {
@@ -55,8 +63,11 @@ namespace RetailEmpireTycoon.BuildSystem
             }
             if (modularStore && cameraInput != null)
             {
-                var position = blueprint.cameraFocus + new Vector3(-8, 12, -14);
-                cameraInput.SetHomeView(position, Quaternion.LookRotation(blueprint.cameraFocus - position));
+                var focus = blueprint.cameraFocus;
+                if (data?.starterSiteVersion == StarterStoreBlueprint.RightSideSiteVersion)
+                    focus += Vector3.right * (StarterStoreBlueprint.RightSideShiftCells * building.grid.cellSize);
+                var position = focus + new Vector3(-8, 12, -14);
+                cameraInput.SetHomeView(position, Quaternion.LookRotation(focus - position));
             }
             if (!modularStore || cityTrip.parkedPickup == null) return;
             cityTrip.parkedPickup.transform.SetPositionAndRotation(blueprint.pickupPosition, Quaternion.Euler(blueprint.pickupEuler));
@@ -71,10 +82,13 @@ namespace RetailEmpireTycoon.BuildSystem
         public void RefreshPickupParking()
         {
             if (!modular || cityTrip.parkedPickup == null) return;
-            var parking = FindObjectsOfType<PlacedObject>().FirstOrDefault(p => p.playerParking);
-            if (parking == null) return;
+            var parking = FindObjectsOfType<PlacedObject>().Where(p => p.playerParking && p.item != null && p.item.isParkingSpace)
+                .OrderByDescending(p => p.primaryPlayerParking).ThenBy(p => p.anchorCell.x).ThenBy(p => p.anchorCell.z).ToArray();
+            cityTrip.SetPersonalParking(parking);
+            if (parking.Length == 0) return;
+            parking[0].primaryPlayerParking = true;
             var pickup = cityTrip.parkedPickup.transform;
-            pickup.SetPositionAndRotation(parking.transform.position, parking.transform.rotation);
+            pickup.SetPositionAndRotation(parking[0].transform.position, parking[0].transform.rotation);
             var renderers = pickup.GetComponentsInChildren<Renderer>();
             if (renderers.Length > 0) pickup.position += Vector3.up * (.025f - renderers.Min(r => r.bounds.min.y));
         }
