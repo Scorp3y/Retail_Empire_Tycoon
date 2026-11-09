@@ -136,7 +136,8 @@ namespace RetailEmpireTycoon.StoreOperations
             var front = building.grid.CellToWorld(new Vector3Int((rect.min.x + rect.max.x) / 2, 0, rect.min.z + 2));
             var placedObjects = FindObjectsOfType<PlacedObject>();
             Navigation.RefreshDoorways(placedObjects);
-            var door = placedObjects.Where(p => p.item != null && p.item.isDoorway).OrderBy(p => (p.transform.position - front).sqrMagnitude).FirstOrDefault();
+            var door = placedObjects.Where(p => p.item != null && p.item.isDoorway &&
+                p.GetComponent<CollectionDoor>()?.AllowsVehicles != true).OrderBy(p => (p.transform.position - front).sqrMagnitude).FirstOrDefault();
             Vector3 inward = Vector3.forward;
             if (door != null)
             {

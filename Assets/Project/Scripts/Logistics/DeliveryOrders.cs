@@ -19,7 +19,7 @@ namespace RetailEmpireTycoon.Logistics
         public SaveManager save;
         [Min(1)] public float pickupCapacityKg = 350;
         [Min(.1f)] public float pickupCapacityM3 = 2;
-        [Min(1)] public float shopCapacityKg = 13000;
+        [Min(1)] public float shopCapacityKg = 20000;
         [Min(1)] public float depotCapacityKg = 10000;
         public DeliveryLedger Ledger { get; } = new DeliveryLedger();
         public event Action Changed;

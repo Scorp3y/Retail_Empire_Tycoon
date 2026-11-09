@@ -29,9 +29,28 @@ namespace RetailEmpireTycoon.BuildSystem
         [SerializeField] private StarterSiteRevision siteRevision = new StarterSiteRevision();
         [SerializeField] private StarterForecourtRevision forecourtRevision = new StarterForecourtRevision();
         [SerializeField] private List<PlacedBuildSaveData> frontageDecorations = new();
+        [SerializeField] private PlacedBuildSaveData additionalWarehouseRack;
         public StarterForecourtRevision ForecourtRevision=>forecourtRevision;
         public StarterSiteRevision SiteRevision=>siteRevision;
         public StarterConstructionStock ConstructionStock=>constructionStock;
+
+        internal RectInt RaisedFloorFootprint(int siteVersion)
+        {
+            var corners = initialState.placedObjects.Where(placed => placed.floor == 0 &&
+                (placed.itemId == "wallcorner_01" || placed.itemId == BuildItemData.StoreStripeCornerId)).ToArray();
+            if (corners.Length != 4) return default;
+
+            var shift = Vector2Int.zero;
+            if (siteVersion >= RightSideSiteVersion) shift.x = RightSideShiftCells;
+            if (siteVersion < StarterForecourtRevision.Version) shift -= forecourtRevision.BuildingShift;
+            if (siteVersion < StarterSiteRevision.Version) shift -= siteRevision.Shift;
+
+            // The fitted floor starts at the inner edge of the west and south modules.
+            int west = corners.Min(corner => corner.x) + 1;
+            int south = corners.Min(corner => corner.z) + 1;
+            return new RectInt(west + shift.x, south + shift.y,
+                corners.Max(corner => corner.x) - west + 1, corners.Max(corner => corner.z) - south + 1);
+        }
 
         // Grant once after the historical layout migrations. Custom frontages receive the
         // same pieces in storage, so no new prop can obstruct their doors or construction.
@@ -325,6 +344,10 @@ namespace RetailEmpireTycoon.BuildSystem
             GrantFrontageDecor(result, null, null, newGame: true);
             ReplaceDefaultWalls(result, null);
             FitDefaultOpeningsAndFloor(result, null);
+            // Keep the extra fixture out of the historical layout used to recognize legacy saves.
+            if (!string.IsNullOrEmpty(additionalWarehouseRack?.itemId) &&
+                result.placedObjects.Count(placed => placed.itemId == additionalWarehouseRack.itemId) < 3)
+                result.placedObjects.Add(JsonUtility.FromJson<PlacedBuildSaveData>(JsonUtility.ToJson(additionalWarehouseRack)));
             MoveDefaultStoreRight(result, newGame: true);
             ClearStarterSidewalkOverhang(result);
             constructionStock.AddTo(result, new System.Random());

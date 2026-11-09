@@ -14,6 +14,7 @@ namespace RetailEmpireTycoon.BuildSystem
         [SerializeField] private GameData previous=new(), replacement=new();
         [SerializeField] private RectInt buildingEnvelope;
         [SerializeField] private Vector2Int buildingShift;
+        internal Vector2Int BuildingShift => buildingShift;
 
         public void Configure(GameData before,GameData after,RectInt envelope,Vector2Int shift)
         {

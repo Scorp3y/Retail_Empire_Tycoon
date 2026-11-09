@@ -47,6 +47,9 @@ namespace RetailEmpireTycoon.BuildSystem
         public void ConfigureSite(bool modularStore, GameData data = null)
         {
             modular = modularStore;
+            floors?.SetRaisedFloorFootprint(modularStore && blueprint != null
+                ? blueprint.RaisedFloorFootprint(data?.starterSiteVersion ?? blueprint.initialState.starterSiteVersion)
+                : default);
             StarterSidewalkWest = modularStore && data?.starterSiteVersion == StarterStoreBlueprint.RightSideSiteVersion
                 ? building.grid.origin.x + blueprint.RightSideWestCell * building.grid.cellSize : (float?)null;
             FindObjectOfType<TownWorldPlaces>()?.SetStarterSidewalk(StarterSidewalkWest);

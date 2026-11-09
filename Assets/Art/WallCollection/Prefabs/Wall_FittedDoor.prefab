@@ -427,6 +427,7 @@ GameObject:
   - component: {fileID: 8327256560310317430}
   - component: {fileID: 831180274323179308}
   - component: {fileID: 3631195855673099167}
+  - component: {fileID: 305475301746619167}
   m_Layer: 0
   m_Name: Wall_FittedDoor
   m_TagString: Untagged
@@ -508,6 +509,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 76e2000a214639443a75a413a99e89fa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &305475301746619167
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5346313043565664243}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7fdd18abc8727041aae75c1ce641d58, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  slots:
+  - renderer: {fileID: 2467324593325786655}
+    index: 0
+    original: {fileID: 2100000, guid: c210fe2f395f3b1478aadc1932ff9e88, type: 2}
+  - renderer: {fileID: 5227717827260366538}
+    index: 0
+    original: {fileID: 2100000, guid: c210fe2f395f3b1478aadc1932ff9e88, type: 2}
+  - renderer: {fileID: 1065822800137512072}
+    index: 0
+    original: {fileID: 2100000, guid: c210fe2f395f3b1478aadc1932ff9e88, type: 2}
+  palette:
+  - {fileID: 2100000, guid: c3da3ba7f94e307468a134690950f754, type: 2}
+  - {fileID: 2100000, guid: 397032992741424448d67cb2b69797ec, type: 2}
+  - {fileID: 2100000, guid: 70a6b33debc78f84f85c6b6e672f5a8d, type: 2}
+  - {fileID: 2100000, guid: bbe8d382ae039f945a56f0f4b58323e6, type: 2}
+  cornerOpening: 0
 --- !u!1 &5558763824644686749
 GameObject:
   m_ObjectHideFlags: 0

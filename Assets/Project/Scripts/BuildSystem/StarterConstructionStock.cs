@@ -57,6 +57,10 @@ namespace RetailEmpireTycoon.BuildSystem
             foreach(var transport in transports)Add(transport,1);
             foreach (var wallStyle in wallStyles)
                 if (!wallStyle.IsWallCorner) Add(wallStyle, 10);
+            foreach (var floorStyle in BuildItemCatalog.LoadFloorCollection())
+                Add(floorStyle, 50);
+            foreach (var doorStyle in BuildItemCatalog.LoadDoorCollection())
+                Add(doorStyle, 3);
             if (personalParking != null) Add(personalParking, 2);
         }
 

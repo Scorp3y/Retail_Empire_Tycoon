@@ -13,12 +13,19 @@ namespace RetailEmpireTycoon.StoreOperations
         private readonly TerritoryManager _territory;
         private readonly Dictionary<Vector3Int, PlacedObject> _doorways = new Dictionary<Vector3Int, PlacedObject>();
         private readonly List<StoreDoorway> _doors = new List<StoreDoorway>();
+        private readonly List<CollectionDoor> _collectionDoors = new();
         private readonly List<StoreyLink> links = new();
         private FloorPainter floors;
         private static readonly Vector3Int[] Directions = { Vector3Int.left, Vector3Int.right, new Vector3Int(0, 0, 1), new Vector3Int(0, 0, -1) };
         public const float FloorHeight = 0.105f*ShopProportions.Scale;
         public static float FloorOffset(int floor)=>floor>0?.013f:FloorHeight;
-        private float SurfaceHeight(Vector3Int cell) => cell.y>0?FloorOffset(cell.y):floors!=null && floors.IsAsphalt(cell) || !_territory.IsCellPurchased(cell) ? .025f : FloorHeight;
+        private float SurfaceHeight(Vector3Int cell)
+        {
+            if (cell.y > 0) return FloorOffset(cell.y);
+            if (!_territory.IsCellPurchased(cell) || floors != null && (!floors.IsRaisedFloor(cell) || floors.IsAsphalt(cell)))
+                return FloorPainter.GroundSurfaceLift + .01f;
+            return FloorHeight;
+        }
         public const float BodyRadius = ShopperDimensions.ShopRadius;
         private static readonly Vector3 BodyBottom = Vector3.up * (.1f + BodyRadius);
         private static readonly Vector3 BodyTop = Vector3.up * (ShopperDimensions.ShopHeight - BodyRadius);
@@ -27,14 +34,15 @@ namespace RetailEmpireTycoon.StoreOperations
         {
             _doorways.Clear();
             _doors.Clear();
+            _collectionDoors.Clear();
             links.Clear(); floors = _grid.GetComponent<BuildController>()?.floorPainter;
             foreach (var placed in objects)
             {
                 if (placed != null && placed.item != null && placed.item.storeyConnection != Core.StoreyConnectionKind.None)
                     links.Add(new StoreyLink(_grid,placed));
                 if (placed == null || placed.item == null || !placed.item.isDoorway) continue;
-                var door = placed.GetComponent<StoreDoorway>() ?? placed.gameObject.AddComponent<StoreDoorway>();
-                _doors.Add(door);
+                if (placed.TryGetComponent<CollectionDoor>(out var mechanism)) _collectionDoors.Add(mechanism);
+                else _doors.Add(placed.GetComponent<StoreDoorway>() ?? placed.gameObject.AddComponent<StoreDoorway>());
                 foreach (var cell in placed.occupiedCells) _doorways[cell] = placed;
             }
         }
@@ -47,6 +55,7 @@ namespace RetailEmpireTycoon.StoreOperations
             if (_grid.IsOccupied(cell))
             {
                 if (!_doorways.TryGetValue(cell, out var doorway) || doorway == null) return false;
+                if (doorway.TryGetComponent<CollectionDoor>(out _)) return IsBodyClear(_grid.CellToWorld(cell));
                 Vector3 local = Quaternion.Inverse(doorway.transform.rotation) * (_grid.CellToWorld(cell) - doorway.transform.position);
                 // Keep one cell's clearance from the solid side posts; only the central opening is walkable.
                 float halfOpening = doorway.item.placementBounds.extents.x - _grid.cellSize * 0.75f;
@@ -70,6 +79,11 @@ namespace RetailEmpireTycoon.StoreOperations
             {
                 if (IsActor(hit.collider)) continue;
                 var placed = hit.collider.GetComponentInParent<PlacedObject>();
+                if (placed != null && placed.TryGetComponent<CollectionDoor>(out var door))
+                {
+                    if (door.IsBarrier(hit.collider)) continue;
+                    return false;
+                }
                 if (placed != null && placed.item != null && placed.item.isDoorway)
                 {
                     Vector3 localStart = Quaternion.Inverse(placed.transform.rotation) * (start - placed.transform.position);
@@ -90,6 +104,11 @@ namespace RetailEmpireTycoon.StoreOperations
             {
                 if (IsActor(collider)) continue;
                 var placed = collider.GetComponentInParent<PlacedObject>();
+                if (placed != null && placed.TryGetComponent<CollectionDoor>(out var door))
+                {
+                    if (door.IsBarrier(collider)) continue;
+                    return false;
+                }
                 if (placed != null && placed.item != null && placed.item.isDoorway)
                 {
                     Vector3 local = Quaternion.Inverse(placed.transform.rotation) * (position - placed.transform.position);
@@ -109,6 +128,11 @@ namespace RetailEmpireTycoon.StoreOperations
         }
         public bool TryUseTransport(ShopCharacter actor,Vector3 position,Vector3 target)
         {
+            foreach (var door in _collectionDoors)
+            {
+                if (door == null || !door.isActiveAndEnabled || !door.Approaches(position)) continue;
+                if (!door.RequestPassage(position) && door.CrossesClosedBarrier(position, target)) return false;
+            }
             var link=links.FirstOrDefault(l=>l.IsUsable(floors)&&l.Contains(position)&&l.Contains(target));
             return link==null || link.Owner.GetComponent<StoreyTransportVisual>()?.TryBoard(actor,position,target)!=false;
         }

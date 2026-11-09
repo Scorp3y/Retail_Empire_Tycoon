@@ -9,6 +9,7 @@ namespace RetailEmpireTycoon.BuildSystem
     public sealed class FloorPainter : MonoBehaviour
     {
         public const float UpperSurfaceLift=.005f;
+        public const float GroundSurfaceLift=.015f;
         public GridSystem grid;
         public TerritoryManager territory;
 
@@ -23,9 +24,11 @@ namespace RetailEmpireTycoon.BuildSystem
         public Material previewInvalidMaterial;
 
         private readonly Dictionary<Vector3Int, BuildItemData> _tiles = new();
+        private readonly Dictionary<Vector3Int, int> _facings = new();
         private readonly Dictionary<Vector3Int, FloorSurfaceChunk> _chunks = new();
         public event System.Action Changed;
         private int visibleThroughLayer = int.MaxValue;
+        private RectInt _raisedFloorFootprint;
 
         // Cell data, not rendered objects, is authoritative for painting, parking and saves.
         public IEnumerable<MeshFilter> AsphaltSurfaces => _chunks.Values.SelectMany(chunk => chunk.AsphaltSurfaces);
@@ -36,6 +39,8 @@ namespace RetailEmpireTycoon.BuildSystem
         private readonly List<Vector3> _previewVertices = new();
         private readonly List<int> _previewTriangles = new();
         private readonly List<Vector2> _previewUVs = new();
+        private int _previewFacing = -1;
+        private bool _previewAsphalt;
 
         public void ClearPreview()
         {
@@ -74,8 +79,25 @@ namespace RetailEmpireTycoon.BuildSystem
             var tiles=StoreyLink.OpeningCells(grid,request).Where(HasSurface).ToList();
             return tiles.Count==0 || RemoveCells(tiles,inventory);
         }
-        public float SurfaceElevation(Vector3Int cell)=>grid.FloorElevation(cell.y)
-            +(cell.y>0?(HasSurface(cell)?UpperSurfaceLift:0):IsAsphalt(cell)?.015f:HasSurface(cell)?surfaceHeight:.015f);
+        public void SetRaisedFloorFootprint(RectInt footprint)
+        {
+            if (_raisedFloorFootprint.Equals(footprint)) return;
+            _raisedFloorFootprint = footprint;
+            _previewCells.Clear();
+            if (_chunks.Count > 0) RebuildChunks(_chunks.Keys.Where(chunk => chunk.y == 0).ToHashSet());
+        }
+
+        internal bool IsRaisedFloor(Vector3Int cell) =>
+            cell.y == 0 && _raisedFloorFootprint.Contains(new Vector2Int(cell.x, cell.z));
+
+        internal float PaintedSurfaceLift(Vector3Int cell, bool asphalt)
+        {
+            if (cell.y > 0) return UpperSurfaceLift;
+            return !asphalt && IsRaisedFloor(cell) ? surfaceHeight : GroundSurfaceLift;
+        }
+
+        public float SurfaceElevation(Vector3Int cell) => grid.FloorElevation(cell.y) +
+            (HasSurface(cell) ? PaintedSurfaceLift(cell, IsAsphalt(cell)) : cell.y > 0 ? 0 : GroundSurfaceLift);
         public BuildItemData FirstSurface => _tiles.Values.FirstOrDefault(item=>item!=null);
 
         public void SetVisibleThroughLayer(int layer)
@@ -98,6 +120,9 @@ namespace RetailEmpireTycoon.BuildSystem
 
             var openings = FindObjectsOfType<PlacedObject>().Where(p => p.item != null && p.item.storeyConnection != StoreyConnectionKind.None)
                 .SelectMany(p => StoreyLink.OpeningCells(grid,p)).ToHashSet();
+            var doorSweeps = surface != null && cells[0].y > 0
+                ? FindObjectsOfType<CollectionDoor>().Where(door => door.GetComponent<PlacedObject>() != null)
+                    .SelectMany(Rule_DoorClearance.Sweeps).ToArray() : System.Array.Empty<Bounds>();
             foreach (var cell in cells)
             {
                 if (cell.y < 0 || cell.y > GridSystem.TopFloor + 1) return false;
@@ -106,12 +131,13 @@ namespace RetailEmpireTycoon.BuildSystem
                     return false;
                 if (parkingCells.Contains(cell)) return false;
                 if (openings.Contains(cell)) return false;
+                if (doorSweeps.Any(sweep => Rule_DoorClearance.CoversCell(sweep, grid, cell))) return false;
             }
 
             return true;
         }
 
-        public void ShowPreview(List<Vector3Int> cells, bool valid)
+        public void ShowPreview(List<Vector3Int> cells, bool valid, int stripeFacing = -1, bool asphalt = false)
         {
             if (grid == null || cells == null || cells.Count == 0) { ClearPreview(); return; }
             if (_previewSurface == null)
@@ -127,24 +153,43 @@ namespace RetailEmpireTycoon.BuildSystem
             }
             _previewSurface.SetActive(true);
             _previewSurface.GetComponent<MeshRenderer>().sharedMaterial=valid?previewValidMaterial:previewInvalidMaterial;
-            if (_previewCells.SequenceEqual(cells)) return;
+            if (_previewFacing == stripeFacing && _previewAsphalt == asphalt && _previewCells.SequenceEqual(cells)) return;
+            _previewFacing = stripeFacing;
+            _previewAsphalt = asphalt;
             _previewCells.Clear();_previewCells.AddRange(cells);
             _previewVertices.Clear();_previewTriangles.Clear();_previewUVs.Clear();
             float half=grid.cellSize*.48f;
+            var stroke = stripeFacing >= 0 ? cells.ToHashSet() : null;
+            var edge = FloorPattern.Edge(stripeFacing);
             foreach(var cell in cells)
             {
-                // Above the imported store floor at 0.096, independent of its authored prefab origin.
-                Vector3 center=grid.CellToWorld(cell)+Vector3.up*(cell.y>0?UpperSurfaceLift+.004f:surfaceHeight+.005f);
-                int first=_previewVertices.Count;
-                _previewVertices.Add(_previewSurface.transform.InverseTransformPoint(center+new Vector3(-half,0,-half)));
-                _previewVertices.Add(_previewSurface.transform.InverseTransformPoint(center+new Vector3(-half,0,half)));
-                _previewVertices.Add(_previewSurface.transform.InverseTransformPoint(center+new Vector3(half,0,half)));
-                _previewVertices.Add(_previewSurface.transform.InverseTransformPoint(center+new Vector3(half,0,-half)));
-                _previewTriangles.AddRange(new[]{first,first+1,first+2,first,first+2,first+3});
-                _previewUVs.AddRange(new[]{Vector2.zero,Vector2.up,Vector2.one,Vector2.right});
+                Vector3 center = grid.CellToWorld(cell) + Vector3.up * (PaintedSurfaceLift(cell, asphalt) + .005f);
+                var neighbor = cell + edge;
+                _facings.TryGetValue(neighbor, out int neighborFacing);
+                bool showEdge = stroke != null && !stroke.Contains(neighbor) &&
+                    !(_tiles.TryGetValue(neighbor, out var item) && item.hasFloorEdgeStripe && neighborFacing == stripeFacing);
+                if (showEdge)
+                {
+                    float x = Mathf.Abs(edge.x);
+                    float z = Mathf.Abs(edge.z);
+                    AddPreviewQuad(center - (Vector3)edge * (.18f * half), half * (1 - .18f * x), half * (1 - .18f * z));
+                    AddPreviewQuad(center + (Vector3)edge * (.88f * half), half * (1 - .88f * x), half * (1 - .88f * z));
+                }
+                else AddPreviewQuad(center, half, half);
             }
             _previewMesh.Clear();_previewMesh.SetVertices(_previewVertices);_previewMesh.SetUVs(0,_previewUVs);
             _previewMesh.SetTriangles(_previewTriangles,0);_previewMesh.RecalculateNormals();_previewMesh.RecalculateBounds();
+        }
+
+        private void AddPreviewQuad(Vector3 center, float halfX, float halfZ)
+        {
+            int first = _previewVertices.Count;
+            _previewVertices.Add(_previewSurface.transform.InverseTransformPoint(center + new Vector3(-halfX, 0, -halfZ)));
+            _previewVertices.Add(_previewSurface.transform.InverseTransformPoint(center + new Vector3(-halfX, 0, halfZ)));
+            _previewVertices.Add(_previewSurface.transform.InverseTransformPoint(center + new Vector3(halfX, 0, halfZ)));
+            _previewVertices.Add(_previewSurface.transform.InverseTransformPoint(center + new Vector3(halfX, 0, -halfZ)));
+            _previewTriangles.AddRange(new[] { first, first + 1, first + 2, first, first + 2, first + 3 });
+            _previewUVs.AddRange(new[] { Vector2.zero, Vector2.up, Vector2.one, Vector2.right });
         }
 
         private void OnDisable() { ClearPreview(); }
@@ -155,24 +200,50 @@ namespace RetailEmpireTycoon.BuildSystem
             if (_previewMesh != null) Destroy(_previewMesh);
         }
 
-        public void PaintCells(List<Vector3Int> cells, BuildItemData item)
+        public int TilesRequired(List<Vector3Int> cells, BuildItemData item)
+        {
+            if (!item.usesMetricFloorPattern) return cells.Count;
+            return cells.Distinct().Count(cell => !_tiles.TryGetValue(cell, out var existing) || existing != item);
+        }
+
+        public void PaintCells(List<Vector3Int> cells, BuildItemData item, int facing = 0)
         {
             if (grid == null || item == null || item.floorMaterial == null)
                 return;
             if (!AreCellsValid(cells, item)) return;
 
-            ApplyCells(cells, item);
+            var dirtyChunks = new HashSet<Vector3Int>();
+            foreach (var cell in cells) SetCell(cell, item, facing, dirtyChunks);
+            RebuildChunks(dirtyChunks);
         }
 
-        private void ApplyCells(List<Vector3Int> cells, BuildItemData item)
+        private void SetCell(Vector3Int cell, BuildItemData item, int facing, HashSet<Vector3Int> dirtyChunks)
         {
-            var dirtyChunks = new HashSet<Vector3Int>();
-            foreach (var cell in cells)
+            facing = item.usesMetricFloorPattern ? FloorPattern.Facing(facing) : 0;
+            _tiles.TryGetValue(cell, out var previous);
+            _facings.TryGetValue(cell, out int previousFacing);
+            if (previous == item && previousFacing == facing) return;
+            _tiles[cell] = item;
+            if (facing == 0) _facings.Remove(cell);
+            else _facings[cell] = facing;
+            MarkChanged(cell, dirtyChunks);
+        }
+
+        private void MarkChanged(Vector3Int cell, HashSet<Vector3Int> dirtyChunks)
+        {
+            dirtyChunks.Add(FloorSurfaceChunk.Coordinates(cell));
+            // The edge on a neighboring stripe can change across a chunk boundary.
+            for (int facing = 0; facing < 4; facing++)
             {
-                if (_tiles.TryGetValue(cell, out var previous) && previous == item) continue;
-                _tiles[cell] = item;
-                dirtyChunks.Add(FloorSurfaceChunk.Coordinates(cell));
+                var neighbor = cell - FloorPattern.Edge(facing);
+                _facings.TryGetValue(neighbor, out int neighborFacing);
+                if (neighborFacing == facing && _tiles.TryGetValue(neighbor, out var item) && item.hasFloorEdgeStripe)
+                    dirtyChunks.Add(FloorSurfaceChunk.Coordinates(neighbor));
             }
+        }
+
+        private void RebuildChunks(HashSet<Vector3Int> dirtyChunks)
+        {
             foreach (var coordinates in dirtyChunks)
             {
                 if (!_chunks.TryGetValue(coordinates, out var chunk))
@@ -180,7 +251,7 @@ namespace RetailEmpireTycoon.BuildSystem
                     chunk = new FloorSurfaceChunk(coordinates, floorRoot != null ? floorRoot : transform);
                     _chunks.Add(coordinates, chunk);
                 }
-                chunk.Rebuild(_tiles, grid, surfaceHeight);
+                chunk.Rebuild(_tiles, _facings, grid, PaintedSurfaceLift);
                 chunk.SetVisible(coordinates.y <= visibleThroughLayer);
             }
             Changed?.Invoke();
@@ -195,9 +266,15 @@ namespace RetailEmpireTycoon.BuildSystem
             if(objects.Where(p=>p.item.isParkingSpace).Any(p=>RetailEmpireTycoon.Parking.Rule_ParkingSurface.ApproachCells(grid,p).Any(removed.Contains)))return false;
             if (objects.Where(p => p.item.storeyConnection != StoreyConnectionKind.None)
                 .Any(p => StoreyLink.LandingCells(grid, p).Any(removed.Contains))) return false;
-            foreach (var cell in removed) { inventory.Add(_tiles[cell], 1); _tiles.Remove(cell); }
-            foreach (var key in removed.Select(FloorSurfaceChunk.Coordinates).Distinct()) _chunks[key].Rebuild(_tiles, grid, surfaceHeight);
-            Changed?.Invoke();
+            var dirtyChunks = new HashSet<Vector3Int>();
+            foreach (var cell in removed)
+            {
+                inventory.Add(_tiles[cell], 1);
+                _tiles.Remove(cell);
+                _facings.Remove(cell);
+                MarkChanged(cell, dirtyChunks);
+            }
+            RebuildChunks(dirtyChunks);
             return true;
         }
 
@@ -216,7 +293,8 @@ namespace RetailEmpireTycoon.BuildSystem
                     itemId = item.id,
                     x = cell.x,
                     floor = cell.y,
-                    z = cell.z
+                    z = cell.z,
+                    facing = _facings.TryGetValue(cell, out int facing) ? facing : 0
                 });
             }
 
@@ -227,20 +305,23 @@ namespace RetailEmpireTycoon.BuildSystem
         {
             ClearPlacedFloors();
 
-            if (data == null || catalog == null)
+            if (data == null || catalog == null || grid == null)
                 return;
 
+            var dirtyChunks = new HashSet<Vector3Int>();
             foreach (var group in data.GroupBy(d => d.itemId))
             {
                 var item = catalog.GetById(group.Key);
                 if (item == null || item.floorMaterial == null)
                     continue;
-                var cells = group.Where(d => d.floor >= 0 && d.floor <= GridSystem.TopFloor + 1).Select(d => new Vector3Int(d.x, d.floor, d.z)).ToList();
                 // Restoring authored/saved ground is not a request to build. Public starter
                 // paving and older custom floors must survive reduced construction rights,
                 // just as saved furniture does. Interactive PaintCells still checks ownership.
-                if (grid != null) ApplyCells(cells, item);
+                foreach (var tile in group)
+                    if (tile.floor >= 0 && tile.floor <= GridSystem.TopFloor + 1)
+                        SetCell(new Vector3Int(tile.x, tile.floor, tile.z), item, tile.facing, dirtyChunks);
             }
+            RebuildChunks(dirtyChunks);
         }
 
         private void ClearPlacedFloors()
@@ -248,6 +329,7 @@ namespace RetailEmpireTycoon.BuildSystem
             foreach (var chunk in _chunks.Values) chunk.Dispose();
             _chunks.Clear();
             _tiles.Clear();
+            _facings.Clear();
 
             if (floorRoot != null)
             {

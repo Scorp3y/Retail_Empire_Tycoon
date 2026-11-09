@@ -29,7 +29,8 @@ namespace RetailEmpireTycoon.BuildSystem
             root.transform.SetParent(parent, false);
         }
 
-        public void Rebuild(IReadOnlyDictionary<Vector3Int, BuildItemData> tiles, GridSystem grid, float height)
+        public void Rebuild(IReadOnlyDictionary<Vector3Int, BuildItemData> tiles,
+            IReadOnlyDictionary<Vector3Int, int> facings, GridSystem grid, Func<Vector3Int, bool, float> surfaceLift)
         {
             var groups = new Dictionary<BuildItemData, List<Vector3Int>>();
             for (int x = coordinates.x * Size; x < (coordinates.x + 1) * Size; x++)
@@ -62,12 +63,13 @@ namespace RetailEmpireTycoon.BuildSystem
                     renderer.sharedMaterial = group.Key.floorMaterial;
                     surfaces.Add(group.Key, filter);
                 }
-                // A 5 mm separation prevents the upper slab fighting with the coplanar lower-wall cap.
-                RebuildSurface(filter, group.Value, grid, coordinates.y>0?FloorPainter.UpperSurfaceLift:group.Key.isAsphalt?.015f:height);
+                RebuildSurface(filter, group.Value, group.Key, tiles, facings, grid, surfaceLift);
             }
         }
 
-        private static void RebuildSurface(MeshFilter filter, List<Vector3Int> cells, GridSystem grid, float height)
+        private static void RebuildSurface(MeshFilter filter, List<Vector3Int> cells, BuildItemData item,
+            IReadOnlyDictionary<Vector3Int, BuildItemData> tiles, IReadOnlyDictionary<Vector3Int, int> facings,
+            GridSystem grid, Func<Vector3Int, bool, float> surfaceLift)
         {
             var vertices = new List<Vector3>(cells.Count * 4);
             var normals = new List<Vector3>(cells.Count * 4);
@@ -78,13 +80,26 @@ namespace RetailEmpireTycoon.BuildSystem
             foreach (var cell in cells)
             {
                 int first = vertices.Count;
+                float height = grid.FloorElevation(cell.y) + surfaceLift(cell, item.isAsphalt);
+                facings.TryGetValue(cell, out int facing);
+                bool showStripe = false;
+                if (item.hasFloorEdgeStripe)
+                {
+                    var neighbor = cell + FloorPattern.Edge(facing);
+                    facings.TryGetValue(neighbor, out int neighborFacing);
+                    showStripe = !tiles.TryGetValue(neighbor, out var neighborItem) || neighborItem != item || neighborFacing != facing;
+                }
                 foreach (var offset in offsets)
                 {
-                    var world = grid.origin + new Vector3((cell.x + offset.x) * grid.cellSize, height + cell.y * GridSystem.StoreyHeight, (cell.z + offset.y) * grid.cellSize);
+                    var world = new Vector3(grid.origin.x + (cell.x + offset.x) * grid.cellSize, height,
+                        grid.origin.z + (cell.z + offset.y) * grid.cellSize);
                     vertices.Add(filter.transform.InverseTransformPoint(world));
                     normals.Add(filter.transform.InverseTransformDirection(Vector3.up).normalized);
                     // Preserve the four-cell texture repeat and its continuity across region borders.
-                    uvs.Add(new Vector2(cell.x + offset.x, cell.z + offset.y) * .25f);
+                    var uv = new Vector2(cell.x + offset.x, cell.z + offset.y) * .25f;
+                    if (item.hasFloorEdgeStripe) uv = FloorPattern.StripeUV(new Vector2Int(cell.x, cell.z), offset, facing, showStripe);
+                    else if (item.usesMetricFloorPattern) uv = FloorPattern.Rotate(uv, facing);
+                    uvs.Add(uv);
                     // Remains in source shop coordinates when the same mesh is copied into City.
                     surfaceCoordinates.Add(new Vector2(world.x,world.z));
                 }
@@ -109,6 +124,7 @@ namespace RetailEmpireTycoon.BuildSystem
             mesh.SetUVs(0, uvs);
             mesh.SetUVs(1, surfaceCoordinates);
             mesh.SetTriangles(indices, 0);
+            if (item.usesMetricFloorPattern) mesh.RecalculateTangents();
             mesh.RecalculateBounds();
             var collider = filter.GetComponent<MeshCollider>();
             if (collider != null) { collider.sharedMesh = null; collider.sharedMesh = mesh; }

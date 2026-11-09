@@ -20,6 +20,7 @@ namespace RetailEmpireTycoon.BuildSystem
         public ProductAssignMode productAssignment;
         public WorkMinigame work;
         public PlacedObject Selected { get; private set; }
+        public DoorFrameFinish SelectedDoor => Selected != null ? Selected.GetComponent<DoorFrameFinish>() : null;
         public bool IsActive => building != null && building.mode == BuildMode.Edit;
         [NonSerialized] public bool ReadPointerInput = true;
         public string Notice { get; private set; }
@@ -87,11 +88,22 @@ namespace RetailEmpireTycoon.BuildSystem
                 building.floorPainter.ShowPreview(StoreyLink.OpeningCells(building.grid,request).ToList(),CandidateResult.ok);
             else building.floorPainter?.ClearPreview();
             building.preview.SetPose(BuildPlacementPose.Position(building.grid, placementDefinition, cell, request.rotated, candidateFacing), Quaternion.Euler(0, candidateFacing * 90, 0));
+            if (SelectedDoor is { } door && placementDefinition.prefab.TryGetComponent<DoorFrameFinish>(out var template))
+                building.preview.SetDoorFrameFinish(template, building.PreviewDoorFinish(template, door.Choice, request));
             building.preview.ShowPlacement(building.grid, request, CandidateResult);
             return CandidateResult;
         }
 
         private PlacementRequest Request() => new PlacementRequest(placementDefinition, candidateCell, candidateFacing % 2 != 0, candidateFacing, Selected);
+
+        public void SetDoorFinish(DoorFinish finish)
+        {
+            if (!IsActive || SelectedDoor is not { } door || door.Choice == finish) return;
+            door.SetChoice(finish);
+            building.NotifyLayoutChanged();
+            PreviewAt(candidateCell);
+            Notice = "Door frame finish updated.";
+        }
 
         public void Rotate(int quarterTurns)
         {

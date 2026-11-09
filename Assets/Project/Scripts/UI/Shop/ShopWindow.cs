@@ -62,6 +62,7 @@ namespace RetailEmpireTycoon.UI.Shop
         private GameObject _staffPage;
         private StoreProductBrowser browser;
         private StoreBuildSections buildSections;
+        private float catalogTop;
         private bool openedOnce;
         public StoreProductBrowser ProductBrowser => browser;
         [SerializeField] private RetailEmpireTycoon.Logistics.DeliveryOrders deliveryOrders;
@@ -100,12 +101,25 @@ namespace RetailEmpireTycoon.UI.Shop
             foreach(var item in Resources.LoadAll<BuildItemData>("MultiStorey"))
                 if(!buildCatalog.Any(existing=>existing!=null&&existing.id==item.id))buildCatalog.Add(item);
             BuildItemCatalog.IncludeWallCollection(buildCatalog);
+            BuildItemCatalog.IncludeFloorCollection(buildCatalog);
+            BuildItemCatalog.IncludeDoorCollection(buildCatalog);
             FindMissingRefs();
             PrepareCameraLock();
             StoreCatalogLayout.Apply(this);
+            if (categoryViewPanel?.transform is RectTransform catalogPanel) catalogTop = catalogPanel.offsetMax.y;
             browser=gameObject.AddComponent<StoreProductBrowser>();
             browser.Initialize(this,productCatalog,money,productInventory,deliveryOrders);
             buildSections=gameObject.AddComponent<StoreBuildSections>();buildSections.Initialize(this);
+        }
+
+        internal void SetBuildSubfiltersVisible(bool visible)
+        {
+            if (categoryViewPanel?.transform is RectTransform catalogPanel)
+            {
+                var offset = catalogPanel.offsetMax;
+                offset.y = catalogTop - (visible ? 37 : 0);
+                catalogPanel.offsetMax = offset;
+            }
         }
 
         private void OnEnable()
@@ -265,7 +279,11 @@ namespace RetailEmpireTycoon.UI.Shop
             int shown = 0;
 
             // Order the visible cards only; stable catalog entries and save identifiers remain unchanged.
-            foreach (var item in buildCatalog.OrderBy(BuildDisplayPriority))
+            var ordered = buildSections != null && (buildSections.ShowsFloors || buildSections.ShowsDoors)
+                ? buildCatalog.OrderBy(item => !buildSections.IsCollectionEntry(item))
+                    .ThenBy(item => buildSections.IsCollectionEntry(item) ? item.id : "", System.StringComparer.Ordinal)
+                : buildCatalog.OrderBy(BuildDisplayPriority);
+            foreach (var item in ordered)
             {
                 if (item == null || item.hiddenFromShop || (buildFilter==BuildCategory.Shelf ? item.category!=BuildCategory.Shelf&&!item.isCheckout : item.category!=buildFilter||item.isCheckout))
                     continue;

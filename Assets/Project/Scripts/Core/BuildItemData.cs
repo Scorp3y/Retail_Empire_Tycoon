@@ -1,9 +1,12 @@
 using UnityEngine;
+using RetailEmpireTycoon.BuildSystem;
 using RetailEmpireTycoon.Core;
 using UnityEngine.Scripting.APIUpdating;
 
 namespace RetailEmpireTycoon.Core
 {
+    public enum FloorFinishGroup { None, Tile, Wood, Stone, Industrial, Resilient, Outdoor }
+
     [CreateAssetMenu(menuName = "Retail Empire Tycoon/Build Item", fileName = "BuildItem_")]
     [MovedFrom(false, "MyShopGame.Core", null, "BuildItemData")]
     public class BuildItemData : ScriptableObject
@@ -71,6 +74,8 @@ namespace RetailEmpireTycoon.Core
         [HideInInspector] public Bounds previousParkingBounds;
         public bool isUnloadingGate;
         public bool isWall;
+        [Tooltip("Shared frame finish suggested by this wall. Auto uses the default for unclassified walls.")]
+        public DoorFinish recommendedDoorFinish;
         [Min(0)] public int beautyPoints;
         public bool unlockedByDefault = true;
         public BuildUnlockCondition unlockCondition;
@@ -90,9 +95,9 @@ namespace RetailEmpireTycoon.Core
         public PlacementKind placementKind = PlacementKind.Object;
         [Header("Floor Paint")]
         public Material floorMaterial;
-
-
-
+        public bool usesMetricFloorPattern;
+        public bool hasFloorEdgeStripe;
+        public FloorFinishGroup floorFinishGroup;
         [Min(1)]
         public int accessibilitySides = 1;
 

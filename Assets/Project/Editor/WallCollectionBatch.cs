@@ -70,6 +70,7 @@ internal static class WallCollectionBatch
             var item=Object.Instantiate(baseline);
             item.name=id;item.id=id;item.displayName=finish.English;item.description=finish.Description;
             item.russianName=finish.Russian;item.russianDescription=finish.RussianDescription;item.price=finish.Price;
+            item.recommendedDoorFinish=DoorFrameFinishSetup.Recommended(i+1);
             item.prefab=prefab;item.icon=icon;
             item.wallGeometryVersion=BuildItemData.TwoCellWallVersion;
             item.footprint=new Vector2Int(2,1);
@@ -139,6 +140,7 @@ internal static class WallCollectionBatch
                         Trim(panel.transform,-side*.33f,.65f,.018f,.17f,.068f,2);
                     }
                 }
+                DoorFrameFinishSetup.BindLegacy(root, DoorFrameFinishSetup.CreatePalette());
                 var prefab=PrefabUtility.SaveAsPrefabAsset(root,Root+"/Prefabs/"+name+".prefab");
                 item.previousWallPrefab=oldPrefab;item.previousWallBounds=oldBounds;
                 item.prefab=prefab;item.wallGeometryVersion=BuildItemData.TwoCellWallVersion;
@@ -176,6 +178,7 @@ internal static class WallCollectionBatch
         var prefab=Prefab(name,0,cornerSize,WallCollectionGeometry.Create(0,cornerSize).solid,null,null,finish,glazing,corner:true);
         var item=Object.Instantiate(legacy);
         item.name=item.id=BuildItemData.StoreStripeCornerId;
+        item.recommendedDoorFinish=DoorFinish.DarkGreen;
         item.displayName="Store Stripe Corner";item.russianName="Угол с фирменной полосой";
         item.description="A single-cell corner for Store Stripe walls.";
         item.russianDescription="Угол в одну клетку для стен с фирменной полосой.";

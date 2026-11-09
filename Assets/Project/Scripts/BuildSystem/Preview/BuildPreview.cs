@@ -21,6 +21,7 @@ namespace RetailEmpireTycoon.BuildSystem
         private Mesh _footprintMesh;
         private MeshRenderer _footprintRenderer;
         private bool? _lastValid;
+        private DoorFinish _doorFinish;
         private readonly Dictionary<Material, Material> _ghostMaterials = new();
         private readonly Dictionary<Material, Color> _sourceColors = new();
         private const float GhostOpacity = .65f;
@@ -107,6 +108,14 @@ namespace RetailEmpireTycoon.BuildSystem
         public void SetModelScale(Vector3 scale)
         {
             if (_instance != null) _instance.transform.localScale = scale;
+        }
+
+        public void SetDoorFrameFinish(DoorFrameFinish template, DoorFinish finish)
+        {
+            if (_instance == null || template == null || finish == _doorFinish) return;
+            template.ApplyPreview(_instance.transform, finish, GhostMaterial);
+            _doorFinish = finish;
+            _lastValid = null;
         }
 
         public void SetVisible(bool visible)
@@ -225,6 +234,7 @@ namespace RetailEmpireTycoon.BuildSystem
             _footprintRenderer = null;
             _renderers = new Renderer[0];
             _lastValid = null;
+            _doorFinish = DoorFinish.Auto;
             foreach (var material in _ghostMaterials.Values) Release(material);
             _ghostMaterials.Clear();
             _sourceColors.Clear();

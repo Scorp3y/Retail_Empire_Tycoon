@@ -22,6 +22,11 @@ namespace RetailEmpireTycoon.UI.Shop
         private TMP_Text title,notice,floorLabel,catalogCount;
         private Button left,right,remove,cancel,down,up,buildTab,editTab,floorBrush,ceilingBrush,eraseBrush;
         private Button personalParking, returnBay;
+        private Button frameFinishButton;
+        private RectTransform frameFinishMenu;
+        private Button[] frameFinishOptions;
+        private DoorFrameFinish displayedDoor;
+        private static readonly string[] FrameFinishNames = { "Auto", "Graphite", "Cream", "Dark green", "Bronze" };
         private TMP_Text parkingAction, placementHint;
         private bool showCatalog=true;
         private BuildCategory? category;
@@ -54,9 +59,52 @@ namespace RetailEmpireTycoon.UI.Shop
             personalParking=Action(toolbar,ShopIcon.Parking,"Make personal",new Vector2(600,-112),172,editor.TogglePersonalParking);
             parkingAction=personalParking.GetComponentInChildren<TMP_Text>();
             returnBay=Action(toolbar,ShopIcon.Pickup,"Set return bay",new Vector2(780,-112),182,editor.UseSelectedReturnBay);
+            CreateFrameFinishMenu();
             CreateCatalog();
             building.inventory.Changed+=RefreshCatalog;
             toolbar.gameObject.SetActive(false);catalog.gameObject.SetActive(false);
+        }
+
+        private void CreateFrameFinishMenu()
+        {
+            frameFinishButton = ui.Button(toolbar, "Frame · Auto", new Vector2(610, -112), new Vector2(196, 34),
+                () => frameFinishMenu.gameObject.SetActive(!frameFinishMenu.gameObject.activeSelf));
+            frameFinishButton.name = "Door frame finish";
+            frameFinishButton.image.color = ShopUiTheme.Line;
+            frameFinishMenu = ui.Rect("Door frame finishes", toolbar, new Vector2(0, 1), new Vector2(0, 0),
+                new Vector2(604, 8), new Vector2(207, 196));
+            ui.Panel(frameFinishMenu, ShopUiTheme.Paper);
+            ui.Border(frameFinishMenu);
+            frameFinishOptions = new Button[FrameFinishNames.Length];
+            for (int i = 0; i < FrameFinishNames.Length; i++)
+            {
+                var finish = (DoorFinish)i;
+                var button = ui.Button(frameFinishMenu, FrameFinishNames[i], new Vector2(9, -9 - i * 36),
+                    new Vector2(189, 32), () =>
+                    {
+                        editor.SetDoorFinish(finish);
+                        frameFinishMenu.gameObject.SetActive(false);
+                    });
+                button.name = "Frame " + FrameFinishNames[i];
+                frameFinishOptions[i] = button;
+            }
+            frameFinishMenu.gameObject.SetActive(false);
+            frameFinishButton.gameObject.SetActive(false);
+        }
+
+        private void RefreshFrameFinish()
+        {
+            var door = editor.SelectedDoor;
+            if (displayedDoor != door)
+            {
+                displayedDoor = door;
+                frameFinishMenu.gameObject.SetActive(false);
+            }
+            frameFinishButton.gameObject.SetActive(door != null);
+            if (door == null) return;
+            frameFinishButton.GetComponentInChildren<TMP_Text>().text = "Frame · " + FrameFinishNames[(int)door.Choice];
+            for (int i = 0; i < frameFinishOptions.Length; i++)
+                frameFinishOptions[i].image.color = i == (int)door.Choice ? ShopUiTheme.Green : ShopUiTheme.Line;
         }
         private Button Action(Transform parent,ShopIcon icon,string text,Vector2 position,float width,Action action)
         {
@@ -153,7 +201,8 @@ namespace RetailEmpireTycoon.UI.Shop
             bool parkingSelected=selected && item.isParkingSpace;
             personalParking.gameObject.SetActive(parkingSelected && !item.isPersonalParking);
             returnBay.gameObject.SetActive(parkingSelected && editor.Selected.playerParking);
-            placementHint.gameObject.SetActive(!parkingSelected);
+            RefreshFrameFinish();
+            placementHint.gameObject.SetActive(!parkingSelected && displayedDoor == null);
             if (parkingSelected)
             {
                 parkingAction.text=editor.Selected.playerParking?"Make public":"Make personal";

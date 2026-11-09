@@ -27,8 +27,10 @@ public static class ConstructionWorkspacePlay
     private static bool Frontage=>SessionState.GetBool("ConstructionWorkspace.Frontage",false);
     private static bool Escalator=>SessionState.GetBool("ConstructionWorkspace.Escalator",false);
     private static bool Elevator=>SessionState.GetBool("ConstructionWorkspace.Elevator",false);
-    private static string Report=>Elevator?ElevatorModelBatch.Report:Escalator?EscalatorModelBatch.Report:Frontage?StarterFrontageBatch.Report:Transport?StoreyTransportBatch.Report:StarterAccess?StarterAccessBatch.Report:ConstructionWorkspaceBatch.Report;
-    private static string Documentation=>Elevator?ElevatorModelBatch.Pictures:Escalator?EscalatorModelBatch.Pictures:Frontage?StarterFrontageBatch.Pictures:Transport?StoreyTransportBatch.Pictures:StarterAccess?"Docs/StarterAccess":"Docs/ConstructionWorkspace";
+    private static bool Floors=>SessionState.GetBool("ConstructionWorkspace.Floors",false);
+    private static bool Doors=>SessionState.GetBool("ConstructionWorkspace.Doors",false);
+    private static string Report=>Doors?DoorCollectionPlay.Report:Floors?"Library/FloorCollectionQA":Elevator?ElevatorModelBatch.Report:Escalator?EscalatorModelBatch.Report:Frontage?StarterFrontageBatch.Report:Transport?StoreyTransportBatch.Report:StarterAccess?StarterAccessBatch.Report:ConstructionWorkspaceBatch.Report;
+    private static string Documentation=>Doors?DoorCollectionBatch.Pictures:Floors?FloorCollectionBatch.Pictures:Elevator?ElevatorModelBatch.Pictures:Escalator?EscalatorModelBatch.Pictures:Frontage?StarterFrontageBatch.Pictures:Transport?StoreyTransportBatch.Pictures:StarterAccess?"Docs/StarterAccess":"Docs/ConstructionWorkspace";
     private static void RecordInputs(){if(Elevator)ElevatorModelBatch.Record();else if(Escalator)EscalatorModelBatch.Record();else if(Frontage)StarterFrontageBatch.Record();else if(Transport)StoreyTransportBatch.Record();else if(StarterAccess)StarterAccessBatch.Record("play");else ConstructionWorkspaceBatch.Record("play");}
     public static void Run()=>Begin(false);
     public static void RunStarterAccess()=>Begin(true);
@@ -36,8 +38,12 @@ public static class ConstructionWorkspacePlay
     public static void RunFrontage()=>Begin(false,true,true);
     public static void RunEscalator()=>Begin(false,true,false,true);
     public static void RunElevator()=>Begin(false,transport:true,elevator:true);
-    private static void Begin(bool starterAccess,bool transport=false,bool frontage=false,bool escalator=false,bool elevator=false)
+    public static void RunFloors()=>Begin(false, floors:true);
+    public static void RunDoors()=>Begin(false, doors:true);
+    private static void Begin(bool starterAccess,bool transport=false,bool frontage=false,bool escalator=false,bool elevator=false,bool floors=false,bool doors=false)
     {
+        SessionState.SetBool("ConstructionWorkspace.Floors",floors);
+        SessionState.SetBool("ConstructionWorkspace.Doors",doors);
         TownWorldSafety.RequireIsolatedEditor();SessionState.SetBool("ConstructionWorkspace.StarterAccess",starterAccess);SessionState.SetBool("ConstructionWorkspace.Transport",transport);SessionState.SetBool("ConstructionWorkspace.Frontage",frontage);SessionState.SetBool("ConstructionWorkspace.Escalator",escalator);SessionState.SetBool("ConstructionWorkspace.Elevator",elevator);Directory.CreateDirectory(Report);
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);
         EditorUtility.UnloadUnusedAssetsImmediate();GC.Collect();
@@ -72,13 +78,23 @@ public static class ConstructionWorkspacePlay
         Require(orders.shopCapacityKg-orders.ShopWeightKg>=2*orders.pickupCapacityKg,
             "Starter stock must leave room for two full pickup loads.");
         var spawner=Object.FindObjectOfType<StorePrefabSpawner>();spawner.UsesModularStore=true;starter.ConfigureSite(true,data);spawner.Spawn(StoreLevelId.Lvl1);starter.ApplyNewGameBuildings(data);
-        VerifyStarterWallJoins(starter);
+        if (!Floors && !Doors) VerifyStarterWallJoins(starter);
         var shop=Object.FindObjectOfType<RetailEmpireTycoon.StoreOperations.StoreOperations>();shop.enabled=false;shop.SetOpen(false);
         var parking=Object.FindObjectOfType<ParkingTraffic>();parking.enabled=false;
         var roads=Object.FindObjectOfType<RetailEmpireTycoon.City.TownRoadTraffic>();roads.enabled=false;
         foreach(var roadCar in roads.ActiveCars)roadCar.gameObject.SetActive(false);
         Require(roads.MaximumCars==RetailEmpireTycoon.City.TownRoadTraffic.DefaultCapacity,"Unexpected shared town traffic capacity.");
         for(int i=0;i<5;i++)yield return null;
+        if (Doors)
+        {
+            foreach (var step in DoorCollectionPlay.Verify(starter, CaptureUi)) yield return step;
+            yield break;
+        }
+        if (Floors)
+        {
+            foreach (var step in VerifyFloorCollection(starter)) yield return step;
+            yield break;
+        }
         if(Frontage){FrontageMigration(starter);foreach(var step in GroundOnlyTransports(starter))yield return step;}
         Physics.simulationMode=SimulationMode.Script;
         VerifyFrontageDecor(starter);
@@ -462,6 +478,242 @@ public static class ConstructionWorkspacePlay
             .Any(button => button.GetComponentInChildren<TMPro.TMP_Text>()?.text == text);
     }
 
+    private static System.Collections.Generic.IEnumerable<object> VerifyFloorCollection(StarterStoreInitialization starter)
+    {
+        var build = starter.building;
+        var floors = starter.floors;
+        var inventory = build.inventory;
+        var orders = starter.cityTrip.orders;
+        var styles = Resources.LoadAll<BuildItemData>("FloorCollection").OrderBy(item => item.id, StringComparer.Ordinal).ToArray();
+        Require(styles.Length == 29 && styles.Select(item => item.id).Distinct().Count() == 29 &&
+            styles.All(item => !item.id.StartsWith("Floor_29_", StringComparison.Ordinal)), "Invalid floor collection IDs.");
+        var controls = Object.FindObjectOfType<GameplayControls>();
+        var shop = Object.FindObjectOfType<RetailEmpireTycoon.UI.Shop.ShopWindow>(true);
+        controls.RequestShop();
+        shop.OpenCategory(BuildCategory.Structures);
+        yield return null;
+        shop.GetComponentsInChildren<Button>().Single(button => button.name == "Floors & Ceilings").onClick.Invoke();
+        yield return null;
+        var cards = shop.GetComponentsInChildren<RetailEmpireTycoon.UI.Shop.ShopItemCard>();
+        Require(styles.All(item => cards.Any(card => card.nameText.text == item.displayName && card.icon.sprite == item.icon &&
+            card.buyButton.interactable)), "Missing purchasable floor card or icon.");
+        Require(cards[0].nameText.text == "Cream Ceramic" && cards.All(card => card.nameText.text != "Storage rack"),
+            "The floor section must start with the new collection and contain only finishes.");
+        CaptureUi("FloorStore");
+        shop.GetComponentsInChildren<Button>().Single(button => button.name == "Wood").onClick.Invoke();
+        yield return null;
+        Require(shop.GetComponentsInChildren<RetailEmpireTycoon.UI.Shop.ShopItemCard>().Select(card => card.nameText.text)
+            .SequenceEqual(styles.Where(item => item.floorFinishGroup == FloorFinishGroup.Wood).Select(item => item.displayName)),
+            "The Wood filter did not isolate the new wooden finishes.");
+        controls.HandleEscape();
+        yield return null;
+
+        var nav = new StoreNavigation(build.grid, build.territory);
+        nav.RefreshDoorways(Object.FindObjectsOfType<PlacedObject>());
+        var racks = Object.FindObjectsOfType<PlacedObject>()
+            .Where(placed => placed.item != null && placed.item.id == "storage_rack_01")
+            .OrderBy(placed => placed.anchorCell.z).ToArray();
+        Require(racks.Length == 3 && racks.SelectMany(rack => rack.occupiedCells).Distinct().Count() ==
+            racks.Sum(rack => rack.occupiedCells.Count), "The starter warehouse needs three separate racks.");
+        var aisle = racks[1].anchorCell + Vector3Int.right * 4;
+        var aisleStart = aisle + new Vector3Int(0, 0, -2);
+        var aisleEnd = aisle + new Vector3Int(0, 0, 6);
+        Require(nav.IsWalkable(aisle) && nav.TryPath(build.grid.CellToWorld(aisleStart) + Vector3.up * StoreNavigation.FloorHeight,
+            build.grid.CellToWorld(aisleEnd) + Vector3.up * StoreNavigation.FloorHeight, out _),
+            "The new rack blocks the warehouse aisle.");
+        var legacy = floors.BuildSaveData();
+        VerifyGroundFloorHeights(starter.catalog, styles[0]);
+        var positions = legacy.Where(tile => tile.floor == 0 && tile.itemId != "asphalt_01")
+            .Select(tile => new Vector3Int(tile.x, 0, tile.z))
+            .Where(cell => nav.IsWalkable(cell) && floors.AreCellsValid(new() { cell }, styles[0]))
+            .OrderBy(cell => (build.grid.CellToWorld(cell) - starter.blueprint.cameraFocus).sqrMagnitude)
+            .Take(styles.Length).ToArray();
+        Require(positions.Length == styles.Length, "Starter floor has too few free test cells.");
+        Require(positions.All(cell => Mathf.Abs(floors.SurfaceElevation(cell) - floors.surfaceHeight) < .001f),
+            "An indoor starter floor was lowered.");
+        int balance = orders.money.Money;
+        orders.money.SetMoney(0);
+        Require(!orders.Order(styles[0]) && orders.money.Money == 0, "An unaffordable tile order was accepted.");
+        orders.money.SetMoney(balance);
+        for (int i = 0; i < styles.Length; i++)
+        {
+            var item = styles[i];
+            Require(starter.catalog.GetById(item.id) == item && item.prefab.isStatic && item.icon != null &&
+                item.floorMaterial.IsKeywordEnabled("_NORMALMAP"), "Invalid definition: " + item.id);
+            int before = orders.money.Money;
+            int stockBefore = inventory.GetCount(item);
+            Require(orders.Order(item) && orders.money.Money == before - item.price, "Incorrect floor charge: " + item.id);
+            var parcel = orders.Ledger.Entries.Single(entry => entry.itemId == item.id &&
+                entry.location == RetailEmpireTycoon.Logistics.DeliveryLocation.Depot);
+            Require(orders.LoadFrom(parcel, RetailEmpireTycoon.Logistics.SupplierKind.Construction) && orders.Unload(),
+                "Floor delivery failed: " + item.id + " " + orders.Notice);
+            build.EnterBuildMode(item);
+            build.RotateSelected(i % 4);
+            Require(build.TryPaintCells(new() { positions[i] }) && inventory.GetCount(item) == stockBefore,
+                "Delivered floor could not be painted: " + item.id);
+            build.ExitBuildMode();
+            Require(nav.IsWalkable(positions[i]), "New finish blocked store navigation: " + item.id);
+        }
+        Require(orders.money.Money == balance - styles.Sum(style => style.price), "Incorrect total charged for collection.");
+        Require(floors.Surfaces.Where(mesh => styles.Any(item => item.id == mesh.name)).All(mesh =>
+            mesh.GetComponent<Collider>() == null && mesh.sharedMesh.tangents.Length == mesh.sharedMesh.vertexCount),
+            "Ground finishes changed colliders or lack normal-map tangents.");
+        var snapshot = new GameData { floorTiles = floors.BuildSaveData(), buildInventory = inventory.BuildSaveData() };
+        var loaded = JsonUtility.FromJson<GameData>(JsonUtility.ToJson(snapshot));
+        floors.ApplySaveData(loaded.floorTiles, starter.catalog);
+        inventory.ApplySaveData(loaded.buildInventory, starter.catalog);
+        var restored = floors.BuildSaveData().ToDictionary(tile => new Vector3Int(tile.x, tile.floor, tile.z));
+        for (int i = 0; i < styles.Length; i++)
+            Require(restored[positions[i]].itemId == styles[i].id && restored[positions[i]].facing == i % 4,
+                "Floor item or rotation lost in save/load: " + styles[i].id);
+        var previous = JsonUtility.FromJson<FloorTileSaveData>("{\"itemId\":\"floor_cream\",\"x\":2,\"z\":3}");
+        Require(previous.facing == 0 && legacy.Any(tile => tile.itemId == "asphalt_01") &&
+            loaded.floorTiles.Any(tile => tile.itemId == "asphalt_01"), "Legacy floors changed.");
+
+        build.EnterBuildMode(styles[0]);
+        int replacementStock = inventory.GetCount(styles[0]);
+        inventory.Add(styles[0], 1);
+        Require(build.TryPaintCells(new() { positions[1] }), "Could not replace another finish.");
+        build.ExitBuildMode();
+        Require(floors.RemoveCells(new() { positions[1] }, inventory) && inventory.GetCount(styles[0]) == replacementStock + 1,
+            "Erasing a floor did not return the replacement tile.");
+        VerifyStripeRegion(starter.catalog, styles[18]);
+        foreach (var step in DriveAcrossFloorCollection(styles)) yield return step;
+
+        var accents = new[] { styles[3], styles[13], styles[18], styles[26] };
+        var shopCells = legacy.Where(tile => tile.floor == 0 && tile.itemId != "asphalt_01")
+            .Select(tile => new Vector3Int(tile.x, 0, tile.z)).ToHashSet();
+        var center = shopCells.OrderByDescending(cell => floors.GetRectCells(cell, cell + new Vector3Int(7, 0, 7))
+                .Count(at => shopCells.Contains(at) && nav.IsWalkable(at)))
+            .First();
+        for (int i = 0; i < accents.Length; i++)
+        {
+            var offset = new Vector3Int(i % 2 * 4, 0, i / 2 * 4);
+            var patch = floors.GetRectCells(center + offset, center + offset + new Vector3Int(3, 0, 3));
+            Require(patch.All(shopCells.Contains) && floors.AreCellsValid(patch, accents[i]), "Cannot place a contiguous screenshot swatch.");
+            floors.PaintCells(patch, accents[i]);
+        }
+        var walkingStart = build.grid.CellToWorld(center + new Vector3Int(0, 0, 1)) + Vector3.up * StoreNavigation.FloorHeight;
+        var walkingEnd = build.grid.CellToWorld(center + new Vector3Int(7, 0, 1)) + Vector3.up * StoreNavigation.FloorHeight;
+        Require(nav.TryPath(walkingStart, walkingEnd, out _), "Customer navigation could not route across the floor junction.");
+        yield return null;
+        var camera = Camera.main;
+        var target = build.grid.CellToWorld(center + new Vector3Int(3, 0, 3));
+        camera.transform.position = target + new Vector3(-5.2f, 8, -6.7f);
+        camera.transform.LookAt(target);
+        CaptureUi("FloorGameplay");
+        Debug.Log("Floor Collection QA passed: 29 cards, filters, purchase, supplier, placement, navigation, pickup drive, replacement, erase, rotation and save/load.");
+    }
+
+    private static System.Collections.Generic.IEnumerable<object> DriveAcrossFloorCollection(BuildItemData[] styles)
+    {
+        var root = new GameObject("Floor driving test");
+        Vector3 origin = new Vector3(1000, 10, 1000);
+        var floor = root.AddComponent<FloorPainter>();
+        floor.grid = root.AddComponent<GridSystem>();
+        floor.grid.origin = origin;
+        floor.grid.cellSize = ShopProportions.CellSize;
+        var road = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        road.transform.SetParent(root.transform);
+        road.transform.position = origin + new Vector3(0, -.25f, 5);
+        road.transform.localScale = new Vector3(12, .5f, 38);
+        for (int i = 0; i < styles.Length; i++)
+            floor.PaintCells(floor.GetRectCells(new Vector3Int(-6, 0, i * 2), new Vector3Int(5, 0, i * 2 + 1)), styles[i]);
+        Physics.SyncTransforms();
+        for (int i = 0; i < styles.Length; i++)
+            Require(Physics.Raycast(origin + new Vector3(0, 2, (i * 2 + .5f) * floor.grid.cellSize), Vector3.down, out var hit, 3)
+                && hit.collider.gameObject == road, "The finish added a ground collision: " + styles[i].id);
+
+        var model = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/City/Pickup.prefab");
+        var truck = Object.Instantiate(model, origin + new Vector3(0, .1f, -3.5f), Quaternion.identity, root.transform)
+            .GetComponent<RetailEmpireTycoon.City.PickupDrive>();
+        truck.enabled = false;
+        truck.ReadKeyboard = false;
+        var tick = typeof(RetailEmpireTycoon.City.PickupDrive).GetMethod("FixedUpdate",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        var previous = Physics.simulationMode;
+        Physics.simulationMode = SimulationMode.Script;
+        try
+        {
+            truck.Stop();
+            Physics.SyncTransforms();
+            for (int step = 0; step < 130; step++) { tick.Invoke(truck, null); Physics.Simulate(.02f); }
+            float settled = truck.Body.position.y;
+            Require(truck.GroundedWheels == truck.wheels.Length, "Pickup was not grounded before the test.");
+            truck.SetInput(.52f, 0, false);
+            float end = origin.z + styles.Length * 2 * floor.grid.cellSize + 2.5f;
+            for (int step = 0; step < 360 && truck.Body.position.z < end; step++)
+            {
+                tick.Invoke(truck, null);
+                Physics.Simulate(.02f);
+                Require(Mathf.Abs(truck.Body.position.y - settled) < .12f && truck.GroundedWheels >= 3,
+                    "Pickup bounced or lost wheel contact on the floor runway.");
+                if (step % 60 == 0) yield return null;
+            }
+            Require(truck.Body.position.z >= end, "Pickup did not cross all 29 finishes.");
+        }
+        finally
+        {
+            Physics.simulationMode = previous;
+            Object.Destroy(root);
+        }
+    }
+
+    private static void VerifyStripeRegion(BuildItemCatalog catalog, BuildItemData stripe)
+    {
+        var root = new GameObject("Floor stripe test");
+        var floor = root.AddComponent<FloorPainter>();
+        floor.grid = root.AddComponent<GridSystem>();
+        floor.grid.cellSize = ShopProportions.CellSize;
+        var inner = new Vector3Int(15, 1, 4);
+        var outer = new Vector3Int(16, 1, 4);
+        floor.PaintCells(new() { inner, outer }, stripe, 1);
+        var surfaces = floor.Surfaces.OrderBy(filter => filter.transform.parent.name, StringComparer.Ordinal).ToArray();
+        Require(surfaces.Length == 2 && surfaces.All(mesh => mesh.GetComponent<MeshCollider>().sharedMesh == mesh.sharedMesh),
+            "Upper floor stripe lacks its chunk collider.");
+        Require(surfaces[0].sharedMesh.uv.Take(4).All(uv => uv.x < .5f) &&
+            surfaces[1].sharedMesh.uv.Take(4).All(uv => uv.x > .5f), "Stripe shows on an interior chunk edge.");
+        var inventory = root.AddComponent<BuildInventory>();
+        Require(floor.RemoveCells(new() { outer }, inventory) && surfaces[0].sharedMesh.uv.Take(4).All(uv => uv.x > .5f),
+            "The stripe did not reappear on the neighboring chunk after erasing.");
+        var snapshot = floor.BuildSaveData();
+        floor.ApplySaveData(snapshot, catalog);
+        Require(floor.BuildSaveData().Single().facing == 1, "The stripe direction did not restore.");
+        Object.Destroy(root);
+    }
+
+    private static void VerifyGroundFloorHeights(BuildItemCatalog catalog, BuildItemData finish)
+    {
+        var root = new GameObject("Floor height test");
+        var floor = root.AddComponent<FloorPainter>();
+        floor.grid = root.AddComponent<GridSystem>();
+        floor.grid.origin = new Vector3(1000, 4, 1000);
+        floor.grid.cellSize = ShopProportions.CellSize;
+        var inside = new Vector3Int(2, 0, 2);
+        var outside = new Vector3Int(3, 0, 2);
+        floor.SetRaisedFloorFootprint(new RectInt(2, 2, 1, 1));
+        floor.PaintCells(new() { inside, outside }, finish);
+        float ground = floor.grid.origin.y + FloorPainter.GroundSurfaceLift;
+        float raised = floor.grid.origin.y + floor.surfaceHeight;
+        void CheckMesh()
+        {
+            var mesh = floor.Surfaces.Single().sharedMesh;
+            Require(mesh.vertexCount == 8 && Mathf.Abs(mesh.bounds.min.y - ground) < .001f &&
+                Mathf.Abs(mesh.bounds.max.y - raised) < .001f &&
+                Mathf.Abs(floor.SurfaceElevation(outside) - ground) < .001f &&
+                Mathf.Abs(floor.SurfaceElevation(inside) - raised) < .001f,
+                "Exterior paving and the raised indoor floor do not match their respective heights.");
+        }
+        CheckMesh();
+        floor.ApplySaveData(floor.BuildSaveData(), catalog);
+        CheckMesh();
+        floor.ShowPreview(new() { outside }, true);
+        var preview = root.transform.Find("Floor brush preview").GetComponent<MeshFilter>().sharedMesh;
+        Require(Mathf.Abs(preview.bounds.center.y - (ground + .005f)) < .001f,
+            "The floor brush preview floats above outdoor paving.");
+        Object.Destroy(root);
+    }
+
     private static System.Collections.Generic.IEnumerable<object> VerifyWallCollection(StarterStoreInitialization starter)
     {
         var orders=starter.cityTrip.orders;
@@ -766,7 +1018,14 @@ public static class ConstructionWorkspacePlay
     private static void StarterStock(StarterStoreInitialization starter,GameData data)
     {
         Require(data.playerMoney==420000,"New games should start with $420,000.");
-        Require(data.buildInventory.Sum(entry=>entry.count)==358,"Incorrect starter stock total.");
+        var starterFloors = Resources.LoadAll<BuildItemData>("FloorCollection");
+        Require(starterFloors.Length == 29 && starterFloors.All(floor =>
+            data.buildInventory.Single(entry => entry.itemId == floor.id).count == 50), "Starting storage must contain 50 of each new floor.");
+        var starterDoors = Resources.LoadAll<BuildItemData>("DoorCollection");
+        Require(starterDoors.Length == 24 && starterDoors.All(door =>
+            data.buildInventory.Single(entry => entry.itemId == door.id).count == 3), "Starting storage must contain three of each collection door.");
+        int totalStock = data.buildInventory.Sum(entry => entry.count);
+        Require(totalStock == 1880, "Incorrect starter stock total.");
         var starterWalls=Resources.LoadAll<BuildItemData>("WallCollection").Where(item=>!item.IsWallCorner).ToArray();
         Require(starterWalls.Length==30 && starterWalls.All(wall=>data.buildInventory.Single(entry=>entry.itemId==wall.id).count==
             (wall.id==BuildItemData.StoreStripeId?30:10)),
@@ -778,7 +1037,16 @@ public static class ConstructionWorkspacePlay
         Require(starter.blueprint.initialState.buildInventory.Count==0,"Grant mutated the reusable blueprint.");
         var reloaded=JsonUtility.FromJson<GameData>(JsonUtility.ToJson(data));
         starter.UpgradeUnmodifiedLayout(reloaded);
-        Require(reloaded.buildInventory.Sum(entry=>entry.count)==358,"Loading/upgrading grants the starter stock again.");
+        Require(reloaded.buildInventory.Sum(entry => entry.count) == totalStock, "Loading/upgrading grants the starter stock again.");
+        var collectionIds = starterFloors.Concat(starterDoors).Select(item => item.id).ToHashSet();
+        reloaded.buildInventory.RemoveAll(entry => collectionIds.Contains(entry.itemId));
+        var extraRack = reloaded.placedObjects.Where(placed => placed.itemId == "storage_rack_01")
+            .OrderBy(placed => placed.z).ElementAt(1);
+        reloaded.placedObjects.Remove(extraRack);
+        starter.UpgradeUnmodifiedLayout(reloaded);
+        Require(reloaded.buildInventory.All(entry => !collectionIds.Contains(entry.itemId)) &&
+            reloaded.placedObjects.Count(placed => placed.itemId == "storage_rack_01") == 2,
+            "An existing layout received the new-game warehouse contents.");
         var stock=(StarterConstructionStock)typeof(StarterStoreBlueprint).GetField("constructionStock",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance).GetValue(starter.blueprint);
         var choices=new System.Collections.Generic.HashSet<string>();
         for(int seed=1;seed<=12;seed++)
@@ -789,7 +1057,7 @@ public static class ConstructionWorkspacePlay
         Require(choices.Count>1,"Starter shelf selection is not random.");
         var layout=Object.FindObjectOfType<RetailEmpireTycoon.City.TownWorldPlaces>().layout;
         Require(layout.ShopVisualScale==Vector3.one*layout.shopToCityScale,"City shop is still stretched vertically.");
-        File.WriteAllText(Report+"/stock.txt","PASS $420,000 capital, 10 of each of 30 wall styles, 2 personal bays and the existing starter stock; inventory restore; existing-game upgrade grants nothing.\n");
+        File.WriteAllText(Report+"/stock.txt","PASS $420,000 capital, 50 of each of 29 floor styles, 10 of each of 30 wall styles, 3 of each of 24 doors, 2 personal bays and the existing starter stock; inventory restore; existing-game upgrade grants nothing.\n");
     }
     private static System.Collections.Generic.IEnumerable<object> Workspace(StarterStoreInitialization starter)
     {
@@ -968,6 +1236,20 @@ public static class ConstructionWorkspacePlay
     private static void Require(bool condition,string message){if(!condition)throw new InvalidOperationException(message);}
     private static void Finish(Exception error)
     {
+        if (Doors)
+        {
+            SessionState.SetBool(Pending, false);
+            File.WriteAllText(Report + "/play.txt", error == null ? "PASS door catalog, placement, persistence, pedestrian and vehicle checks.\n" : "FAIL " + error);
+            EditorApplication.Exit(error == null ? 0 : 1);
+            return;
+        }
+        if (Floors)
+        {
+            SessionState.SetBool(Pending, false);
+            File.WriteAllText(Report + "/play.txt", error == null ? "PASS floor catalog, purchase, placement and persistence.\n" : "FAIL " + error);
+            EditorApplication.Exit(error == null ? 0 : 1);
+            return;
+        }
         SessionState.SetBool(Pending,false);File.WriteAllText(Report+"/play.txt",error==null?"PASS full construction, parking and buyer lifecycle without accessing the player's save.\n":"FAIL "+error);
         if(error==null)File.WriteAllLines(Report+"/language.txt",new[]{"PASS English-only UI, legacy locale changes cannot switch this build away from English. Verified screens:"}.Concat(englishScreens.OrderBy(name=>name)));
         if(error==null)RecordInputs();EditorApplication.Exit(error==null?0:1);

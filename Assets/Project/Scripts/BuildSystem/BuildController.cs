@@ -38,11 +38,34 @@ namespace RetailEmpireTycoon.BuildSystem
         public int PreviewOpeningTileCount {get;private set;}
         public int FloorStrokeCellCount {get;private set;}
         public event System.Action LayoutChanged;
+        private readonly Dictionary<Vector3Int, DoorFinish> _wallDoorFinishes = new();
         public void NotifyLayoutChanged()
         {
             WallPattern.RefreshConnections(grid);
+            RefreshDoorFinishes();
             LayoutChanged?.Invoke();
         }
+
+        private void RefreshDoorFinishes()
+        {
+            var objects = FindObjectsOfType<PlacedObject>();
+            _wallDoorFinishes.Clear();
+            foreach (var placed in objects)
+            {
+                if (placed.item == null || !placed.item.isWall || placed.IsPendingRemoval) continue;
+                var finish = placed.item.recommendedDoorFinish;
+                if (finish == DoorFinish.Auto)
+                    finish = placed.item.id is "wall_01" or "wallcorner_01" ? DoorFinish.DarkGreen : DoorFinish.Graphite;
+                foreach (var cell in placed.occupiedCells) _wallDoorFinishes[cell] = finish;
+            }
+            foreach (var placed in objects)
+                if (!placed.IsPendingRemoval && placed.TryGetComponent<DoorFrameFinish>(out var door))
+                    door.Apply(door.Resolve(door.Choice, placed.occupiedCells, placed.facing, _wallDoorFinishes));
+        }
+
+        internal DoorFinish PreviewDoorFinish(DoorFrameFinish door, DoorFinish choice, PlacementRequest request) =>
+            door.Resolve(choice, grid.GetFootprintCells(request.anchorCell, request.item.footprint, request.rotated,
+                request.item.pivotOffset), request.facing, _wallDoorFinishes);
         internal bool PersonalParkingLimitReached => FindObjectsOfType<PlacedObject>().Count(p => p.playerParking) >= 3;
         public PlacementResult ValidateExistingPlacement(PlacementRequest request) => _validator.CanPlace(request);
 
@@ -75,6 +98,7 @@ namespace RetailEmpireTycoon.BuildSystem
                 new Rule_Accessibility(grid, grid),
                 new Rule_ShelfApproach(grid,territory),
                 new Rule_VisualOverlap(grid),
+                new Rule_DoorClearance(grid, floorPainter),
                 new Rule_WallJoint(),
                 new RetailEmpireTycoon.Parking.Rule_ParkingSurface(grid, floorPainter),
             };
@@ -102,8 +126,10 @@ namespace RetailEmpireTycoon.BuildSystem
             }
             else
             {
-                if(!floorPainter.AreCellsValid(cells,_selected)||inventory.GetCount(_selected)<cells.Count)return false;
-                floorPainter.PaintCells(cells,_selected);inventory.TryConsume(_selected,cells.Count);
+                if (!floorPainter.AreCellsValid(cells, _selected)) return false;
+                int required = floorPainter.TilesRequired(cells, _selected);
+                if (required > 0 && !inventory.TryConsume(_selected, required)) return false;
+                floorPainter.PaintCells(cells, _selected, _facing);
             }
             NotifyLayoutChanged();return true;
         }
@@ -134,6 +160,7 @@ namespace RetailEmpireTycoon.BuildSystem
 
             if (_selected != null && _selected.placementKind == PlacementKind.Floor)
             {
+                if (_selected.usesMetricFloorPattern && !Storeys.EraseSurface) HandleRotate();
                 HandleFloorPaintMode();
                 return;
             }
@@ -228,6 +255,8 @@ namespace RetailEmpireTycoon.BuildSystem
             else floorPainter?.ClearPreview();
 
             preview?.SetPose(worldPos, rot);
+            if (req.item.prefab.TryGetComponent<DoorFrameFinish>(out var door))
+                preview?.SetDoorFrameFinish(door, PreviewDoorFinish(door, DoorFinish.Auto, req));
             preview?.ShowPlacement(grid, req, res);
         }
 
@@ -260,14 +289,8 @@ namespace RetailEmpireTycoon.BuildSystem
                 {
                     var cells = new List<Vector3Int> { cell };
 
-                    if (floorPainter.AreCellsValid(cells, _selected) && inventory != null && inventory.GetCount(_selected) >= 1)
-                    {
-                        floorPainter.PaintCells(cells, _selected);
-                        inventory.TryConsume(_selected, 1);
-
-                        if (inventory.GetCount(_selected) <= 0)
-                            ExitBuildMode();
-                    }
+                    if (TryPaintCells(cells) && inventory.GetCount(_selected) <= 0)
+                        ExitBuildMode();
                 }
 
                 return;
@@ -363,10 +386,10 @@ namespace RetailEmpireTycoon.BuildSystem
                     var cells = new List<Vector3Int> { hoverCell };
 
                     bool validArea = floorPainter.AreCellsValid(cells, _selected);
-                    bool enoughItems = Storeys.EraseSurface || inventory.GetCount(_selected) >= 1;
-                    UpdateFloorFeedback(1, validArea, enoughItems);
+                    int required = Storeys.EraseSurface ? 0 : floorPainter.TilesRequired(cells, _selected);
+                    UpdateFloorFeedback(required, validArea, inventory.GetCount(_selected) >= required);
 
-                    floorPainter.ShowPreview(cells, validArea && enoughItems);
+                    ShowFloorPaintPreview(cells, PreviewResult.ok);
                 }
             }
 
@@ -389,10 +412,10 @@ namespace RetailEmpireTycoon.BuildSystem
                 _floorPreviewCells = floorPainter.GetRectCells(_floorStartCell, currentCell);
 
                 bool validArea = floorPainter.AreCellsValid(_floorPreviewCells, _selected);
-                bool enoughItems = Storeys.EraseSurface || inventory.GetCount(_selected) >= _floorPreviewCells.Count;
-                UpdateFloorFeedback(_floorPreviewCells.Count, validArea, enoughItems);
+                int required = Storeys.EraseSurface ? 0 : floorPainter.TilesRequired(_floorPreviewCells, _selected);
+                UpdateFloorFeedback(required, validArea, inventory.GetCount(_selected) >= required);
 
-                floorPainter.ShowPreview(_floorPreviewCells, validArea && enoughItems);
+                ShowFloorPaintPreview(_floorPreviewCells, PreviewResult.ok);
             }
 
             if (_isPaintingFloor && Input.GetMouseButtonUp(0))
@@ -406,7 +429,7 @@ namespace RetailEmpireTycoon.BuildSystem
                 }
 
                 bool validArea = floorPainter.AreCellsValid(_floorPreviewCells, _selected);
-                bool enoughItems = Storeys.EraseSurface || inventory.GetCount(_selected) >= _floorPreviewCells.Count;
+                bool enoughItems = Storeys.EraseSurface || inventory.GetCount(_selected) >= floorPainter.TilesRequired(_floorPreviewCells, _selected);
 
                 if (validArea && enoughItems)
                 {
@@ -418,6 +441,12 @@ namespace RetailEmpireTycoon.BuildSystem
 
                 floorPainter.ClearPreview();
             }
+        }
+
+        private void ShowFloorPaintPreview(List<Vector3Int> cells, bool valid)
+        {
+            int stripeFacing = _selected.hasFloorEdgeStripe && !Storeys.EraseSurface ? _facing : -1;
+            floorPainter.ShowPreview(cells, valid, stripeFacing, _selected.isAsphalt);
         }
 
         private void UpdateFloorFeedback(int count, bool validArea, bool enoughItems)
@@ -453,7 +482,8 @@ namespace RetailEmpireTycoon.BuildSystem
                     wallModuleVersion = placed.wallModuleVersion,
                     playerParking = placed.playerParking,
                     primaryPlayerParking = placed.primaryPlayerParking,
-                    parkingModuleVersion = placed.parkingModuleVersion
+                    parkingModuleVersion = placed.parkingModuleVersion,
+                    doorFrameFinish = placed.GetComponent<DoorFrameFinish>()?.Choice ?? DoorFinish.Auto
                 });
             }
 
@@ -486,6 +516,7 @@ namespace RetailEmpireTycoon.BuildSystem
                 {
                     placed.playerParking = d.playerParking;
                     placed.primaryPlayerParking = d.playerParking && d.primaryPlayerParking;
+                    placed.GetComponent<DoorFrameFinish>()?.SetChoice(d.doorFrameFinish);
                     placed.GetComponent<RetailEmpireTycoon.Parking.ParkingBay>()?.ApplyPaint(d.playerParking);
                 }
             }

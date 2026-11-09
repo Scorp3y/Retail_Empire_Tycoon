@@ -95,6 +95,7 @@ GameObject:
   - component: {fileID: 9022375363421807671}
   - component: {fileID: 1739212249484582587}
   - component: {fileID: 3295054447900763283}
+  - component: {fileID: 7632233968320299103}
   m_Layer: 0
   m_Name: Wall_FittedUnloadingGate
   m_TagString: Untagged
@@ -185,6 +186,34 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.34, y: 1.41, z: 0.105020985}
   m_Center: {x: 0, y: 0.705, z: 0}
+--- !u!114 &7632233968320299103
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3411005925645810119}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7fdd18abc8727041aae75c1ce641d58, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  slots:
+  - renderer: {fileID: 3731638598087136267}
+    index: 0
+    original: {fileID: 2100000, guid: c210fe2f395f3b1478aadc1932ff9e88, type: 2}
+  - renderer: {fileID: 86038464300904812}
+    index: 0
+    original: {fileID: 2100000, guid: c210fe2f395f3b1478aadc1932ff9e88, type: 2}
+  - renderer: {fileID: 1812258949324363413}
+    index: 0
+    original: {fileID: 2100000, guid: c210fe2f395f3b1478aadc1932ff9e88, type: 2}
+  palette:
+  - {fileID: 2100000, guid: c3da3ba7f94e307468a134690950f754, type: 2}
+  - {fileID: 2100000, guid: 397032992741424448d67cb2b69797ec, type: 2}
+  - {fileID: 2100000, guid: 70a6b33debc78f84f85c6b6e672f5a8d, type: 2}
+  - {fileID: 2100000, guid: bbe8d382ae039f945a56f0f4b58323e6, type: 2}
+  cornerOpening: 0
 --- !u!1 &5204160315723483526
 GameObject:
   m_ObjectHideFlags: 0

@@ -100,24 +100,29 @@ namespace RetailEmpireTycoon.City
             closedBarrier.enabled = travel < 5.45f;
         }
 
-        public static Vector3 Track(float distance)
+        public static Vector3 Track(float distance) => Track(distance, BendStart, BendRadius);
+
+        public static Vector3 Track(float distance, float bendStart, float bendRadius)
         {
-            if (distance <= BendStart) return new Vector3(0, distance, 0);
-            float arc = Mathf.PI * .5f * BendRadius;
-            float over = distance - BendStart;
-            if (over >= arc) return new Vector3(0, BendStart + BendRadius, -BendRadius - (over - arc));
-            float angle = over / BendRadius;
-            return new Vector3(0, BendStart + BendRadius * Mathf.Sin(angle), -BendRadius * (1 - Mathf.Cos(angle)));
+            if (distance <= bendStart) return new Vector3(0, distance, 0);
+            float arc = Mathf.PI * .5f * bendRadius;
+            float over = distance - bendStart;
+            if (over >= arc) return new Vector3(0, bendStart + bendRadius, -bendRadius - (over - arc));
+            float angle = over / bendRadius;
+            return new Vector3(0, bendStart + bendRadius * Mathf.Sin(angle), -bendRadius * (1 - Mathf.Cos(angle)));
         }
 
         // Shared by the editor generator, the capture scene and runtime.
-        public static void SetSectionPose(Transform section, int index, float travel)
+        public static void SetSectionPose(Transform section, int index, float travel) =>
+            SetSectionPose(section, index, travel, SectionHeight, BendStart, BendRadius);
+
+        public static void SetSectionPose(Transform section, int index, float travel, float height, float bendStart, float bendRadius)
         {
-            var a = Track(index * SectionHeight + travel);
-            var b = Track((index + 1) * SectionHeight + travel);
+            var a = Track(index * height + travel, bendStart, bendRadius);
+            var b = Track((index + 1) * height + travel, bendStart, bendRadius);
             section.localPosition = (a + b) * .5f;
             section.localRotation = Quaternion.FromToRotation(Vector3.up, b - a);
-            section.localScale = new Vector3(1, (b - a).magnitude / SectionHeight, 1);
+            section.localScale = new Vector3(1, (b - a).magnitude / height, 1);
         }
     }
 }

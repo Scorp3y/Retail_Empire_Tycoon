@@ -55,6 +55,7 @@ public class PlacedBuildSaveData
     public bool playerParking;
     public bool primaryPlayerParking;
     public int parkingModuleVersion;
+    public RetailEmpireTycoon.BuildSystem.DoorFinish doorFrameFinish;
 }
 
 [Serializable]
@@ -65,4 +66,6 @@ public class FloorTileSaveData
     // Zero when absent in legacy saves. Layer 1 is both a ceiling and the second-storey floor.
     public int floor;
     public int z;
+    // Zero is the original orientation for saves written before directional finishes.
+    public int facing;
 }

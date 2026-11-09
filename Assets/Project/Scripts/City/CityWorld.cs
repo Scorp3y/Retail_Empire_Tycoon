@@ -354,8 +354,10 @@ namespace RetailEmpireTycoon.City
             Vector3 geometryScale=layout!=null?layout.ShopVisualScale:Vector3.one*scale;
             if(layout!=null){originalCenter=layout.sourceShopOrigin;shopCenter=layout.cityShopOrigin;}
             Vector3 Map(Vector3 point) => shopCenter + Vector3.Scale(point-originalCenter,geometryScale);
-            var doorFilters=shopScene.GetRootGameObjects().SelectMany(root=>root.GetComponentsInChildren<PlacedObject>(true))
-                .Where(placed=>placed.item!=null && placed.item.isDoorway && !placed.item.isUnloadingGate && placed.GetComponentInParent<BuildPreview>()==null)
+            var installedDoors=shopScene.GetRootGameObjects().SelectMany(root=>root.GetComponentsInChildren<PlacedObject>(true))
+                .Where(placed=>placed.item!=null && placed.item.isDoorway && !placed.item.isUnloadingGate &&
+                    placed.GetComponentInParent<BuildPreview>()==null && trip.WasShopObjectActive(placed.gameObject)).ToArray();
+            var doorFilters=installedDoors.Where(placed => placed.GetComponent<CollectionDoor>() == null)
                 .SelectMany(placed=>placed.GetComponentsInChildren<MeshFilter>(true));
             var contents=shopScene.GetRootGameObjects().SelectMany(root=>root.GetComponentsInChildren<PlacedObject>(true))
                 .Where(placed=>placed.item!=null && !placed.item.isWall && !placed.item.isDoorway && !placed.item.isUnloadingGate
@@ -371,6 +373,13 @@ namespace RetailEmpireTycoon.City
                 copy.transform.SetParent(facadeRoot,false); copy.transform.position=Map(filter.transform.position);
                 copy.transform.rotation=filter.transform.rotation; copy.transform.localScale=Vector3.Scale(filter.transform.lossyScale,geometryScale);
                 copy.GetComponent<MeshFilter>().sharedMesh=filter.sharedMesh; copy.GetComponent<MeshRenderer>().sharedMaterials=source.sharedMaterials;
+            }
+            foreach (var placed in installedDoors.Where(door => door.GetComponent<CollectionDoor>() != null))
+            {
+                var copy = Instantiate(placed.item.prefab, Map(placed.transform.position), placed.transform.rotation, facadeRoot);
+                copy.transform.localScale = Vector3.Scale(placed.transform.lossyScale, geometryScale);
+                if (placed.TryGetComponent<DoorFrameFinish>(out var finish) && copy.TryGetComponent<DoorFrameFinish>(out var target))
+                    target.Apply(finish.Resolved);
             }
             // The facade is visual-only. A solid core seals all doors and prevents entering the shop in the city.
             var core = new GameObject("Shop interior is closed",typeof(BoxCollider)); core.transform.SetParent(facadeRoot,false);

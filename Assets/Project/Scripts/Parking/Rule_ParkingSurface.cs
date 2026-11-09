@@ -21,7 +21,8 @@ namespace RetailEmpireTycoon.Parking
                 if(footprint.Intersect(reserved).Any()) return PlacementResult.Fail(PlaceFailReason.NoAccess,"Keep the parking approach clear.");
             }
             if(!request.item.isParkingSpace) return PlacementResult.Success();
-            foreach(var door in Object.FindObjectsOfType<PlacedObject>().Where(placed=>placed.item!=null && placed.item.isDoorway && placed.GetComponentInParent<BuildPreview>()==null))
+            foreach(var door in Object.FindObjectsOfType<PlacedObject>().Where(placed=>placed.item!=null && placed.item.isDoorway &&
+                placed.GetComponent<CollectionDoor>()?.AllowsVehicles != true && placed.GetComponentInParent<BuildPreview>()==null))
                 if(footprint.Intersect(DoorAccessCells(grid,door.item,door.anchorCell,door.rotated,door.facing)).Any())
                     return PlacementResult.Fail(PlaceFailReason.NoAccess,"Keep the customer entrance clear.");
             var parkingTraffic=Object.FindObjectOfType<ParkingTraffic>();
