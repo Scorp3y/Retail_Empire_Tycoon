@@ -22,14 +22,16 @@ namespace RetailEmpireTycoon.BuildSystem
         public readonly bool rotated;
         public readonly int facing;
         public readonly PlacedObject ignoredObject;
+        public readonly Vector3Int? decorEnd;
 
-        public PlacementRequest(BuildItemData item, Vector3Int anchorCell, bool rotated, int facing, PlacedObject ignoredObject = null)
+        public PlacementRequest(BuildItemData item, Vector3Int anchorCell, bool rotated, int facing, PlacedObject ignoredObject = null, Vector3Int? decorEnd = null)
         {
             this.item = item;
             this.anchorCell = anchorCell;
             this.rotated = rotated;
             this.facing = facing;
             this.ignoredObject = ignoredObject;
+            this.decorEnd = decorEnd;
         }
     }
 

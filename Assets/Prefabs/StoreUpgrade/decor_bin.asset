@@ -22,15 +22,18 @@ MonoBehaviour:
   previousWallAlignmentOffset: {x: 0, y: 0, z: 0}
   decorationProportionsVersion: 2
   id: decor_bin
-  displayName: Waste bin
+  displayName: Waste Bin
   description: 
-  icon: {fileID: 21300000, guid: 5681b0e02259b6d4bab991af145d7b58, type: 3}
+  russianName: "\u041C\u0443\u0441\u043E\u0440\u043D\u0430\u044F \u0443\u0440\u043D\u0430"
+  russianDescription:
+  icon: {fileID: 21300000, guid: 8b40f175283a9fc4385bde5f16b46692, type: 3}
   price: 35
   hiddenFromShop: 0
   weightKg: 5
   cargoVolumeM3: 0.08
   isAsphalt: 0
   isParkingSpace: 0
+  isPersonalParking: 0
   parkingGeometryVersion: 0
   previousParkingPrefab: {fileID: 0}
   previousParkingFootprint: {x: 0, y: 0}
@@ -39,7 +42,12 @@ MonoBehaviour:
     m_Extent: {x: 0, y: 0, z: 0}
   isUnloadingGate: 0
   isWall: 0
+  recommendedDoorFinish: 0
   beautyPoints: 1
+  decorGroup: 3
+  decorMount: 1
+  decorSeason: 0
+  decorUnlockLevel: 1
   unlockedByDefault: 1
   unlockCondition: {fileID: 0}
   category: 3
@@ -49,6 +57,9 @@ MonoBehaviour:
   ruleFlags: 3
   placementKind: 0
   floorMaterial: {fileID: 0}
+  usesMetricFloorPattern: 0
+  hasFloorEdgeStripe: 0
+  floorFinishGroup: 0
   accessibilitySides: 1
   pivotOffset: {x: 0, y: 0}
   alignModelToFootprint: 1
@@ -61,6 +72,7 @@ MonoBehaviour:
   isDoorway: 0
   isCheckout: 0
   storeyConnection: 0
+  storeyDirection: 0
   prefab: {fileID: 1461753713438393762, guid: c996be0123f5f3a4cb8ab937ddfecd4e, type: 3}
   previewValidMaterial: {fileID: 0}
   previewInvalidMaterial: {fileID: 0}

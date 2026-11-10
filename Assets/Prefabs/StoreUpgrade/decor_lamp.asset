@@ -22,15 +22,18 @@ MonoBehaviour:
   previousWallAlignmentOffset: {x: 0, y: 0, z: 0}
   decorationProportionsVersion: 2
   id: decor_lamp
-  displayName: Floor lamp
+  displayName: Floor Lamp
   description: 
-  icon: {fileID: 21300000, guid: 6fbb1779c38e0d845a56c1d74f9aefc9, type: 3}
+  russianName: "\u0422\u043E\u0440\u0448\u0435\u0440"
+  russianDescription:
+  icon: {fileID: 21300000, guid: c1fe0a4eb6575c4448f230e63d4fc9ac, type: 3}
   price: 80
   hiddenFromShop: 0
   weightKg: 5
   cargoVolumeM3: 0.08
   isAsphalt: 0
   isParkingSpace: 0
+  isPersonalParking: 0
   parkingGeometryVersion: 0
   previousParkingPrefab: {fileID: 0}
   previousParkingFootprint: {x: 0, y: 0}
@@ -39,7 +42,12 @@ MonoBehaviour:
     m_Extent: {x: 0, y: 0, z: 0}
   isUnloadingGate: 0
   isWall: 0
-  beautyPoints: 4
+  recommendedDoorFinish: 0
+  beautyPoints: 3
+  decorGroup: 2
+  decorMount: 1
+  decorSeason: 0
+  decorUnlockLevel: 1
   unlockedByDefault: 1
   unlockCondition: {fileID: 0}
   category: 3
@@ -49,6 +57,9 @@ MonoBehaviour:
   ruleFlags: 3
   placementKind: 0
   floorMaterial: {fileID: 0}
+  usesMetricFloorPattern: 0
+  hasFloorEdgeStripe: 0
+  floorFinishGroup: 0
   accessibilitySides: 1
   pivotOffset: {x: 0, y: 0}
   alignModelToFootprint: 1
@@ -61,6 +72,7 @@ MonoBehaviour:
   isDoorway: 0
   isCheckout: 0
   storeyConnection: 0
+  storeyDirection: 0
   prefab: {fileID: 6185336876664447165, guid: 35eb429e55b550c48ae20c1d7765d534, type: 3}
   previewValidMaterial: {fileID: 0}
   previewInvalidMaterial: {fileID: 0}

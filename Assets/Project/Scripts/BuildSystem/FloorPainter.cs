@@ -123,6 +123,13 @@ namespace RetailEmpireTycoon.BuildSystem
             var doorSweeps = surface != null && cells[0].y > 0
                 ? FindObjectsOfType<CollectionDoor>().Where(door => door.GetComponent<PlacedObject>() != null)
                     .SelectMany(Rule_DoorClearance.Sweeps).ToArray() : System.Array.Empty<Bounds>();
+            if(surface!=null && surface.isAsphalt)
+            {
+                var affected=cells.ToHashSet();
+                if(FindObjectsOfType<PlacedObject>().Any(p=>p.item!=null &&
+                    (p.decorMount==DecorMount.Floor && p.occupiedCells.Any(affected.Contains) || DecorPlacement.CeilingSupports(p,affected,grid))))
+                    return false;
+            }
             foreach (var cell in cells)
             {
                 if (cell.y < 0 || cell.y > GridSystem.TopFloor + 1) return false;
@@ -263,6 +270,7 @@ namespace RetailEmpireTycoon.BuildSystem
             var removed = cells.Where(_tiles.ContainsKey).ToHashSet();
             var objects = FindObjectsOfType<PlacedObject>().Where(p => p.item != null).ToArray();
             if (objects.Any(p => p.occupiedCells.Any(removed.Contains))) return false;
+            if (objects.Any(p => DecorPlacement.CeilingSupports(p,removed,grid))) return false;
             if(objects.Where(p=>p.item.isParkingSpace).Any(p=>RetailEmpireTycoon.Parking.Rule_ParkingSurface.ApproachCells(grid,p).Any(removed.Contains)))return false;
             if (objects.Where(p => p.item.storeyConnection != StoreyConnectionKind.None)
                 .Any(p => StoreyLink.LandingCells(grid, p).Any(removed.Contains))) return false;

@@ -56,6 +56,9 @@ public class PlacedBuildSaveData
     public bool primaryPlayerParking;
     public int parkingModuleVersion;
     public RetailEmpireTycoon.BuildSystem.DoorFinish doorFrameFinish;
+    public RetailEmpireTycoon.Core.DecorMount decorMount;
+    public bool hasDecorEnd;
+    public UnityEngine.Vector3Int decorEnd;
 }
 
 [Serializable]

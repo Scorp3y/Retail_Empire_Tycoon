@@ -32,6 +32,8 @@ namespace RetailEmpireTycoon.BuildSystem
         private int _facing;
 
         private PlacementValidator _validator;
+        private DecorPlacement decorPlacement;
+        private Vector3Int? garlandStart;
         public BuildItemData SelectedItem=>_selected;
         public PlacementResult PreviewResult {get;private set;}
         public bool HasPlacementPreview {get;private set;}
@@ -41,6 +43,7 @@ namespace RetailEmpireTycoon.BuildSystem
         private readonly Dictionary<Vector3Int, DoorFinish> _wallDoorFinishes = new();
         public void NotifyLayoutChanged()
         {
+            decorPlacement?.InvalidateRoutes();
             WallPattern.RefreshConnections(grid);
             RefreshDoorFinishes();
             LayoutChanged?.Invoke();
@@ -67,7 +70,44 @@ namespace RetailEmpireTycoon.BuildSystem
             door.Resolve(choice, grid.GetFootprintCells(request.anchorCell, request.item.footprint, request.rotated,
                 request.item.pivotOffset), request.facing, _wallDoorFinishes);
         internal bool PersonalParkingLimitReached => FindObjectsOfType<PlacedObject>().Count(p => p.playerParking) >= 3;
-        public PlacementResult ValidateExistingPlacement(PlacementRequest request) => _validator.CanPlace(request);
+        public PlacementResult ValidateExistingPlacement(PlacementRequest request)
+        {
+            var moved = request.ignoredObject;
+            if (moved != null && (request.anchorCell != moved.anchorCell || request.facing != moved.facing) &&
+                DecorPlacement.SupportsDecoration(moved))
+                return PlacementResult.Fail(PlaceFailReason.NoAccess, "Move or store the attached decorations first.");
+            if (request.item.decorMount != DecorMount.None)
+            {
+                var result = decorPlacement.Validate(request);
+                if (!result.ok || !DecorCatalog.UsesFloorSpace(request.item.decorMount)) return result;
+            }
+            var placement = _validator.CanPlace(request);
+            return placement.ok && request.item.decorMount != DecorMount.None ? decorPlacement.ValidateRoutes(request) : placement;
+        }
+
+        internal void PreviewPose(PlacementRequest request, Vector3 prefabScale)
+        {
+            if (request.item.decorMount != DecorMount.None && decorPlacement.TryResolve(request, out var pose))
+            {
+                preview?.SetModelScale(Vector3.Scale(prefabScale,pose.Scale));
+                preview?.SetPose(pose.Position,pose.Rotation);
+                return;
+            }
+            preview?.SetModelScale(prefabScale);
+            preview?.SetPose(BuildPlacementPose.Position(grid,request.item,request.anchorCell,request.rotated,request.facing),
+                Quaternion.Euler(0,request.facing*90,0));
+        }
+
+        internal bool ApplyDecorPose(PlacedObject placed, PlacementRequest request, DecorMount preferred = DecorMount.None)
+        {
+            if (request.item.decorMount == DecorMount.None || !decorPlacement.TryResolve(request,out var pose,preferred)) return false;
+            placed.decorMount = pose.Mount;
+            placed.decorEnd = request.decorEnd;
+            placed.decorScale = pose.Scale;
+            placed.transform.SetPositionAndRotation(pose.Position,pose.Rotation);
+            placed.transform.localScale = Vector3.Scale(request.item.prefab.transform.localScale,pose.Scale);
+            return true;
+        }
 
         public bool TryGetPlacementFocus(out Vector3 focus)
         {
@@ -104,6 +144,7 @@ namespace RetailEmpireTycoon.BuildSystem
             };
 
             _validator = new PlacementValidator(rules); 
+            decorPlacement = new DecorPlacement(this);
         }
 
 
@@ -112,6 +153,7 @@ namespace RetailEmpireTycoon.BuildSystem
         private List<Vector3Int> _floorPreviewCells = new();
         public void CancelFloorStroke()
         {
+            garlandStart=null;
             _isPaintingFloor=false; _floorPreviewCells.Clear(); FloorStrokeCellCount=0; HasPlacementPreview=false;
             floorPainter?.ClearPreview(); preview?.SetVisible(false);
         }
@@ -185,6 +227,7 @@ namespace RetailEmpireTycoon.BuildSystem
 
             mode = BuildMode.Build;
             _selected = item;
+            garlandStart = null;
             _rotated = false;
             _facing = 0;
 
@@ -201,6 +244,7 @@ namespace RetailEmpireTycoon.BuildSystem
             HasPlacementPreview = false;
             mode = BuildMode.Normal;
             _selected = null;
+            garlandStart = null;
             _isPaintingFloor = false;
             _floorPreviewCells.Clear();
             floorPainter?.ClearPreview();
@@ -242,10 +286,7 @@ namespace RetailEmpireTycoon.BuildSystem
                 return;
             }
 
-            var worldPos = BuildPlacementPose.Position(grid, _selected, cell, _rotated, _facing);
-            var rot = Quaternion.Euler(0f, _facing * 90f, 0f);
-
-            var req = new PlacementRequest(_selected, cell, _rotated, _facing);
+            var req = RequestAt(cell);
             var res = CanPlaceAt(cell);
             PreviewResult = res;
             HasPlacementPreview = true;
@@ -254,14 +295,18 @@ namespace RetailEmpireTycoon.BuildSystem
                 floorPainter.ShowPreview(StoreyLink.OpeningCells(grid,req).ToList(),res.ok);
             else floorPainter?.ClearPreview();
 
-            preview?.SetPose(worldPos, rot);
+            PreviewPose(req, _selected.prefab.transform.localScale);
             if (req.item.prefab.TryGetComponent<DoorFrameFinish>(out var door))
                 preview?.SetDoorFrameFinish(door, PreviewDoorFinish(door, DoorFinish.Auto, req));
             preview?.ShowPlacement(grid, req, res);
         }
 
         /// <summary>The same result drives the ghost and the final placement, including stock availability.</summary>
-        public PlacementResult CanPlaceAt(Vector3Int cell)
+        private PlacementRequest RequestAt(Vector3Int cell, Vector3Int? decorEnd = null) =>
+            new PlacementRequest(_selected,garlandStart ?? cell,_rotated,_facing,
+                decorEnd:decorEnd ?? (garlandStart.HasValue ? cell : (Vector3Int?)null));
+
+        public PlacementResult CanPlaceAt(Vector3Int cell, Vector3Int? decorEnd = null)
         {
             if (_selected == null || _selected.prefab == null || grid == null || _validator == null)
                 return PlacementResult.Fail(PlaceFailReason.RuleFailed, "This item is not ready for placement");
@@ -269,10 +314,14 @@ namespace RetailEmpireTycoon.BuildSystem
                 return PlacementResult.Fail(PlaceFailReason.InsufficientInventory, "This item is not in storage");
             if (_selected.isPersonalParking && PersonalParkingLimitReached)
                 return PlacementResult.Fail(PlaceFailReason.RuleFailed, "You can have up to three personal parking bays.");
-            if (territory == null || !(_selected.isParkingSpace ? territory.IsParkingCellAllowed(cell) : territory.IsCellPurchased(cell)))
+            if (territory == null || !AllowsLand(_selected,cell))
                 return PlacementResult.Fail(PlaceFailReason.NotPurchased, "Outside your available building area");
-            return _validator.CanPlace(new PlacementRequest(_selected, cell, _rotated, _facing));
+            return ValidateExistingPlacement(RequestAt(cell,decorEnd));
         }
+
+        private bool AllowsLand(BuildItemData item, Vector3Int cell) =>
+            item.isParkingSpace || (item.decorMount & (DecorMount.Street|DecorMount.Frontage|DecorMount.EntryMat))!=0
+                ? territory.IsParkingCellAllowed(cell) : territory.IsCellPurchased(cell);
 
         private void TryPlace()
         {
@@ -296,17 +345,22 @@ namespace RetailEmpireTycoon.BuildSystem
                 return;
             }
 
-            TryPlaceAt(cell);
+            if (_selected.decorMount == DecorMount.Garland && !garlandStart.HasValue)
+            {
+                if (decorPlacement.CanStartGarland(RequestAt(cell))) garlandStart = cell;
+                return;
+            }
+            if (TryPlaceAt(cell)) garlandStart = null;
         }
 
-        public bool TryPlaceAt(Vector3Int cell)
+        public bool TryPlaceAt(Vector3Int cell, Vector3Int? decorEnd = null)
         {
             if (mode != BuildMode.Build || _selected == null || _selected.placementKind == PlacementKind.Floor) return false;
-            var req = new PlacementRequest(_selected, cell, _rotated, _facing);
-            var res = CanPlaceAt(cell);
+            var req = RequestAt(cell,decorEnd);
+            var res = CanPlaceAt(cell,decorEnd);
             if (!res.ok) return false;
 
-            if (territory != null && !(_selected.isParkingSpace ? territory.IsParkingCellAllowed(cell) : territory.IsCellPurchased(cell)))
+            if (territory != null && !AllowsLand(_selected,cell))
                 return false;
 
             if (!SpawnPlaced(req)) return false;
@@ -340,6 +394,7 @@ namespace RetailEmpireTycoon.BuildSystem
             placed.anchorCell = req.anchorCell;
             placed.rotated = req.rotated;
             placed.facing = req.facing;
+            ApplyDecorPose(placed,req);
             placed.wallModuleVersion = req.item.HasVersionedWallGeometry ? req.item.WallPlacementVersion : 0;
             placed.parkingModuleVersion=req.item.parkingGeometryVersion;
             placed.playerParking = req.item.isPersonalParking;
@@ -367,7 +422,14 @@ namespace RetailEmpireTycoon.BuildSystem
 
             var ray = worldCamera.ScreenPointToRay(Input.mousePosition);
             int level = Storeys.ActiveFloor + (_selected != null && _selected.placementKind == PlacementKind.Floor && Storeys.PaintCeiling ? 1 : 0);
-            var plane = new Plane(Vector3.up, new Vector3(0, grid.FloorElevation(level), 0));
+            if (DecorPlacement.PickSurface(ray,_selected,level,grid,out cell,out var facing))
+            {
+                if (facing>=0 && !garlandStart.HasValue) { _facing=facing; _rotated=facing%2!=0; }
+                hitPos=grid.CellToWorld(cell);
+                return true;
+            }
+            bool ceiling=_selected!=null && (_selected.decorMount.HasFlag(DecorMount.Ceiling) || garlandStart.HasValue);
+            var plane = new Plane(Vector3.up, new Vector3(0, grid.FloorElevation(level+(ceiling?1:0)), 0));
             if (!plane.Raycast(ray, out float distance) || distance > 2000f)
                 return false;
 
@@ -483,7 +545,10 @@ namespace RetailEmpireTycoon.BuildSystem
                     playerParking = placed.playerParking,
                     primaryPlayerParking = placed.primaryPlayerParking,
                     parkingModuleVersion = placed.parkingModuleVersion,
-                    doorFrameFinish = placed.GetComponent<DoorFrameFinish>()?.Choice ?? DoorFinish.Auto
+                    doorFrameFinish = placed.GetComponent<DoorFrameFinish>()?.Choice ?? DoorFinish.Auto,
+                    decorMount = placed.decorMount,
+                    hasDecorEnd = placed.decorEnd.HasValue,
+                    decorEnd = placed.decorEnd.GetValueOrDefault()
                 });
             }
 
@@ -501,6 +566,7 @@ namespace RetailEmpireTycoon.BuildSystem
             if (data == null || catalog == null)
                 return;
 
+            var decorations = new List<(PlacedObject Placed, PlacementRequest Request, DecorMount Mount)>();
             foreach (var d in data)
             {
                 var item = catalog.GetById(d.itemId);
@@ -509,7 +575,7 @@ namespace RetailEmpireTycoon.BuildSystem
 
                 if (d.floor < 0 || d.floor > GridSystem.TopFloor) continue;
                 var cell = new Vector3Int(d.x, d.floor, d.z);
-                var req = new PlacementRequest(item, cell, d.rotated, d.facing);
+                var req = new PlacementRequest(item, cell, d.rotated, d.facing, decorEnd:d.hasDecorEnd?d.decorEnd:(Vector3Int?)null);
 
                 var placed = SpawnPlacedFromSave(req, d.wallModuleVersion, d.parkingModuleVersion);
                 if (placed != null)
@@ -518,7 +584,15 @@ namespace RetailEmpireTycoon.BuildSystem
                     placed.primaryPlayerParking = d.playerParking && d.primaryPlayerParking;
                     placed.GetComponent<DoorFrameFinish>()?.SetChoice(d.doorFrameFinish);
                     placed.GetComponent<RetailEmpireTycoon.Parking.ParkingBay>()?.ApplyPaint(d.playerParking);
+                    if (d.decorMount!=DecorMount.None) decorations.Add((placed,req,d.decorMount));
                 }
+            }
+            foreach (var entry in decorations)
+            {
+                if (ApplyDecorPose(entry.Placed,entry.Request,entry.Mount)) continue;
+                grid.Release(entry.Placed.occupiedCells);
+                inventory.Add(entry.Placed.item,1);
+                entry.Placed.RemoveFromScene();
             }
             // Upgrade a small historical bay only when its larger footprint and approach remain
             // on asphalt and do not intersect the user's other construction. Never move the anchor.

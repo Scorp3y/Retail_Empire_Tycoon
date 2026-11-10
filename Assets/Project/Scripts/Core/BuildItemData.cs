@@ -77,6 +77,10 @@ namespace RetailEmpireTycoon.Core
         [Tooltip("Shared frame finish suggested by this wall. Auto uses the default for unclassified walls.")]
         public DoorFinish recommendedDoorFinish;
         [Min(0)] public int beautyPoints;
+        public DecorGroup decorGroup;
+        public DecorMount decorMount;
+        public DecorSeason decorSeason;
+        [Min(1)] public int decorUnlockLevel = 1;
         public bool unlockedByDefault = true;
         public BuildUnlockCondition unlockCondition;
 

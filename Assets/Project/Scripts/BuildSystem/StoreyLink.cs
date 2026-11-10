@@ -75,6 +75,7 @@ namespace RetailEmpireTycoon.BuildSystem
         }
         public static IEnumerable<Vector3Int> OccupiedCells(GridSystem grid, BuildItemData item, Vector3Int anchor, bool rotated)
         {
+            if (!DecorCatalog.UsesFloorSpace(item.decorMount)) yield break;
             foreach (var cell in grid.GetFootprintCells(anchor,item.footprint,rotated,item.pivotOffset))
             {
                 yield return cell;

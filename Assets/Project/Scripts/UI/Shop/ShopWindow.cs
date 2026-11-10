@@ -103,6 +103,7 @@ namespace RetailEmpireTycoon.UI.Shop
             BuildItemCatalog.IncludeWallCollection(buildCatalog);
             BuildItemCatalog.IncludeFloorCollection(buildCatalog);
             BuildItemCatalog.IncludeDoorCollection(buildCatalog);
+            BuildItemCatalog.IncludeDecorCollection(buildCatalog);
             FindMissingRefs();
             PrepareCameraLock();
             StoreCatalogLayout.Apply(this);
@@ -282,7 +283,9 @@ namespace RetailEmpireTycoon.UI.Shop
             var ordered = buildSections != null && (buildSections.ShowsFloors || buildSections.ShowsDoors)
                 ? buildCatalog.OrderBy(item => !buildSections.IsCollectionEntry(item))
                     .ThenBy(item => buildSections.IsCollectionEntry(item) ? item.id : "", System.StringComparer.Ordinal)
-                : buildCatalog.OrderBy(BuildDisplayPriority);
+                : buildFilter==BuildCategory.Decoration
+                    ? buildCatalog.OrderBy(item=>item?.decorGroup).ThenBy(item=>item?.price)
+                    : buildCatalog.OrderBy(BuildDisplayPriority);
             foreach (var item in ordered)
             {
                 if (item == null || item.hiddenFromShop || (buildFilter==BuildCategory.Shelf ? item.category!=BuildCategory.Shelf&&!item.isCheckout : item.category!=buildFilter||item.isCheckout))

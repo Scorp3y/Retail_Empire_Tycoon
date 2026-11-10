@@ -87,14 +87,25 @@ namespace RetailEmpireTycoon.BuildSystem
             if(placementDefinition.storeyConnection!=StoreyConnectionKind.None && OpeningTileCount>0)
                 building.floorPainter.ShowPreview(StoreyLink.OpeningCells(building.grid,request).ToList(),CandidateResult.ok);
             else building.floorPainter?.ClearPreview();
-            building.preview.SetPose(BuildPlacementPose.Position(building.grid, placementDefinition, cell, request.rotated, candidateFacing), Quaternion.Euler(0, candidateFacing * 90, 0));
+            var previewScale = placementDefinition.decorMount == DecorMount.None ? Selected.transform.localScale : placementDefinition.prefab.transform.localScale;
+            building.PreviewPose(request,previewScale);
             if (SelectedDoor is { } door && placementDefinition.prefab.TryGetComponent<DoorFrameFinish>(out var template))
                 building.preview.SetDoorFrameFinish(template, building.PreviewDoorFinish(template, door.Choice, request));
             building.preview.ShowPlacement(building.grid, request, CandidateResult);
             return CandidateResult;
         }
 
-        private PlacementRequest Request() => new PlacementRequest(placementDefinition, candidateCell, candidateFacing % 2 != 0, candidateFacing, Selected);
+        private PlacementRequest Request()
+        {
+            Vector3Int? end = null;
+            if (Selected.decorEnd is { } previousEnd)
+            {
+                var offset = previousEnd - Selected.anchorCell;
+                var rotatedOffset = Quaternion.Euler(0,(candidateFacing-Selected.facing)*90,0)*(Vector3)offset;
+                end = candidateCell + Vector3Int.RoundToInt(rotatedOffset);
+            }
+            return new PlacementRequest(placementDefinition,candidateCell,candidateFacing%2!=0,candidateFacing,Selected,end);
+        }
 
         public void SetDoorFinish(DoorFinish finish)
         {
@@ -124,7 +135,8 @@ namespace RetailEmpireTycoon.BuildSystem
             building.grid.Release(Selected.occupiedCells);
             if(Selected.item.isParkingSpace && Selected.parkingModuleVersion<Selected.item.parkingGeometryVersion)
                 Selected.GetComponent<RetailEmpireTycoon.Parking.ParkingBay>()?.Resize(Selected.item.placementBounds.size.x,Selected.item.placementBounds.size.z,Selected.item.previousParkingBounds);
-            Selected.transform.SetPositionAndRotation(BuildPlacementPose.Position(building.grid, placementDefinition, candidateCell, request.rotated, candidateFacing), Quaternion.Euler(0, candidateFacing * 90, 0));
+            if(!building.ApplyDecorPose(Selected,request))
+                Selected.transform.SetPositionAndRotation(BuildPlacementPose.Position(building.grid, placementDefinition, candidateCell, request.rotated, candidateFacing), Quaternion.Euler(0, candidateFacing * 90, 0));
             Selected.GetComponent<WallPattern>()?.Align();
             Selected.anchorCell = candidateCell;
             Selected.facing = candidateFacing;
@@ -141,6 +153,8 @@ namespace RetailEmpireTycoon.BuildSystem
         public bool DeleteSelected()
         {
             if (!IsActive || Selected == null) return false;
+            if(DecorPlacement.SupportsDecoration(Selected))
+            {Notice="Move or store the attached decorations first.";return false;}
             if(Selected.item.storeyConnection!=StoreyConnectionKind.None && new StoreyLink(building.grid,Selected).HasPassenger)
             {Notice="Wait until everyone has left this connection before removing it.";return false;}
             var parkingTraffic=FindObjectOfType<RetailEmpireTycoon.Parking.ParkingTraffic>();
@@ -264,9 +278,19 @@ namespace RetailEmpireTycoon.BuildSystem
                 SelectAtScreenPoint(Input.mousePosition);
                 return;
             }
-            var plane = new Plane(Vector3.up, Vector3.up * building.grid.FloorElevation(building.Storeys.ActiveFloor));
+            int floor=building.Storeys.ActiveFloor;
+            if(DecorPlacement.PickSurface(ray,placementDefinition,floor,building.grid,out var mountCell,out var mountFacing))
+            {
+                if(mountFacing>=0)candidateFacing=mountFacing;
+                PreviewAt(mountCell);
+                if(Input.GetMouseButtonDown(0))Confirm();
+                return;
+            }
+            int layer=placementDefinition.decorMount.HasFlag(DecorMount.Ceiling)?floor+1:floor;
+            var plane = new Plane(Vector3.up, Vector3.up * building.grid.FloorElevation(layer));
             if (!plane.Raycast(ray, out float distance)) return;
-            PreviewAt(building.grid.WorldToCell(ray.GetPoint(distance)));
+            var cell=building.grid.WorldToCell(ray.GetPoint(distance));cell.y=floor;
+            PreviewAt(cell);
             if (Input.GetMouseButtonDown(0)) Confirm();
         }
 

@@ -29,7 +29,8 @@ public static class ConstructionWorkspacePlay
     private static bool Elevator=>SessionState.GetBool("ConstructionWorkspace.Elevator",false);
     private static bool Floors=>SessionState.GetBool("ConstructionWorkspace.Floors",false);
     private static bool Doors=>SessionState.GetBool("ConstructionWorkspace.Doors",false);
-    private static string Report=>Doors?DoorCollectionPlay.Report:Floors?"Library/FloorCollectionQA":Elevator?ElevatorModelBatch.Report:Escalator?EscalatorModelBatch.Report:Frontage?StarterFrontageBatch.Report:Transport?StoreyTransportBatch.Report:StarterAccess?StarterAccessBatch.Report:ConstructionWorkspaceBatch.Report;
+    private static bool Decor=>SessionState.GetBool("ConstructionWorkspace.Decor",false);
+    private static string Report=>Decor?"Library/DecorCollectionQA":Doors?DoorCollectionPlay.Report:Floors?"Library/FloorCollectionQA":Elevator?ElevatorModelBatch.Report:Escalator?EscalatorModelBatch.Report:Frontage?StarterFrontageBatch.Report:Transport?StoreyTransportBatch.Report:StarterAccess?StarterAccessBatch.Report:ConstructionWorkspaceBatch.Report;
     private static string Documentation=>Doors?DoorCollectionBatch.Pictures:Floors?FloorCollectionBatch.Pictures:Elevator?ElevatorModelBatch.Pictures:Escalator?EscalatorModelBatch.Pictures:Frontage?StarterFrontageBatch.Pictures:Transport?StoreyTransportBatch.Pictures:StarterAccess?"Docs/StarterAccess":"Docs/ConstructionWorkspace";
     private static void RecordInputs(){if(Elevator)ElevatorModelBatch.Record();else if(Escalator)EscalatorModelBatch.Record();else if(Frontage)StarterFrontageBatch.Record();else if(Transport)StoreyTransportBatch.Record();else if(StarterAccess)StarterAccessBatch.Record("play");else ConstructionWorkspaceBatch.Record("play");}
     public static void Run()=>Begin(false);
@@ -40,10 +41,12 @@ public static class ConstructionWorkspacePlay
     public static void RunElevator()=>Begin(false,transport:true,elevator:true);
     public static void RunFloors()=>Begin(false, floors:true);
     public static void RunDoors()=>Begin(false, doors:true);
-    private static void Begin(bool starterAccess,bool transport=false,bool frontage=false,bool escalator=false,bool elevator=false,bool floors=false,bool doors=false)
+    public static void RunDecor()=>Begin(false, decor:true);
+    private static void Begin(bool starterAccess,bool transport=false,bool frontage=false,bool escalator=false,bool elevator=false,bool floors=false,bool doors=false,bool decor=false)
     {
         SessionState.SetBool("ConstructionWorkspace.Floors",floors);
         SessionState.SetBool("ConstructionWorkspace.Doors",doors);
+        SessionState.SetBool("ConstructionWorkspace.Decor",decor);
         TownWorldSafety.RequireIsolatedEditor();SessionState.SetBool("ConstructionWorkspace.StarterAccess",starterAccess);SessionState.SetBool("ConstructionWorkspace.Transport",transport);SessionState.SetBool("ConstructionWorkspace.Frontage",frontage);SessionState.SetBool("ConstructionWorkspace.Escalator",escalator);SessionState.SetBool("ConstructionWorkspace.Elevator",elevator);Directory.CreateDirectory(Report);
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);
         EditorUtility.UnloadUnusedAssetsImmediate();GC.Collect();
@@ -78,13 +81,18 @@ public static class ConstructionWorkspacePlay
         Require(orders.shopCapacityKg-orders.ShopWeightKg>=2*orders.pickupCapacityKg,
             "Starter stock must leave room for two full pickup loads.");
         var spawner=Object.FindObjectOfType<StorePrefabSpawner>();spawner.UsesModularStore=true;starter.ConfigureSite(true,data);spawner.Spawn(StoreLevelId.Lvl1);starter.ApplyNewGameBuildings(data);
-        if (!Floors && !Doors) VerifyStarterWallJoins(starter);
+        if (!Floors && !Doors && !Decor) VerifyStarterWallJoins(starter);
         var shop=Object.FindObjectOfType<RetailEmpireTycoon.StoreOperations.StoreOperations>();shop.enabled=false;shop.SetOpen(false);
         var parking=Object.FindObjectOfType<ParkingTraffic>();parking.enabled=false;
         var roads=Object.FindObjectOfType<RetailEmpireTycoon.City.TownRoadTraffic>();roads.enabled=false;
         foreach(var roadCar in roads.ActiveCars)roadCar.gameObject.SetActive(false);
         Require(roads.MaximumCars==RetailEmpireTycoon.City.TownRoadTraffic.DefaultCapacity,"Unexpected shared town traffic capacity.");
         for(int i=0;i<5;i++)yield return null;
+        if (Decor)
+        {
+            foreach(var step in DecorCollectionPlay.Verify(starter))yield return step;
+            yield break;
+        }
         if (Doors)
         {
             foreach (var step in DoorCollectionPlay.Verify(starter, CaptureUi)) yield return step;
@@ -1236,10 +1244,11 @@ public static class ConstructionWorkspacePlay
     private static void Require(bool condition,string message){if(!condition)throw new InvalidOperationException(message);}
     private static void Finish(Exception error)
     {
-        if (Doors)
+        if (Doors || Decor)
         {
             SessionState.SetBool(Pending, false);
-            File.WriteAllText(Report + "/play.txt", error == null ? "PASS door catalog, placement, persistence, pedestrian and vehicle checks.\n" : "FAIL " + error);
+            File.WriteAllText(Report + "/play.txt", error == null ? (Decor?"PASS decor catalog, purchase, mounts, move, storage and save/load.\n":
+                "PASS door catalog, placement, persistence, pedestrian and vehicle checks.\n") : "FAIL " + error);
             EditorApplication.Exit(error == null ? 0 : 1);
             return;
         }

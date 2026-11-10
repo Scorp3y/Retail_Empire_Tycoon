@@ -100,7 +100,35 @@ namespace RetailEmpireTycoon.Logistics
         {
             if (item == null) return false;
             if (item.hiddenFromShop) return Reject("This item is no longer for sale.");
+            if (item.decorGroup != DecorGroup.None) return BuyDecoration(item);
             return Purchase(item.id, DeliveryItemKind.Building, 1, item.price, item.weightKg);
+        }
+
+        public int DecorationStoreLevel => FindObjectOfType<StoreOperations.StoreOperations>()?.Level ?? 1;
+
+        private bool BuyDecoration(BuildItemData item)
+        {
+            NoticeIsInline=false;
+            if (DecorationStoreLevel < item.decorUnlockLevel) return Reject("Expand your store to unlock this decoration.");
+            if (ShopWeightKg + item.weightKg > shopCapacityKg) return Reject("The store warehouse is full.");
+            int balance=money.Money;
+            if (!money.TrySpend(item.price)) return Reject("Insufficient funds.");
+            try
+            {
+                buildings.Add(item,1);
+                Persist();
+            }
+            catch(Exception error)
+            {
+                buildings.TryConsume(item,1);
+                money.SetMoney(balance);
+                Debug.LogException(error,this);
+                return Reject("Purchase cancelled: payment refunded.");
+            }
+            Notice="Decoration purchased and added to storage.";
+            NoticeIsError=false;
+            Notify();
+            return true;
         }
         private bool Purchase(string id, DeliveryItemKind kind, int quantity, int price, float unitWeight)
         {

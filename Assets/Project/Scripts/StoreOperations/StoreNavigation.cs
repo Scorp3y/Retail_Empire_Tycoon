@@ -16,6 +16,8 @@ namespace RetailEmpireTycoon.StoreOperations
         private readonly List<CollectionDoor> _collectionDoors = new();
         private readonly List<StoreyLink> links = new();
         private FloorPainter floors;
+        internal ISet<Vector3Int> DecorObstruction { get; set; }
+        internal PlacedObject IgnoredFixture { get; set; }
         private static readonly Vector3Int[] Directions = { Vector3Int.left, Vector3Int.right, new Vector3Int(0, 0, 1), new Vector3Int(0, 0, -1) };
         public const float FloorHeight = 0.105f*ShopProportions.Scale;
         public static float FloorOffset(int floor)=>floor>0?.013f:FloorHeight;
@@ -49,10 +51,10 @@ namespace RetailEmpireTycoon.StoreOperations
 
         public bool IsWalkable(Vector3Int cell, bool allowOutside = false)
         {
-            if(cell.y<0||cell.y>GridSystem.TopFloor)return false;
+            if(cell.y<0||cell.y>GridSystem.TopFloor||DecorObstruction?.Contains(cell)==true)return false;
             if(cell.y>0 && (floors==null || !floors.HasSurface(cell)))return false;
             if (!allowOutside && !_territory.IsCellPurchased(cell)) return false;
-            if (_grid.IsOccupied(cell))
+            if (_grid.IsOccupied(cell) && (IgnoredFixture==null || !IgnoredFixture.occupiedCells.Contains(cell)))
             {
                 if (!_doorways.TryGetValue(cell, out var doorway) || doorway == null) return false;
                 if (doorway.TryGetComponent<CollectionDoor>(out _)) return IsBodyClear(_grid.CellToWorld(cell));
@@ -79,6 +81,7 @@ namespace RetailEmpireTycoon.StoreOperations
             {
                 if (IsActor(hit.collider)) continue;
                 var placed = hit.collider.GetComponentInParent<PlacedObject>();
+                if (IgnoredFixture!=null && placed==IgnoredFixture) continue;
                 if (placed != null && placed.TryGetComponent<CollectionDoor>(out var door))
                 {
                     if (door.IsBarrier(hit.collider)) continue;
@@ -99,11 +102,13 @@ namespace RetailEmpireTycoon.StoreOperations
         private bool IsBodyClear(Vector3 position)
         {
             var cell=_grid.WorldToCell(position);
+            if (DecorObstruction?.Contains(cell)==true) return false;
             position.y = _grid.FloorElevation(cell.y)+SurfaceHeight(cell);
             foreach (var collider in Physics.OverlapCapsule(position + BodyBottom, position + BodyTop, BodyRadius, ~0, QueryTriggerInteraction.Ignore))
             {
                 if (IsActor(collider)) continue;
                 var placed = collider.GetComponentInParent<PlacedObject>();
+                if (IgnoredFixture!=null && placed==IgnoredFixture) continue;
                 if (placed != null && placed.TryGetComponent<CollectionDoor>(out var door))
                 {
                     if (door.IsBarrier(collider)) continue;

@@ -21,7 +21,17 @@ namespace RetailEmpireTycoon.BuildSystem
             IncludeWallCollection(items);
             IncludeFloorCollection(items);
             IncludeDoorCollection(items);
+            IncludeDecorCollection(items);
         }
+
+        public static void IncludeDecorCollection(List<BuildItemData> target)
+        {
+            foreach (var item in LoadDecorCollection())
+                if (item!=null && !target.Exists(existing=>existing!=null && existing.id==item.id)) target.Add(item);
+        }
+
+        private static BuildItemData[] LoadDecorCollection() =>
+            Resources.Load<DecorCollectionManifest>("DecorCollection/Manifest")?.items ?? System.Array.Empty<BuildItemData>();
 
         public static void IncludeWallCollection(List<BuildItemData> target)
         {
@@ -63,7 +73,8 @@ namespace RetailEmpireTycoon.BuildSystem
             var extension=Resources.Load<BuildItemData>("MultiStorey/"+id) ?? Resources.Load<BuildItemData>("FrontageDecor/"+id)
                 ?? Resources.Load<BuildItemData>(WallCollectionPath+"/"+id)
                 ?? Resources.Load<BuildItemData>(FloorCollectionPath+"/"+id)
-                ?? Resources.Load<BuildItemData>(DoorCollectionPath+"/"+id);
+                ?? Resources.Load<BuildItemData>(DoorCollectionPath+"/"+id)
+                ?? System.Array.Find(LoadDecorCollection(),item=>item!=null && item.id==id);
             if(extension!=null)return extension;
             Debug.LogWarning("[BuildItemCatalog] Item not found: " + id);
             return null;

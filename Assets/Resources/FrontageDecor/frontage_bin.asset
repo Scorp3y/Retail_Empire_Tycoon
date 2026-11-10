@@ -22,15 +22,18 @@ MonoBehaviour:
   previousWallAlignmentOffset: {x: 0, y: 0, z: 0}
   decorationProportionsVersion: 0
   id: frontage_bin
-  displayName: Outdoor litter bin
+  displayName: Street Bin
   description: 
-  icon: {fileID: 21300000, guid: 5681b0e02259b6d4bab991af145d7b58, type: 3}
-  price: 35
+  russianName: "\u0423\u043B\u0438\u0447\u043D\u0430\u044F \u0443\u0440\u043D\u0430"
+  russianDescription:
+  icon: {fileID: 21300000, guid: 37a26bcc4e1e1f642b440f0115604e6f, type: 3}
+  price: 65
   hiddenFromShop: 0
   weightKg: 8
   cargoVolumeM3: 0.12
   isAsphalt: 0
   isParkingSpace: 0
+  isPersonalParking: 0
   parkingGeometryVersion: 0
   previousParkingPrefab: {fileID: 0}
   previousParkingFootprint: {x: 0, y: 0}
@@ -39,7 +42,12 @@ MonoBehaviour:
     m_Extent: {x: 0, y: 0, z: 0}
   isUnloadingGate: 0
   isWall: 0
+  recommendedDoorFinish: 0
   beautyPoints: 2
+  decorGroup: 3
+  decorMount: 32
+  decorSeason: 0
+  decorUnlockLevel: 1
   unlockedByDefault: 1
   unlockCondition: {fileID: 0}
   category: 3
@@ -49,6 +57,9 @@ MonoBehaviour:
   ruleFlags: 3
   placementKind: 0
   floorMaterial: {fileID: 0}
+  usesMetricFloorPattern: 0
+  hasFloorEdgeStripe: 0
+  floorFinishGroup: 0
   accessibilitySides: 1
   pivotOffset: {x: 0, y: 0}
   alignModelToFootprint: 1

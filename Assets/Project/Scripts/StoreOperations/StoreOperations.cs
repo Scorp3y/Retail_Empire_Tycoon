@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using RetailEmpireTycoon.BuildSystem;
+using RetailEmpireTycoon.Core;
 using RetailEmpireTycoon.Economy;
 using RetailEmpireTycoon.Products;
 using RetailEmpireTycoon.Shelves;
@@ -446,7 +447,9 @@ namespace RetailEmpireTycoon.StoreOperations
             int variety = shelves.Where(s => s.CurrentProduct != null && !s.IsEmpty).Select(s => s.CurrentProduct).Distinct().Count();
             float stockRatio = shelves.Length == 0 ? 0 : (float)shelves.Count(s => !s.IsEmpty) / shelves.Length;
             float sizeBonus = 0.12f * (Level - 1);
-            BeautyPoints=FindObjectsOfType<PlacedObject>().Where(p=>p.item!=null&&p.GetComponentInParent<BuildPreview>()==null).Sum(p=>p.item.beautyPoints);
+            BeautyPoints=FindObjectsOfType<PlacedObject>().Where(p=>p.item!=null&&p.GetComponentInParent<BuildPreview>()==null)
+                .GroupBy(p=>p.item.id).Sum(group=>group.First().item.beautyPoints *
+                    (group.First().item.decorGroup==DecorGroup.None?group.Count():Mathf.Min(group.Count(),DecorCatalog.BeautyCopies)));
             float beautyBonus=Mathf.Min(.6f,BeautyPoints*.02f);
             int longWaits = _visits.Count(v => v.WaitingSeconds > 35 && v.Stage == VisitStage.Waiting);
             RatingFactors = new StoreRatingBreakdown(_reputation * .55f, stockRatio * 1.1f, Mathf.Min(5, variety) * .16f,

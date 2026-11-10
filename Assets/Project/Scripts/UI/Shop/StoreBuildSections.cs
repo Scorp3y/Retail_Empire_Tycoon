@@ -45,7 +45,8 @@ namespace RetailEmpireTycoon.UI.Shop
             foreach(Transform child in root){child.gameObject.SetActive(false);Destroy(child.gameObject);}
             string[] sections=shop.SelectedCategory==BuildCategory.Shelf?new[]{"All","Shelves","Refrigeration","Freezers","Counters","Checkouts"}
                 :shop.SelectedCategory==BuildCategory.Structures?new[]{"All","Walls",DoorsSection,FloorsSection,"Floor connections","Parking"}
-                :new[]{"All","Plants","Seating","Lighting","Other"};
+                :new[]{"All",DecorCatalog.Section(DecorGroup.Plants),DecorCatalog.Section(DecorGroup.Lighting),
+                    DecorCatalog.Section(DecorGroup.Seating),DecorCatalog.Section(DecorGroup.Walls),DecorCatalog.Section(DecorGroup.Storefront)};
             for(int i=0;i<sections.Length;i++)
             {
                 string section=sections[i];var button=ui.Button(root,section,new Vector2(i*width/sections.Length,0),new Vector2(width/sections.Length-6,34),()=>
@@ -103,7 +104,7 @@ namespace RetailEmpireTycoon.UI.Shop
                     :item.isDoorway||item.isUnloadingGate?DoorsSection:item.isWall?"Walls"
                     :item.placementKind==PlacementKind.Floor?FloorsSection:"All";
             if(item.category==BuildCategory.Decoration)
-                return id.Contains("plant")||id.Contains("flower")?"Plants":id.Contains("bench")||id.Contains("seat")?"Seating":id.Contains("lamp")||id.Contains("light")?"Lighting":"Other";
+                return DecorCatalog.Section(item.decorGroup);
             return id.Contains("freezer")||id.Contains("cold_pantry")?"Freezers":id.Contains("chill")||id.Contains("refrigerat")?"Refrigeration"
                 :id.Contains("counter")||id.Contains("stand")||id.Contains("bin")?"Counters":"Shelves";
         }

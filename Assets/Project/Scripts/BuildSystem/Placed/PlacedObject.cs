@@ -19,6 +19,9 @@ namespace RetailEmpireTycoon.BuildSystem
         public bool playerParking;
         public bool primaryPlayerParking;
         public int parkingModuleVersion;
+        public DecorMount decorMount;
+        public Vector3Int? decorEnd;
+        public Vector3 decorScale = Vector3.one;
 
         public List<Vector3Int> occupiedCells = new List<Vector3Int>();
 
