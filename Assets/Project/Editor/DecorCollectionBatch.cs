@@ -15,6 +15,7 @@ public static class DecorCollectionBatch
     internal const string ArtRoot = "Assets/Art/DecorCollection";
     internal const string ItemRoot = "Assets/Resources/DecorCollection";
     private const string Balance = "Assets/Project/Editor/DecorCollectionBalance.txt";
+    private const string SecondBalance = "Assets/Project/Editor/DecorCollectionIIBalance.txt";
     private const int TriangleBudget = 3000;
     private const string VisualName = "Collection model";
     private const float CellPadding = .022f;
@@ -29,27 +30,50 @@ public static class DecorCollectionBatch
     }
 
     [MenuItem("Retail Empire/Art/Build decor collection")]
-    public static void Generate()
+    public static void Generate() => Generate(Balance, ArtRoot, ItemRoot, Enumerable.Range(1, 50).Except(new[] { 23, 30 }));
+
+    [MenuItem("Retail Empire/Art/Build decor collection II")]
+    public static void GenerateSecond() => Generate(SecondBalance, ArtRoot + "II", ItemRoot + "II", Enumerable.Range(51, 50));
+
+    public static void RefreshAdjustedDecor()
     {
-        foreach (string folder in new[] { ItemRoot, ArtRoot+"/Meshes", ArtRoot+"/Materials", ArtRoot+"/Prefabs", ArtRoot+"/Icons" })
+        Generate(Balance, ArtRoot, ItemRoot, Enumerable.Range(1, 50).Except(new[] { 23, 30 }),
+            new[] { 3, 24, 38 });
+        Generate(SecondBalance, ArtRoot + "II", ItemRoot + "II", Enumerable.Range(51, 50),
+            new[] { 68, 82, 92, 94 });
+    }
+
+    private static void Generate(string balance, string artRoot, string itemRoot, IEnumerable<int> numbers,
+        int[] adjustedModels = null)
+    {
+        foreach (string folder in new[] { itemRoot, artRoot+"/Meshes", ArtRoot+"/Materials", artRoot+"/Prefabs", artRoot+"/Icons" })
             Directory.CreateDirectory(folder);
         AssetDatabase.Refresh();
-        var designs = File.ReadLines(Balance).Skip(1).Where(line=>!string.IsNullOrWhiteSpace(line)).Select(Parse).ToArray();
-        if (designs.Length != 48 || designs.Select(d=>d.Number).Distinct().Count()!=48 ||
-            designs.Select(d=>d.Id).Distinct().Count()!=48 || designs.Any(d=>d.Number is 23 or 30))
-            throw new InvalidDataException("The decor balance sheet must contain exactly 48 distinct approved designs.");
-        var palette = Enumerable.Range(0,DecorMesh.Colors.Length).Select(MaterialFor).ToArray();
+        var designs = File.ReadLines(balance).Skip(1).Where(line=>!string.IsNullOrWhiteSpace(line)).Select(Parse).ToArray();
+        if (!designs.Select(d=>d.Number).OrderBy(n=>n).SequenceEqual(numbers) ||
+            designs.Select(d=>d.Id).Distinct().Count()!=designs.Length)
+            throw new InvalidDataException("The decor balance sheet must contain all approved designs with unique IDs.");
+        var palette = Enumerable.Range(0,DecorMesh.Colors.Length)
+            .Select(index => MaterialFor(index,artRoot)).ToArray();
         var template = AssetDatabase.LoadAssetAtPath<BuildItemData>("Assets/Prefabs/StoreUpgrade/decor_plant.asset");
         var output = new List<string> { "ID,Triangles,Materials" };
         var items = new List<BuildItemData>(designs.Length);
         foreach (var design in designs)
         {
-            var item = Existing(design.Id);
-            string itemPath = item != null ? AssetDatabase.GetAssetPath(item) : $"{ItemRoot}/{design.Id}.asset";
-            string prefabPath = item != null && item.prefab != null ? AssetDatabase.GetAssetPath(item.prefab) : $"{ArtRoot}/Prefabs/{design.Id}.prefab";
+            var item = Existing(design.Id, itemRoot);
+            if (adjustedModels != null && !adjustedModels.Contains(design.Number))
+            {
+                if (item == null) throw new InvalidDataException("Missing decor " + design.Id);
+                item.decorMount = design.Mount;
+                EditorUtility.SetDirty(item);
+                items.Add(item);
+                continue;
+            }
+            string itemPath = item != null ? AssetDatabase.GetAssetPath(item) : $"{itemRoot}/{design.Id}.asset";
+            string prefabPath = item != null && item.prefab != null ? AssetDatabase.GetAssetPath(item.prefab) : $"{artRoot}/Prefabs/{design.Id}.prefab";
             var sourcePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
             var root = sourcePrefab != null ? PrefabUtility.LoadPrefabContents(prefabPath) : new GameObject(design.Id);
-            bool rework = !itemPath.StartsWith(ItemRoot, StringComparison.Ordinal);
+            bool rework = !itemPath.StartsWith(itemRoot + "/", StringComparison.Ordinal);
             try
             {
                 var existingVisual = root.transform.Find(VisualName);
@@ -58,17 +82,18 @@ public static class DecorCollectionBatch
                     foreach(var renderer in root.GetComponentsInChildren<Renderer>(true))
                         renderer.enabled = false;
                 var art = DecorArt.Make(design.Number);
-                bool wall = (design.Mount & (DecorMount.Wall | DecorMount.Awning)) != 0;
+                bool wall = (design.Mount & (DecorMount.Wall | DecorMount.Awning | DecorMount.ExteriorWall)) != 0;
                 var originalBounds = rework ? item.placementBounds : default;
                 var offset = new Vector3(originalBounds.center.x, Mathf.Max(0,originalBounds.min.y), originalBounds.center.z);
                 var size = new Vector2(design.Width,design.Depth) * ShopProportions.CellSize - Vector2.one * CellPadding;
-                if(design.Mount is DecorMount.Garland) size = new Vector2(1f,0f);
+                if(design.Mount.HasFlag(DecorMount.Garland)) size = new Vector2(1f,0f);
                 else if(wall) size.y = 0f;
                 float heightLimit = design.Mount.HasFlag(DecorMount.Ceiling) ? .54f : float.PositiveInfinity;
-                var generated = art.Bake(design.Id, size, wall, root.transform.localScale, offset, heightLimit);
+                var generated = art.Bake(design.Id, size, wall && !design.Mount.HasFlag(DecorMount.Garland),
+                    root.transform.localScale, offset, heightLimit);
                 int triangles = generated.triangles.Length / 3;
                 if (triangles > TriangleBudget) throw new InvalidOperationException($"{design.Id}: {triangles} triangles exceeds {TriangleBudget}.");
-                var mesh = SaveMesh(generated, $"{ArtRoot}/Meshes/{design.Id}.asset");
+                var mesh = SaveMesh(generated, $"{artRoot}/Meshes/{design.Id}.asset");
                 var visual = new GameObject(VisualName, typeof(MeshFilter), typeof(MeshRenderer));
                 visual.transform.SetParent(root.transform, false);
                 visual.GetComponent<MeshFilter>().sharedMesh = mesh;
@@ -82,7 +107,7 @@ public static class DecorCollectionBatch
                 }
                 var prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
                 if(prefab == null) throw new InvalidOperationException("Could not save " + prefabPath);
-                var icon = ShopUiPreviews.Render(prefab, design.Id, 28, outputFolder: ArtRoot+"/Icons");
+                var icon = ShopUiPreviews.Render(prefab, design.Id, 28, outputFolder: artRoot+"/Icons");
                 if (item == null)
                 {
                     item = ScriptableObject.CreateInstance<BuildItemData>();
@@ -121,7 +146,7 @@ public static class DecorCollectionBatch
                 else Object.DestroyImmediate(root);
             }
         }
-        var manifestPath=ItemRoot+"/Manifest.asset";
+        var manifestPath=itemRoot+"/Manifest.asset";
         var manifest=AssetDatabase.LoadAssetAtPath<DecorCollectionManifest>(manifestPath);
         if(manifest==null)
         {
@@ -132,8 +157,9 @@ public static class DecorCollectionBatch
         EditorUtility.SetDirty(manifest);
         AssetDatabase.SaveAssets();
         Directory.CreateDirectory("Library/DecorCollectionQA");
-        File.WriteAllLines("Library/DecorCollectionQA/meshes.csv",output);
-        Debug.Log("Decor Collection: built 48 verified prefabs and transparent catalog icons.");
+        var report = itemRoot==ItemRoot ? "meshes.csv" : "meshes-II.csv";
+        File.WriteAllLines("Library/DecorCollectionQA/"+report,output);
+        Debug.Log($"Decor Collection: built {items.Count} prefabs and transparent catalog icons for {itemRoot}.");
     }
 
     private static Design Parse(string line)
@@ -149,10 +175,10 @@ public static class DecorCollectionBatch
         };
     }
 
-    private static BuildItemData Existing(string id) =>
+    private static BuildItemData Existing(string id, string itemRoot) =>
         AssetDatabase.LoadAssetAtPath<BuildItemData>($"Assets/Prefabs/StoreUpgrade/{id}.asset") ??
         AssetDatabase.LoadAssetAtPath<BuildItemData>($"Assets/Resources/FrontageDecor/{id}.asset") ??
-        AssetDatabase.LoadAssetAtPath<BuildItemData>($"{ItemRoot}/{id}.asset");
+        AssetDatabase.LoadAssetAtPath<BuildItemData>($"{itemRoot}/{id}.asset");
 
     private static Mesh SaveMesh(Mesh mesh, string path)
     {
@@ -170,10 +196,13 @@ public static class DecorCollectionBatch
         return existing;
     }
 
-    private static Material MaterialFor(int index)
+    private static Material MaterialFor(int index, string artRoot)
     {
         var finish=(DecorMesh.Finish)index;
-        string path=$"{ArtRoot}/Materials/{finish}.mat";
+        // Both collections share the palette. Only the emissive finish uses a separate asset.
+        string folder=finish==DecorMesh.Finish.Glow && artRoot!=ArtRoot ? artRoot : ArtRoot;
+        Directory.CreateDirectory(folder+"/Materials");
+        string path=$"{folder}/Materials/{finish}.mat";
         var material=AssetDatabase.LoadAssetAtPath<Material>(path);
         if(material==null)
         {
@@ -187,8 +216,9 @@ public static class DecorCollectionBatch
         material.enableInstancing=true;
         if(finish==DecorMesh.Finish.Glow)
         {
-            material.EnableKeyword("_EMISSION");
             material.SetColor("_EmissionColor",color*.58f);
+            material.globalIlluminationFlags=MaterialGlobalIlluminationFlags.None;
+            material.EnableKeyword("_EMISSION");
         }
         if(finish==DecorMesh.Finish.Glass)
         {
@@ -202,6 +232,7 @@ public static class DecorCollectionBatch
             material.SetShaderPassEnabled("ShadowCaster",false);
         }
         EditorUtility.SetDirty(material);
+        AssetDatabase.SaveAssetIfDirty(material);
         return material;
     }
 }

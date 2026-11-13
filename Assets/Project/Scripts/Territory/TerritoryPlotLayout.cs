@@ -22,6 +22,15 @@ namespace RetailEmpireTycoon.Territory
         private Rect initialServiceYard;
         public bool IsServiceYardCell(Vector3Int cell) => grid != null && cell.y == 0
             && initialServiceYard.Contains(new Vector2(grid.CellToWorld(cell).x, grid.CellToWorld(cell).z));
+        public bool IsLockedParcelCell(Vector3Int cell)
+        {
+            if (grid == null || progression == null) return false;
+            var world = grid.CellToWorld(cell);
+            var point = new Vector2(world.x, world.z);
+            foreach (var plot in plots)
+                if (!progression.State.IsPurchased(plot.id) && plot.bounds.Contains(point)) return true;
+            return false;
+        }
         public void SetInitialServiceYard(Rect bounds) { initialServiceYard = bounds; Apply(); }
 
         private void OnEnable()

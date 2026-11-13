@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using RetailEmpireTycoon.Core;
 using RetailEmpireTycoon.StoreOperations;
+using RetailEmpireTycoon.Shelves;
 using UnityEngine;
 
 namespace RetailEmpireTycoon.BuildSystem
@@ -15,6 +16,8 @@ namespace RetailEmpireTycoon.BuildSystem
         private const float MinimumGarland = .55f;
         private const float MaximumGarland = 2.5f;
         private const float MountGap = .012f;
+        private const float ShelfBoardClearance = .042f;
+        private const float MinimumShelfLightHeight = .20f;
 
         private readonly BuildController build;
         private StoreNavigation navigation;
@@ -107,7 +110,7 @@ namespace RetailEmpireTycoon.BuildSystem
                 var support=hit.collider.GetComponentInParent<PlacedObject>();
                 if(support==null || support.item==null || support.anchorCell.y!=level || support.occupiedCells.Count==0) continue;
                 bool wall=IsWallSupport(support.item,item.decorMount);
-                bool counter=item.decorMount.HasFlag(DecorMount.Counter) && IsCounter(support.item);
+                bool counter=(item.decorMount & (DecorMount.Counter | DecorMount.ShelfUnderside)) != 0 && IsCounter(support.item);
                 if (!wall && !counter) continue;
                 var point=hit.point;
                 cell=support.occupiedCells.OrderBy(c=>
@@ -118,7 +121,10 @@ namespace RetailEmpireTycoon.BuildSystem
                 if (wall)
                 {
                     var normal=support.transform.forward;
-                    if (Vector3.Dot(ray.direction,normal)>0) normal=-normal;
+                    float side = Vector3.Dot(hit.normal, normal);
+                    if (Mathf.Abs(side) < .5f)
+                        side = Vector3.Dot(ray.origin - SupportBounds(support).center, normal);
+                    if (side < 0) normal=-normal;
                     facing=(Mathf.RoundToInt(Mathf.Atan2(normal.x,normal.z)*Mathf.Rad2Deg/90)+4)%4;
                 }
                 return true;
@@ -126,11 +132,13 @@ namespace RetailEmpireTycoon.BuildSystem
             return false;
         }
 
-        internal PlacementResult Validate(PlacementRequest request)
+        internal PlacementResult Validate(PlacementRequest request, out DecorMount mount)
         {
+            mount = DecorMount.None;
             var objects=Objects();
             if (!TryResolve(request,objects,out var pose,out var issue)) return Fail(issue);
-            if (!DecorCatalog.UsesFloorSpace(request.item.decorMount) && pose.Mount != DecorMount.EntryMat)
+            mount = pose.Mount;
+            if (!DecorCatalog.UsesFloorSpace(mount) && mount != DecorMount.EntryMat)
             {
                 var bounds=BoundsFor(request.item,pose);
                 if(objects.Where(p=>p!=request.ignoredObject && p.decorMount!=DecorMount.None &&
@@ -168,7 +176,8 @@ namespace RetailEmpireTycoon.BuildSystem
             bool Indoor(Vector3Int c)=>Floors.HasSurface(c) && !Floors.IsAsphalt(c);
             var here=Grid.CellToWorld(cell);
             var top=Grid.FloorElevation(cell.y+1);
-            if(mounts.HasFlag(DecorMount.Garland))
+            if(mounts.HasFlag(DecorMount.Garland) &&
+                (request.decorEnd.HasValue || !mounts.HasFlag(DecorMount.Wall)))
             {
                 issue="Choose a wall, then a second wall or ceiling 0.55–2.5 m away.";
                 if(!Owned(cell) || !TryWallPoint(objects,cell,request.facing,DecorMount.Wall,out var first)) return false;
@@ -206,25 +215,73 @@ namespace RetailEmpireTycoon.BuildSystem
             {
                 issue="Choose a free display top on a counter or shelf.";
                 var support=objects.FirstOrDefault(p=>p!=request.ignoredObject && IsCounter(p.item) && p.occupiedCells.Contains(cell));
-                if(support==null || !Owned(cell)) return false;
-                var bounds=SupportBounds(support);
-                here.y=bounds.max.y+MountGap-item.placementBounds.min.y;
-                var prop=BoundsFor(item,new Pose(DecorMount.Counter,here,rotation,Vector3.one));
-                if(prop.min.x<bounds.min.x-.01f || prop.max.x>bounds.max.x+.01f ||
-                    prop.min.z<bounds.min.z-.01f || prop.max.z>bounds.max.z+.01f) return false;
-                pose=new Pose(DecorMount.Counter,here,rotation,Vector3.one);
+                if(support!=null && Owned(cell))
+                {
+                    var bounds=SupportBounds(support);
+                    var prop=BoundsFor(item,new Pose(DecorMount.Counter,here,rotation,Vector3.one));
+                    var extents = prop.extents;
+                    if (extents.x <= bounds.extents.x + .005f && extents.z <= bounds.extents.z + .005f)
+                    {
+                        float x = Mathf.Max(0, bounds.extents.x - extents.x);
+                        float z = Mathf.Max(0, bounds.extents.z - extents.z);
+                        here.x += Mathf.Clamp(prop.center.x - bounds.center.x, -x, x) + bounds.center.x - prop.center.x;
+                        here.z += Mathf.Clamp(prop.center.z - bounds.center.z, -z, z) + bounds.center.z - prop.center.z;
+                        here.y=bounds.max.y+MountGap-item.placementBounds.min.y;
+                        pose=new Pose(DecorMount.Counter,here,rotation,Vector3.one);
+                        return true;
+                    }
+                }
+                if (!mounts.HasFlag(DecorMount.Floor)) return false;
+            }
+            if (mounts.HasFlag(DecorMount.ShelfUnderside))
+            {
+                issue="Choose a shelf with a free underside for the light bar.";
+                var support=objects.FirstOrDefault(p=>p!=request.ignoredObject && p.item.category==BuildCategory.Shelf && p.occupiedCells.Contains(cell));
+                if (support==null || !Owned(cell) || !support.TryGetComponent<ShelfProductDisplay>(out var display) ||
+                    !display.TryGetUpperShelfHeight(out float shelfHeight)) return false;
+                var fixture=SupportBounds(support);
+                rotation=support.transform.rotation;
+                here.y=shelfHeight-ShelfBoardClearance-item.placementBounds.max.y;
+                var light=BoundsFor(item,new Pose(DecorMount.ShelfUnderside,here,rotation,Vector3.one));
+                if (light.min.x<fixture.min.x || light.max.x>fixture.max.x || light.min.z<fixture.min.z || light.max.z>fixture.max.z ||
+                    light.min.y<Grid.FloorElevation(cell.y)+MinimumShelfLightHeight) return false;
+                pose=new Pose(DecorMount.ShelfUnderside,here,rotation,Vector3.one);
                 return true;
             }
-            if((mounts & (DecorMount.Wall|DecorMount.Awning))!=0)
+            if((mounts & (DecorMount.Wall|DecorMount.Awning|DecorMount.ExteriorWall))!=0)
             {
-                var kind=mounts.HasFlag(DecorMount.Awning)?DecorMount.Awning:DecorMount.Wall;
-                issue=kind==DecorMount.Awning?"Fit the awning to the outside of a display window.":"Choose the face of an installed wall.";
-                if(Owned(cell) && TryWallPoint(objects,cell,request.facing,kind,out var point))
+                var kind=mounts.HasFlag(DecorMount.Awning)?DecorMount.Awning:
+                    mounts.HasFlag(DecorMount.ExteriorWall)?DecorMount.ExteriorWall:DecorMount.Wall;
+                issue=kind switch
                 {
-                    if(kind!=DecorMount.Awning || cell.y==0 && !Indoor(cell+StoreyLink.Direction(request.facing)))
+                    DecorMount.Awning=>"Fit the awning to the outside of a display window.",
+                    DecorMount.ExteriorWall=>"Choose an outside face of a ground-floor wall.",
+                    _=>"Choose the face of an installed wall."
+                };
+                if(Owned(cell) && TryWallPoint(objects,cell,request.facing,kind,out var point, out var supportBounds))
+                {
+                    var normal=StoreyLink.Direction(request.facing);
+                    var outside=Grid.WorldToCell(point+(Vector3)normal*Grid.cellSize*.5f);
+                    outside.y=cell.y;
+                    bool allowed=kind==DecorMount.Wall || cell.y==0 && (kind==DecorMount.ExteriorWall || !Indoor(outside));
+                    if(allowed)
                     {
+                        if (kind == DecorMount.Wall && item.decorMount.HasFlag(DecorMount.Garland))
+                        {
+                            // A single-wall garland follows the width of the panel, regardless of which cell was clicked.
+                            float wallWidth = normal.x != 0 ? supportBounds.size.z : supportBounds.size.x;
+                            if (normal.x != 0) point.z = supportBounds.center.z;
+                            else point.x = supportBounds.center.x;
+                            point.y = supportBounds.max.y - .12f - item.placementBounds.max.y;
+                            point -= (Vector3)normal * item.placementBounds.min.z;
+                            var scale = new Vector3(Mathf.Min(1f, (wallWidth - 2 * MountGap) / item.placementBounds.size.x), 1, 1);
+                            if (scale.x <= 0) return false;
+                            pose = new Pose(kind, point, rotation, scale);
+                            return true;
+                        }
                         point.y=kind==DecorMount.Awning?top-.07f:Grid.FloorElevation(cell.y)+MountHeight;
                         point.y-=item.placementBounds.max.y;
+                        if (kind != DecorMount.Awning) point -= (Vector3)normal * item.placementBounds.min.z;
                         pose=new Pose(kind,point,rotation,Vector3.one);
                         return true;
                     }
@@ -250,8 +307,8 @@ namespace RetailEmpireTycoon.BuildSystem
                 Vector2.Distance(new Vector2(position.x,position.z),new Vector2(p.transform.position.x,p.transform.position.z))<=range);
             if (mounts.HasFlag(DecorMount.EntryMat))
             {
-                issue="Place the mat beside a ground-floor entrance.";
-                if(cell.y!=0 || !NearDoor(EntranceMatRadius) || occupied.Any(c=>!Yard(c) ||
+                issue="Place the mat on a floor or beside a ground-floor entrance.";
+                if(cell.y!=0 || occupied.Any(c=>!Yard(c) || !Floors.HasSurface(c) && !NearDoor(EntranceMatRadius) ||
                     Grid.IsOccupied(c) && !objects.Any(p=>p.item.isDoorway && p.occupiedCells.Contains(c)))) return false;
                 position.y=occupied.Max(Floors.SurfaceElevation)+.008f-item.placementBounds.min.y;
                 pose=new Pose(DecorMount.EntryMat,position,rotation,Vector3.one);
@@ -259,7 +316,7 @@ namespace RetailEmpireTycoon.BuildSystem
             }
             if(mounts.HasFlag(DecorMount.Floor) && occupied.All(c=>Owned(c)&&Indoor(c)))
             {
-                position.y=occupied.Max(Floors.SurfaceElevation)-Mathf.Min(0,item.placementBounds.min.y);
+                position.y=occupied.Max(Floors.SurfaceElevation)-item.placementBounds.min.y;
                 pose=new Pose(DecorMount.Floor,position,rotation,Vector3.one);
                 return true;
             }
@@ -267,8 +324,8 @@ namespace RetailEmpireTycoon.BuildSystem
             {
                 bool frontage=mounts.HasFlag(DecorMount.Frontage) && NearDoor(FrontageRadius);
                 issue=mounts.HasFlag(DecorMount.Frontage) && !mounts.HasFlag(DecorMount.Street)?
-                    "Place this on the forecourt by the entrance.":"Place this on an outdoor paved surface.";
-                if(cell.y!=0 || occupied.Any(c=>!Yard(c)||Indoor(c) || !frontage&&!Floors.IsAsphalt(c)) ||
+                    "Place this on the forecourt by the entrance.":"Place this on a paved ground-floor surface.";
+                if(cell.y!=0 || occupied.Any(c=>!Yard(c) || !frontage&&!Floors.HasSurface(c)) ||
                     !frontage&&!mounts.HasFlag(DecorMount.Street)) return false;
                 if(NearDoor(EntranceMatRadius) || objects.Where(p=>p.item.isParkingSpace)
                     .SelectMany(p=>RetailEmpireTycoon.Parking.Rule_ParkingSurface.ApproachCells(Grid,p)).Intersect(occupied).Any())
@@ -276,7 +333,7 @@ namespace RetailEmpireTycoon.BuildSystem
                     issue="Keep the entrance and parking approaches clear.";
                     return false;
                 }
-                position.y=occupied.Max(Floors.SurfaceElevation)-Mathf.Min(0,item.placementBounds.min.y);
+                position.y=occupied.Max(Floors.SurfaceElevation)-item.placementBounds.min.y;
                 pose=new Pose(frontage?DecorMount.Frontage:DecorMount.Street,position,rotation,Vector3.one);
                 return true;
             }
@@ -293,14 +350,19 @@ namespace RetailEmpireTycoon.BuildSystem
             return one!=other;
         }
 
-        private bool TryWallPoint(PlacedObject[] objects, Vector3Int cell, int facing, DecorMount kind, out Vector3 point)
+        private bool TryWallPoint(PlacedObject[] objects, Vector3Int cell, int facing, DecorMount kind, out Vector3 point) =>
+            TryWallPoint(objects, cell, facing, kind, out point, out _);
+
+        private bool TryWallPoint(PlacedObject[] objects, Vector3Int cell, int facing, DecorMount kind,
+            out Vector3 point, out Bounds bounds)
         {
             point=Grid.CellToWorld(cell);
+            bounds=default;
             var direction=StoreyLink.Direction(facing);
             var support=objects.FirstOrDefault(p=>IsWallSupport(p.item,kind) && p.occupiedCells.Contains(cell) &&
                 Mathf.Abs(Vector3.Dot(p.transform.forward,direction))>.9f);
             if(support==null) return false;
-            var bounds=SupportBounds(support);
+            bounds=SupportBounds(support);
             if(kind==DecorMount.Awning) point=bounds.center;
             if(direction.x!=0) point.x=(direction.x>0?bounds.max.x:bounds.min.x)+direction.x*MountGap;
             else point.z=(direction.z>0?bounds.max.z:bounds.min.z)+direction.z*MountGap;
@@ -309,7 +371,7 @@ namespace RetailEmpireTycoon.BuildSystem
 
         private static bool IsWallSupport(BuildItemData item, DecorMount kind) =>
             kind.HasFlag(DecorMount.Awning) ? item.id is "wall_finish_25" or "wall_finish_27" :
-            item.isWall && !item.IsWallCorner;
+            (kind & (DecorMount.Wall | DecorMount.Garland | DecorMount.ExteriorWall)) != 0 && item.isWall && !item.IsWallCorner;
 
         private static bool IsCounter(BuildItemData item) => item.category==BuildCategory.Shelf || item.isCheckout;
 
@@ -326,7 +388,7 @@ namespace RetailEmpireTycoon.BuildSystem
         }
 
         internal static bool SupportsDecoration(PlacedObject support) =>
-            Objects().Any(p=>p!=support && (p.decorMount is DecorMount.Counter or DecorMount.Wall or DecorMount.Awning or DecorMount.Garland) &&
+            Objects().Any(p=>p!=support && (p.decorMount is DecorMount.Counter or DecorMount.Wall or DecorMount.Awning or DecorMount.Garland or DecorMount.ShelfUnderside or DecorMount.ExteriorWall) &&
                 (support.occupiedCells.Contains(p.anchorCell) || p.decorEnd.HasValue && support.occupiedCells.Contains(p.decorEnd.Value)));
 
         internal static bool CeilingSupports(PlacedObject decor, HashSet<Vector3Int> surfaces, GridSystem grid) =>

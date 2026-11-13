@@ -2,14 +2,15 @@ using System;
 using UnityEngine;
 using F = DecorMesh.Finish;
 
-internal sealed class DecorArt
+internal sealed partial class DecorArt
 {
     private readonly DecorMesh mesh = new();
 
     internal static DecorMesh Make(int number)
     {
         var art = new DecorArt();
-        art.Build(number);
+        if (number <= 50) art.Build(number);
+        else art.BuildSecond(number);
         return art.mesh;
     }
 
@@ -59,13 +60,15 @@ internal sealed class DecorArt
         Box(face,0,h/2,.037f,w-.065f,h-.065f,.016f);
     }
 
-    private void Chair(float x, float z, float width, F seat)
+    private void Chair(float x, float z, float width, F seat, float yaw = 0)
     {
+        var rotation = Quaternion.Euler(0, yaw, 0);
+        Vector3 Point(float dx, float y, float dz) => V(x, 0, z) + rotation * V(dx, y, dz);
         for(int i=-1;i<=1;i+=2)
         for(int j=-1;j<=1;j+=2)
-            Beam(F.Wood,V(x+i*width*.39f,.01f,z+j*.17f),V(x+i*width*.3f,.34f,z+j*.14f),.03f);
-        Box(seat,x,.36f,z,width,.11f,.38f);
-        mesh.Box(seat,V(x,.58f,z-.165f),V(width,.36f,.075f),V(-11,0));
+            Beam(F.Wood,Point(i*width*.39f,.01f,j*.17f),Point(i*width*.3f,.34f,j*.14f),.03f);
+        mesh.Box(seat,Point(0,.36f,0),V(width,.11f,.38f),V(0,yaw));
+        mesh.Box(seat,Point(0,.58f,-.165f),V(width,.36f,.075f),V(-11,yaw));
     }
 
     private void Build(int n)
@@ -79,7 +82,7 @@ internal sealed class DecorArt
                 Pot(0,0,0,.17f,.30f,F.Cream); Foliage(0,.28f,0,.15f,.55f,7,true); break;
             case 3:
                 Pot(0,0,0,.28f,.32f,F.Brass); Beam(F.DarkWood,V(0,.25f),V(.04f,1.17f),.045f);
-                Foliage(0,.7f,0,.38f,.42f,9); break;
+                Foliage(.04f,1.15f,0,.34f,.52f,9); break;
             case 4:
                 Pot(0,.35f,0,.22f,.14f,F.Wood);
                 for (int i=0;i<3;i++)
@@ -195,7 +198,7 @@ internal sealed class DecorArt
                 if(back)for(int i=0;i<2;i++) Box(F.Wood,0,.55f+i*.13f,-.17f,1.01f,.10f,.05f);
                 break;
             case 24:
-                Chair(-.61f,.04f,.34f,F.Wood); Chair(.61f,-.04f,.34f,F.Wood);
+                Chair(-.61f,0,.34f,F.Wood,90); Chair(.61f,0,.34f,F.Wood,-90);
                 Ring(F.Sage,0,0,0,(0,.24f),(.06f,.17f),(.12f,.057f),(.64f,.057f),(.67f,.29f),(.73f,.31f),(.75f,.29f)); break;
             case 25: Chair(0,0,.60f,F.Terra); break;
             case 26:
@@ -284,7 +287,7 @@ internal sealed class DecorArt
                 Box(F.Pine,0,.13f,0,.68f,.25f,.070f);
                 for(int i=-1;i<=1;i+=2) Beam(F.Charcoal,V(i*.21f,.25f),V(i*.21f,.45f),.014f);
                 Box(F.Wood,0,.44f,0,.68f,.051f,.092f);
-                FreshLettering(); break;
+                break;
             case 39:
                 for(int i=-1;i<=1;i+=2) for(int j=0;j<2;j++) Box(j==0?F.Sage:F.Cream,i*.152f,.152f+j*.30f,0,.292f,.291f,.052f);
                 for(int i=-1;i<=1;i+=2) Orb(F.Leaf,i*.101f,.37f,.038f,.13f,.28f,.019f,-i*46);
@@ -368,14 +371,5 @@ internal sealed class DecorArt
         }
     }
 
-    private void FreshLettering()
-    {
-        // Five block letters built into the sign mesh, with no texture or runtime font.
-        string[] glyphs={"111100110100100","110101110101101","111100110100111","111100111001111","101101111101101"};
-        for(int letter=0;letter<glyphs.Length;letter++)
-            for(int index=0;index<glyphs[letter].Length;index++)
-                if(glyphs[letter][index]=='1')
-                    mesh.Stamp(F.Cream,V(.217f-letter*.099f-(index%3)*.022f,.178f-(index/3)*.026f,.041f),.023f,.027f);
-    }
 }
 

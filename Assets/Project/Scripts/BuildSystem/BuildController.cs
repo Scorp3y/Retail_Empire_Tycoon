@@ -78,11 +78,12 @@ namespace RetailEmpireTycoon.BuildSystem
                 return PlacementResult.Fail(PlaceFailReason.NoAccess, "Move or store the attached decorations first.");
             if (request.item.decorMount != DecorMount.None)
             {
-                var result = decorPlacement.Validate(request);
-                if (!result.ok || !DecorCatalog.UsesFloorSpace(request.item.decorMount)) return result;
+                var result = decorPlacement.Validate(request, out var mount);
+                if (!result.ok || !DecorCatalog.UsesFloorSpace(mount)) return result;
+                var placement = _validator.CanPlace(request);
+                return placement.ok ? decorPlacement.ValidateRoutes(request) : placement;
             }
-            var placement = _validator.CanPlace(request);
-            return placement.ok && request.item.decorMount != DecorMount.None ? decorPlacement.ValidateRoutes(request) : placement;
+            return _validator.CanPlace(request);
         }
 
         internal void PreviewPose(PlacementRequest request, Vector3 prefabScale)
@@ -112,7 +113,7 @@ namespace RetailEmpireTycoon.BuildSystem
         public bool TryGetPlacementFocus(out Vector3 focus)
         {
             focus = default;
-            if (mode != BuildMode.Build || !TryGetMouseCell(out var cell, out _)) return false;
+            if (mode != BuildMode.Build || !TryGetMouseCell(out var cell)) return false;
             focus = grid.CellToWorld(cell);
             return true;
         }
@@ -279,7 +280,7 @@ namespace RetailEmpireTycoon.BuildSystem
             if (grid == null) return;
             if (_validator == null) return;
 
-            if (!TryGetMouseCell(out var cell, out _))
+            if (!TryGetMouseCell(out var cell))
             {
                 HasPlacementPreview = false;
                 preview?.SetVisible(false);
@@ -298,7 +299,7 @@ namespace RetailEmpireTycoon.BuildSystem
             PreviewPose(req, _selected.prefab.transform.localScale);
             if (req.item.prefab.TryGetComponent<DoorFrameFinish>(out var door))
                 preview?.SetDoorFrameFinish(door, PreviewDoorFinish(door, DoorFinish.Auto, req));
-            preview?.ShowPlacement(grid, req, res);
+            preview?.ShowPlacement(grid, req, res, floorPainter);
         }
 
         /// <summary>The same result drives the ghost and the final placement, including stock availability.</summary>
@@ -329,7 +330,7 @@ namespace RetailEmpireTycoon.BuildSystem
             if (grid == null) return;
             if (_validator == null) return;
 
-            if (!TryGetMouseCell(out var cell, out _))
+            if (!TryGetMouseCell(out var cell))
                 return;
 
             if (_selected.placementKind == PlacementKind.Floor)
@@ -391,6 +392,7 @@ namespace RetailEmpireTycoon.BuildSystem
             }
 
             placed.item = req.item;
+            placed.SetSignText(null);
             placed.anchorCell = req.anchorCell;
             placed.rotated = req.rotated;
             placed.facing = req.facing;
@@ -400,7 +402,7 @@ namespace RetailEmpireTycoon.BuildSystem
             placed.playerParking = req.item.isPersonalParking;
             if (placed.playerParking) go.GetComponent<RetailEmpireTycoon.Parking.ParkingBay>()?.ApplyPaint(true);
 
-            var cells = new List<Vector3Int>(StoreyLink.OccupiedCells(grid, req.item, req.anchorCell, req.rotated));
+            var cells = new List<Vector3Int>(StoreyLink.OccupiedCells(grid, req.item, req.anchorCell, req.rotated, placed.decorMount));
             placed.occupiedCells = cells;
 
             grid.Occupy(cells);
@@ -412,10 +414,9 @@ namespace RetailEmpireTycoon.BuildSystem
             return true;
         }
 
-        private bool TryGetMouseCell(out Vector3Int cell, out Vector3 hitPos)
+        private bool TryGetMouseCell(out Vector3Int cell)
         {
             cell = default;
-            hitPos = default;
 
             if (worldCamera == null) return false;
             if (grid == null) return false;
@@ -425,17 +426,13 @@ namespace RetailEmpireTycoon.BuildSystem
             if (DecorPlacement.PickSurface(ray,_selected,level,grid,out cell,out var facing))
             {
                 if (facing>=0 && !garlandStart.HasValue) { _facing=facing; _rotated=facing%2!=0; }
-                hitPos=grid.CellToWorld(cell);
                 return true;
             }
             bool ceiling=_selected!=null && (_selected.decorMount.HasFlag(DecorMount.Ceiling) || garlandStart.HasValue);
-            var plane = new Plane(Vector3.up, new Vector3(0, grid.FloorElevation(level+(ceiling?1:0)), 0));
-            if (!plane.Raycast(ray, out float distance) || distance > 2000f)
-                return false;
-
-            hitPos = ray.GetPoint(distance);
-            cell = grid.WorldToCell(hitPos); cell.y = level;
-            return true;
+            bool center = !garlandStart.HasValue && _selected != null &&
+                (_selected.placementKind == PlacementKind.Object || ceiling);
+            return BuildPlacementPose.TryPointerAnchor(grid, floorPainter, _selected, ray, level, ceiling,
+                center, _rotated, out cell);
         }
 
         private void HandleFloorPaintMode()
@@ -443,7 +440,7 @@ namespace RetailEmpireTycoon.BuildSystem
             if (_selected == null || floorPainter == null || inventory == null) return;
             if (!_isPaintingFloor)
             {
-                if (TryGetMouseCell(out var hoverCell, out _))
+                if (TryGetMouseCell(out var hoverCell))
                 {
                     var cells = new List<Vector3Int> { hoverCell };
 
@@ -460,7 +457,7 @@ namespace RetailEmpireTycoon.BuildSystem
 
             if (Input.GetMouseButtonDown(0))
             {
-                if (!TryGetMouseCell(out _floorStartCell, out _))
+                if (!TryGetMouseCell(out _floorStartCell))
                     return;
 
                 _isPaintingFloor = true;
@@ -468,7 +465,7 @@ namespace RetailEmpireTycoon.BuildSystem
 
             if (_isPaintingFloor && Input.GetMouseButton(0))
             {
-                if (!TryGetMouseCell(out var currentCell, out _))
+                if (!TryGetMouseCell(out var currentCell))
                     return;
 
                 _floorPreviewCells = floorPainter.GetRectCells(_floorStartCell, currentCell);
@@ -548,7 +545,9 @@ namespace RetailEmpireTycoon.BuildSystem
                     doorFrameFinish = placed.GetComponent<DoorFrameFinish>()?.Choice ?? DoorFinish.Auto,
                     decorMount = placed.decorMount,
                     hasDecorEnd = placed.decorEnd.HasValue,
-                    decorEnd = placed.decorEnd.GetValueOrDefault()
+                    decorEnd = placed.decorEnd.GetValueOrDefault(),
+                    hasSignText = placed.SignText != null,
+                    signText = placed.SignText
                 });
             }
 
@@ -580,6 +579,7 @@ namespace RetailEmpireTycoon.BuildSystem
                 var placed = SpawnPlacedFromSave(req, d.wallModuleVersion, d.parkingModuleVersion);
                 if (placed != null)
                 {
+                    placed.SetSignText(d.hasSignText ? d.signText ?? "" : null);
                     placed.playerParking = d.playerParking;
                     placed.primaryPlayerParking = d.playerParking && d.primaryPlayerParking;
                     placed.GetComponent<DoorFrameFinish>()?.SetChoice(d.doorFrameFinish);
@@ -589,7 +589,17 @@ namespace RetailEmpireTycoon.BuildSystem
             }
             foreach (var entry in decorations)
             {
-                if (ApplyDecorPose(entry.Placed,entry.Request,entry.Mount)) continue;
+                if (ApplyDecorPose(entry.Placed,entry.Request,entry.Mount))
+                {
+                    if (entry.Placed.occupiedCells.Count == 0 && DecorCatalog.UsesFloorSpace(entry.Mount))
+                    {
+                        var request = entry.Request;
+                        entry.Placed.occupiedCells = StoreyLink.OccupiedCells(grid, request.item, request.anchorCell,
+                            request.rotated, entry.Mount).ToList();
+                        grid.Occupy(entry.Placed.occupiedCells);
+                    }
+                    continue;
+                }
                 grid.Release(entry.Placed.occupiedCells);
                 inventory.Add(entry.Placed.item,1);
                 entry.Placed.RemoveFromScene();

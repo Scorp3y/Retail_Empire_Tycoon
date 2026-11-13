@@ -23,7 +23,7 @@ namespace RetailEmpireTycoon.BuildSystem
         public GameData CreateNewGame(int startingMoney=GameData.StartingCapital)
         {
             if (blueprint == null) throw new InvalidOperationException("Starter store blueprint is not configured.");
-            return blueprint.CreateNewGame(startingMoney);
+            return blueprint.CreateNewGame(startingMoney, catalog?.Items);
         }
         public void UpgradeUnmodifiedLayout(GameData data)
         {

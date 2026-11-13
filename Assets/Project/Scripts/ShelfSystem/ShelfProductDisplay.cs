@@ -35,6 +35,16 @@ namespace RetailEmpireTycoon.Shelves
         private readonly List<GameObject> _spawnedObjects = new List<GameObject>();
 
         public float ProductScale => productScale;
+
+        internal bool TryGetUpperShelfHeight(out float height)
+        {
+            CollectSlotsIfNeeded();
+            height = float.NegativeInfinity;
+            foreach (var slot in slots)
+                if (slot != null && slot.GetComponent<ShelfProductSlot>()?.hanging != true)
+                    height = Mathf.Max(height, slot.position.y);
+            return !float.IsNegativeInfinity(height);
+        }
         private List<Transform> Eligible(ProductItemData product)
         {
             CollectSlotsIfNeeded();

@@ -91,7 +91,7 @@ namespace RetailEmpireTycoon.BuildSystem
             building.PreviewPose(request,previewScale);
             if (SelectedDoor is { } door && placementDefinition.prefab.TryGetComponent<DoorFrameFinish>(out var template))
                 building.preview.SetDoorFrameFinish(template, building.PreviewDoorFinish(template, door.Choice, request));
-            building.preview.ShowPlacement(building.grid, request, CandidateResult);
+            building.preview.ShowPlacement(building.grid, request, CandidateResult, building.floorPainter);
             return CandidateResult;
         }
 
@@ -116,6 +116,14 @@ namespace RetailEmpireTycoon.BuildSystem
             Notice = "Door frame finish updated.";
         }
 
+        public void SetSignText(string text)
+        {
+            if (!IsActive || Selected == null || DecorSign.CharacterLimit(Selected.item) == 0) return;
+            Selected.SetSignText(text);
+            CancelSelection();
+            Notice = "Sign text updated.";
+        }
+
         public void Rotate(int quarterTurns)
         {
             if (Selected == null || !Selected.item.allowRotation) return;
@@ -131,12 +139,13 @@ namespace RetailEmpireTycoon.BuildSystem
             if (!CandidateResult.ok) { Notice = BuildPreview.FailureText(CandidateResult); return false; }
             if(building.floorPainter!=null && !building.floorPainter.TryOpenTransport(request,building.inventory))
             {Notice="The opening is no longer clear. Move upstairs furniture first.";return false;}
-            var cells = StoreyLink.OccupiedCells(building.grid, placementDefinition, candidateCell, request.rotated).ToList();
             building.grid.Release(Selected.occupiedCells);
             if(Selected.item.isParkingSpace && Selected.parkingModuleVersion<Selected.item.parkingGeometryVersion)
                 Selected.GetComponent<RetailEmpireTycoon.Parking.ParkingBay>()?.Resize(Selected.item.placementBounds.size.x,Selected.item.placementBounds.size.z,Selected.item.previousParkingBounds);
             if(!building.ApplyDecorPose(Selected,request))
                 Selected.transform.SetPositionAndRotation(BuildPlacementPose.Position(building.grid, placementDefinition, candidateCell, request.rotated, candidateFacing), Quaternion.Euler(0, candidateFacing * 90, 0));
+            var cells = StoreyLink.OccupiedCells(building.grid, placementDefinition, candidateCell,
+                request.rotated, Selected.decorMount).ToList();
             Selected.GetComponent<WallPattern>()?.Align();
             Selected.anchorCell = candidateCell;
             Selected.facing = candidateFacing;
@@ -239,9 +248,8 @@ namespace RetailEmpireTycoon.BuildSystem
             if(!IsActive || building.worldCamera==null)return false;
             var ray=building.worldCamera.ScreenPointToRay(screenPoint);
             int floor=building.Storeys.ActiveFloor;
-            var plane=new Plane(Vector3.up,Vector3.up*building.grid.FloorElevation(floor));
-            bool onPlane=plane.Raycast(ray,out float distance);
-            var cell=onPlane?building.grid.WorldToCell(ray.GetPoint(distance)):default;cell.y=floor;
+            bool onPlane=BuildPlacementPose.TryPointerAnchor(building.grid,building.floorPainter,null,ray,floor,
+                false,false,false,out var cell);
             var placedObjects=FindObjectsOfType<PlacedObject>().Where(placed=>placed.anchorCell.y==floor
                 && placed.GetComponentInParent<BuildPreview>()==null).ToArray();
             // Parking paint has no solid collider. A wall farther along the ray must not steal its click.
@@ -258,6 +266,8 @@ namespace RetailEmpireTycoon.BuildSystem
         private void Update()
         {
             if (!IsActive || !ReadPointerInput) return;
+            if (EventSystem.current != null && EventSystem.current.currentSelectedGameObject != null &&
+                EventSystem.current.currentSelectedGameObject.TryGetComponent<TMPro.TMP_InputField>(out var input) && input.isFocused) return;
             if (Input.GetKeyDown(KeyCode.Escape))
             {
                 if (Selected != null) { CancelSelection(); Notice = "Selection cancelled."; }
@@ -286,10 +296,10 @@ namespace RetailEmpireTycoon.BuildSystem
                 if(Input.GetMouseButtonDown(0))Confirm();
                 return;
             }
-            int layer=placementDefinition.decorMount.HasFlag(DecorMount.Ceiling)?floor+1:floor;
-            var plane = new Plane(Vector3.up, Vector3.up * building.grid.FloorElevation(layer));
-            if (!plane.Raycast(ray, out float distance)) return;
-            var cell=building.grid.WorldToCell(ray.GetPoint(distance));cell.y=floor;
+            bool ceiling=placementDefinition.decorMount.HasFlag(DecorMount.Ceiling);
+            bool center=placementDefinition.placementKind==PlacementKind.Object && !Selected.decorEnd.HasValue;
+            if (!BuildPlacementPose.TryPointerAnchor(building.grid,building.floorPainter,placementDefinition,ray,
+                floor,ceiling,center,candidateFacing%2!=0,out var cell)) return;
             PreviewAt(cell);
             if (Input.GetMouseButtonDown(0)) Confirm();
         }

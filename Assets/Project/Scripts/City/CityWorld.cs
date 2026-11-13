@@ -374,6 +374,15 @@ namespace RetailEmpireTycoon.City
                 copy.transform.rotation=filter.transform.rotation; copy.transform.localScale=Vector3.Scale(filter.transform.lossyScale,geometryScale);
                 copy.GetComponent<MeshFilter>().sharedMesh=filter.sharedMesh; copy.GetComponent<MeshRenderer>().sharedMaterials=source.sharedMaterials;
             }
+            foreach (var placed in shopScene.GetRootGameObjects().SelectMany(root=>root.GetComponentsInChildren<PlacedObject>(true))
+                .Where(placed=>DecorSign.CharacterLimit(placed.item)>0 && trip.WasShopObjectActive(placed.gameObject)))
+            {
+                var sign = new GameObject("Store facade sign");
+                sign.transform.SetParent(facadeRoot, false);
+                sign.transform.SetPositionAndRotation(Map(placed.transform.position), placed.transform.rotation);
+                sign.transform.localScale = Vector3.Scale(placed.transform.lossyScale, geometryScale);
+                DecorSign.Create(sign.transform, placed.item, placed.SignText);
+            }
             foreach (var placed in installedDoors.Where(door => door.GetComponent<CollectionDoor>() != null))
             {
                 var copy = Instantiate(placed.item.prefab, Map(placed.transform.position), placed.transform.rotation, facadeRoot);

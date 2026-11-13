@@ -23,6 +23,10 @@ namespace RetailEmpireTycoon.UI.Shop
         private Button left,right,remove,cancel,down,up,buildTab,editTab,floorBrush,ceilingBrush,eraseBrush;
         private Button personalParking, returnBay;
         private Button frameFinishButton;
+        private Button signButton;
+        private TMP_InputField signInput;
+        private RectTransform signPanel;
+        private PlacedObject displayedSign;
         private RectTransform frameFinishMenu;
         private Button[] frameFinishOptions;
         private DoorFrameFinish displayedDoor;
@@ -60,9 +64,44 @@ namespace RetailEmpireTycoon.UI.Shop
             parkingAction=personalParking.GetComponentInChildren<TMP_Text>();
             returnBay=Action(toolbar,ShopIcon.Pickup,"Set return bay",new Vector2(780,-112),182,editor.UseSelectedReturnBay);
             CreateFrameFinishMenu();
+            CreateSignEditor();
             CreateCatalog();
             building.inventory.Changed+=RefreshCatalog;
             toolbar.gameObject.SetActive(false);catalog.gameObject.SetActive(false);
+        }
+
+        private void CreateSignEditor()
+        {
+            signButton = ui.Button(toolbar, "Edit text", new Vector2(610,-112), new Vector2(150,34), () =>
+            {
+                if (displayedSign == null) return;
+                signInput.characterLimit = DecorSign.CharacterLimit(displayedSign.item);
+                signInput.SetTextWithoutNotify(DecorSign.Caption(displayedSign.item, displayedSign.SignText));
+                signPanel.gameObject.SetActive(true);
+                signInput.ActivateInputField();
+            });
+            signPanel = ui.Rect("Sign editor", toolbar, new Vector2(0,1), new Vector2(0,0),
+                new Vector2(604,8), new Vector2(325,112));
+            ui.Panel(signPanel, ShopUiTheme.Paper);
+            ui.Border(signPanel);
+            var field = ui.Rect("Sign text", signPanel, new Vector2(0,1), new Vector2(0,1),
+                new Vector2(10,-10), new Vector2(305,40));
+            ui.Panel(field, ShopUiTheme.Line);
+            signInput = field.gameObject.AddComponent<TMP_InputField>();
+            var label = ui.Label(field, "", new Vector2(9,-4), new Vector2(286,32), 19);
+            label.richText = false;
+            signInput.textViewport = field;
+            signInput.textComponent = (TextMeshProUGUI)label;
+            signInput.lineType = TMP_InputField.LineType.SingleLine;
+            ui.Button(signPanel, "Save text", new Vector2(10,-62), new Vector2(145,35), () =>
+            {
+                editor.SetSignText(signInput.text);
+                signPanel.gameObject.SetActive(false);
+            });
+            ui.Button(signPanel, "Cancel", new Vector2(168,-62), new Vector2(147,35),
+                () => signPanel.gameObject.SetActive(false));
+            signPanel.gameObject.SetActive(false);
+            signButton.gameObject.SetActive(false);
         }
 
         private void CreateFrameFinishMenu()
@@ -151,6 +190,7 @@ namespace RetailEmpireTycoon.UI.Shop
         {
             if(!IsOpen)return;
             IsOpen=false;editor.Finish();building.ExitBuildMode();building.Storeys.SetCeiling(false);building.Storeys.SelectFloor(0);
+            signPanel.gameObject.SetActive(false);
             toolbar.gameObject.SetActive(false);catalog.gameObject.SetActive(false);
         }
         public void OpenCatalog(){if(!IsOpen)Open();editor.Begin();showCatalog=true;RefreshCatalog();}
@@ -202,7 +242,11 @@ namespace RetailEmpireTycoon.UI.Shop
             personalParking.gameObject.SetActive(parkingSelected && !item.isPersonalParking);
             returnBay.gameObject.SetActive(parkingSelected && editor.Selected.playerParking);
             RefreshFrameFinish();
-            placementHint.gameObject.SetActive(!parkingSelected && displayedDoor == null);
+            var sign = selected && DecorSign.CharacterLimit(item)>0 ? editor.Selected : null;
+            if (sign != displayedSign) signPanel.gameObject.SetActive(false);
+            displayedSign = sign;
+            signButton.gameObject.SetActive(sign != null);
+            placementHint.gameObject.SetActive(!parkingSelected && displayedDoor == null && sign == null);
             if (parkingSelected)
             {
                 parkingAction.text=editor.Selected.playerParking?"Make public":"Make personal";

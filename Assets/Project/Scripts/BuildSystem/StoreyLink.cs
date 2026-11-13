@@ -73,9 +73,10 @@ namespace RetailEmpireTycoon.BuildSystem
         {
             var link = new StoreyLink(grid, owner); yield return link.Lower; yield return link.Upper;
         }
-        public static IEnumerable<Vector3Int> OccupiedCells(GridSystem grid, BuildItemData item, Vector3Int anchor, bool rotated)
+        public static IEnumerable<Vector3Int> OccupiedCells(GridSystem grid, BuildItemData item, Vector3Int anchor,
+            bool rotated, DecorMount mount = DecorMount.None)
         {
-            if (!DecorCatalog.UsesFloorSpace(item.decorMount)) yield break;
+            if (!DecorCatalog.UsesFloorSpace(mount == DecorMount.None ? item.decorMount : mount)) yield break;
             foreach (var cell in grid.GetFootprintCells(anchor,item.footprint,rotated,item.pivotOffset))
             {
                 yield return cell;

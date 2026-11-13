@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using RetailEmpireTycoon.Core;
 
@@ -30,8 +31,10 @@ namespace RetailEmpireTycoon.BuildSystem
                 if (item!=null && !target.Exists(existing=>existing!=null && existing.id==item.id)) target.Add(item);
         }
 
-        private static BuildItemData[] LoadDecorCollection() =>
-            Resources.Load<DecorCollectionManifest>("DecorCollection/Manifest")?.items ?? System.Array.Empty<BuildItemData>();
+        internal static IEnumerable<BuildItemData> LoadDecorCollection() =>
+            Resources.LoadAll<DecorCollectionManifest>("DecorCollection")
+                .Concat(Resources.LoadAll<DecorCollectionManifest>("DecorCollectionII"))
+                .SelectMany(manifest => manifest.items ?? System.Array.Empty<BuildItemData>());
 
         public static void IncludeWallCollection(List<BuildItemData> target)
         {
@@ -74,7 +77,7 @@ namespace RetailEmpireTycoon.BuildSystem
                 ?? Resources.Load<BuildItemData>(WallCollectionPath+"/"+id)
                 ?? Resources.Load<BuildItemData>(FloorCollectionPath+"/"+id)
                 ?? Resources.Load<BuildItemData>(DoorCollectionPath+"/"+id)
-                ?? System.Array.Find(LoadDecorCollection(),item=>item!=null && item.id==id);
+                ?? LoadDecorCollection().FirstOrDefault(item=>item!=null && item.id==id);
             if(extension!=null)return extension;
             Debug.LogWarning("[BuildItemCatalog] Item not found: " + id);
             return null;

@@ -33,6 +33,71 @@ internal sealed class DecorMesh
         Face(finish, center-x-y, center+x-y, center+x+y, center-x+y);
     }
 
+    internal void Dot(Finish finish, Vector3 center, float radius)
+    {
+        var outline = Enumerable.Range(0, 8).Select(i =>
+        {
+            float angle = i * Mathf.PI / 4;
+            return center + new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0) * radius;
+        }).ToArray();
+        Face(finish, outline);
+    }
+
+    // Radial outlines are clockwise as seen from +Z. The bevel is geometry on both faces.
+    internal void Badge(Finish finish, Vector3 center, Vector2[] outline, float depth)
+    {
+        float edge = depth * .22f;
+        Vector3[] Ring(float z, float scale) => outline.Select(point =>
+            center + new Vector3(point.x * scale, point.y * scale, z)).ToArray();
+        var back = Ring(-depth * .5f, .92f);
+        var rimBack = Ring(-depth * .5f + edge, 1);
+        var rimFront = Ring(depth * .5f - edge, 1);
+        var front = Ring(depth * .5f, .92f);
+        for (int i = 0; i < outline.Length; i++)
+        {
+            int j = (i + 1) % outline.Length;
+            Face(finish, center + Vector3.back * depth * .5f, back[i], back[j]);
+            Face(finish, back[j], back[i], rimBack[i], rimBack[j]);
+            Face(finish, rimBack[j], rimBack[i], rimFront[i], rimFront[j]);
+            Face(finish, rimFront[j], rimFront[i], front[i], front[j]);
+            Face(finish, center + Vector3.forward * depth * .5f, front[j], front[i]);
+        }
+    }
+
+    internal void Flag(Finish finish, Vector3 top, float width, float height)
+    {
+        Badge(finish, top + Vector3.down * height * .47f, new[]
+        {
+            new Vector2(-width/2,height*.47f), new Vector2(width/2,height*.47f),
+            new Vector2(width*.43f,-height*.53f), new Vector2(0,-height*.27f),
+            new Vector2(-width*.43f,-height*.53f)
+        }, .021f);
+    }
+
+    internal void MapleLeaf(Finish finish, Vector3 center, float width, float angle)
+    {
+        var outline = Enumerable.Range(0, 18).Select(i =>
+        {
+            float a = i * Mathf.PI / 9;
+            float radius = i % 2 == 0 ? width * .53f : width * .32f;
+            var direction = Quaternion.Euler(0, 0, angle) * new Vector3(Mathf.Sin(a), Mathf.Cos(a), 0);
+            return (Vector2)direction * radius;
+        }).ToArray();
+        Badge(finish, center, outline, .017f);
+    }
+
+    internal void CurvedTable(Finish finish, Vector3 center, float width, float depth, float height)
+    {
+        Vector3[] Ring(float y,float scale) => Enumerable.Range(0, 14).Select(i =>
+        {
+            float angle = i * Mathf.PI / 7;
+            float x = Mathf.Cos(angle), z = Mathf.Sin(angle);
+            float curve = .65f + .35f * Mathf.Abs(x);
+            return center + new Vector3(x * width * scale, y, z * depth * scale * curve - x*x*.053f);
+        }).ToArray();
+        Shell(finish, new[] { Ring(-height/2,.95f), Ring(-height*.31f,1), Ring(height*.31f,1), Ring(height/2,.95f) });
+    }
+
     internal void Canopy(Finish first, Finish second, float height, float eave, float radius)
     {
         Vector3 Point(int corner,float y)

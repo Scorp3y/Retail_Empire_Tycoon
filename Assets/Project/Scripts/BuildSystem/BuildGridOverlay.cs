@@ -81,7 +81,7 @@ namespace RetailEmpireTycoon.BuildSystem
         {
             if (_mesh == null)
             {
-                _mesh = new Mesh();
+                _mesh = new Mesh { indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
                 _mesh.name = "BuildGridOverlayMesh";
             }
             else
@@ -93,6 +93,7 @@ namespace RetailEmpireTycoon.BuildSystem
             var triangles = new List<int>();
             var uvs = new List<Vector2>();
 
+            var shown = new HashSet<Vector3Int>();
             foreach (var rect in territory.PurchasedRects)
             {
                 if (rect == null)
@@ -101,6 +102,7 @@ namespace RetailEmpireTycoon.BuildSystem
                 for(int z=rect.min.z;z<=rect.max.z;z++)
                 {
                     var cell=new Vector3Int(x,ActiveFloor,z);
+                    if (!shown.Add(cell) || !territory.IsCellPurchased(cell)) continue;
                     float height=(floors!=null?floors.SurfaceElevation(cell):grid.FloorElevation(ActiveFloor))+yOffset;
 
                     Vector3 minWorld = new Vector3(

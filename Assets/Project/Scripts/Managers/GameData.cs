@@ -59,6 +59,8 @@ public class PlacedBuildSaveData
     public RetailEmpireTycoon.Core.DecorMount decorMount;
     public bool hasDecorEnd;
     public UnityEngine.Vector3Int decorEnd;
+    public bool hasSignText;
+    public string signText;
 }
 
 [Serializable]

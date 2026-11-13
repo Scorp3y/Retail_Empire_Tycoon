@@ -336,7 +336,7 @@ namespace RetailEmpireTycoon.BuildSystem
                 data.placedObjects.Add(JsonUtility.FromJson<PlacedBuildSaveData>(JsonUtility.ToJson(bay)));
             return true;
         }
-        public GameData CreateNewGame(int startingMoney)
+        public GameData CreateNewGame(int startingMoney, IEnumerable<BuildItemData> catalog = null)
         {
             var result = JsonUtility.FromJson<GameData>(JsonUtility.ToJson(initialState));
             result.usesModularStore = true;
@@ -350,7 +350,7 @@ namespace RetailEmpireTycoon.BuildSystem
                 result.placedObjects.Add(JsonUtility.FromJson<PlacedBuildSaveData>(JsonUtility.ToJson(additionalWarehouseRack)));
             MoveDefaultStoreRight(result, newGame: true);
             ClearStarterSidewalkOverhang(result);
-            constructionStock.AddTo(result, new System.Random());
+            constructionStock.AddTo(result, new System.Random(), catalog);
             return result;
         }
     }

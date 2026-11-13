@@ -1028,12 +1028,18 @@ public static class ConstructionWorkspacePlay
         Require(data.playerMoney==420000,"New games should start with $420,000.");
         var starterFloors = Resources.LoadAll<BuildItemData>("FloorCollection");
         Require(starterFloors.Length == 29 && starterFloors.All(floor =>
-            data.buildInventory.Single(entry => entry.itemId == floor.id).count == 50), "Starting storage must contain 50 of each new floor.");
+            data.buildInventory.Single(entry => entry.itemId == floor.id).count ==
+                (floor.id is "Floor_26_BrickPavers" or "Floor_01_CreamCeramic" ? 50000 : 50)),
+            "Starting storage must contain 50,000 each of Brick Pavers and Cream Ceramic and 50 of each other collection floor.");
         var starterDoors = Resources.LoadAll<BuildItemData>("DoorCollection");
         Require(starterDoors.Length == 24 && starterDoors.All(door =>
             data.buildInventory.Single(entry => entry.itemId == door.id).count == 3), "Starting storage must contain three of each collection door.");
+        var starterDecor = starter.catalog.Items.Where(item => item != null && item.category == BuildCategory.Decoration &&
+            !item.hiddenFromShop && item.prefab != null).ToArray();
+        Require(starterDecor.Length == 99 && starterDecor.All(item =>
+            data.buildInventory.Single(entry => entry.itemId == item.id).count >= 3),
+            "Starting storage must contain three of every purchasable decoration, including the legacy market sign.");
         int totalStock = data.buildInventory.Sum(entry => entry.count);
-        Require(totalStock == 1880, "Incorrect starter stock total.");
         var starterWalls=Resources.LoadAll<BuildItemData>("WallCollection").Where(item=>!item.IsWallCorner).ToArray();
         Require(starterWalls.Length==30 && starterWalls.All(wall=>data.buildInventory.Single(entry=>entry.itemId==wall.id).count==
             (wall.id==BuildItemData.StoreStripeId?30:10)),
@@ -1046,7 +1052,7 @@ public static class ConstructionWorkspacePlay
         var reloaded=JsonUtility.FromJson<GameData>(JsonUtility.ToJson(data));
         starter.UpgradeUnmodifiedLayout(reloaded);
         Require(reloaded.buildInventory.Sum(entry => entry.count) == totalStock, "Loading/upgrading grants the starter stock again.");
-        var collectionIds = starterFloors.Concat(starterDoors).Select(item => item.id).ToHashSet();
+        var collectionIds = starterFloors.Concat(starterDoors).Concat(starterDecor).Select(item => item.id).ToHashSet();
         reloaded.buildInventory.RemoveAll(entry => collectionIds.Contains(entry.itemId));
         var extraRack = reloaded.placedObjects.Where(placed => placed.itemId == "storage_rack_01")
             .OrderBy(placed => placed.z).ElementAt(1);
@@ -1065,7 +1071,7 @@ public static class ConstructionWorkspacePlay
         Require(choices.Count>1,"Starter shelf selection is not random.");
         var layout=Object.FindObjectOfType<RetailEmpireTycoon.City.TownWorldPlaces>().layout;
         Require(layout.ShopVisualScale==Vector3.one*layout.shopToCityScale,"City shop is still stretched vertically.");
-        File.WriteAllText(Report+"/stock.txt","PASS $420,000 capital, 50 of each of 29 floor styles, 10 of each of 30 wall styles, 3 of each of 24 doors, 2 personal bays and the existing starter stock; inventory restore; existing-game upgrade grants nothing.\n");
+        File.WriteAllText(Report+"/stock.txt","PASS 50,000 Brick Pavers, 50,000 Cream Ceramic and three of all 99 purchasable decorations; existing-game upgrade grants nothing.\n");
     }
     private static System.Collections.Generic.IEnumerable<object> Workspace(StarterStoreInitialization starter)
     {

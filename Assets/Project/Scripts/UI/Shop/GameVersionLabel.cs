@@ -7,7 +7,7 @@ namespace RetailEmpireTycoon.UI.Shop
     /// <summary>Non-interactive build identifier, deliberately independent of language and tutorial hints.</summary>
     public sealed class GameVersionLabel : MonoBehaviour
     {
-        public const string CurrentVersion = "v0.26.0a";
+        public const string CurrentVersion = "v0.26.1a";
         public Transform uiRoot;
         private RectTransform versionRect;
 

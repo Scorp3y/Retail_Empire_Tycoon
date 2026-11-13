@@ -10,6 +10,9 @@ namespace RetailEmpireTycoon.BuildSystem
     [Serializable]
     public sealed class StarterConstructionStock
     {
+        private const string BrickPaversId = "Floor_26_BrickPavers";
+        private const string CeramicFloorId = "Floor_01_CreamCeramic";
+        private const int BulkFloorCount = 50000;
         [SerializeField] private BuildItemData[] shelves = Array.Empty<BuildItemData>();
         [SerializeField] private BuildItemData floor, wall, door, gate, parking;
         [SerializeField] private BuildItemData personalParking;
@@ -34,7 +37,7 @@ namespace RetailEmpireTycoon.BuildSystem
             Validate();
         }
 
-        public void AddTo(GameData data, System.Random random)
+        public void AddTo(GameData data, System.Random random, IEnumerable<BuildItemData> catalog = null)
         {
             if(data==null)throw new ArgumentNullException(nameof(data));
             if(random==null)throw new ArgumentNullException(nameof(random));
@@ -58,9 +61,18 @@ namespace RetailEmpireTycoon.BuildSystem
             foreach (var wallStyle in wallStyles)
                 if (!wallStyle.IsWallCorner) Add(wallStyle, 10);
             foreach (var floorStyle in BuildItemCatalog.LoadFloorCollection())
-                Add(floorStyle, 50);
+                Add(floorStyle, floorStyle.id is BrickPaversId or CeramicFloorId ? BulkFloorCount : 50);
             foreach (var doorStyle in BuildItemCatalog.LoadDoorCollection())
                 Add(doorStyle, 3);
+            var decorations = BuildItemCatalog.LoadDecorCollection()
+                .Concat(catalog ?? Array.Empty<BuildItemData>())
+                .Where(item => item != null && item.category == BuildCategory.Decoration && !item.hiddenFromShop && item.prefab != null)
+                .GroupBy(item => item.id);
+            foreach (var decoration in decorations)
+            {
+                int current = data.buildInventory.FirstOrDefault(entry => entry.itemId == decoration.Key)?.count ?? 0;
+                if (current < 3) Add(decoration.First(), 3 - current);
+            }
             if (personalParking != null) Add(personalParking, 2);
         }
 
